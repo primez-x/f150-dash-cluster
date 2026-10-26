@@ -40,6 +40,16 @@ body.offroad { --accent: #8fd3ff; --accent-dim: rgba(143, 211, 255, .18); }
 .track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: linear-gradient(90deg, transparent, var(--accent)); }
 .track i::after { content: ""; position: absolute; right: -5px; top: -4px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 0 14px var(--accent), 0 0 4px var(--accent); }
 .track b { position: absolute; top: -5px; bottom: -5px; width: 1px; background: rgba(255, 255, 255, .22); }
+/* Fuel gauge. The icon is a mask so the caution colour can tint the icon; on device use a caution icon asset. */
+.fuel .head { white-space: nowrap; }
+.fuel .v { font-size: 32px; }
+.fuel .dte { margin-left: 20px; padding-left: 20px; border-left: 1px solid rgba(255, 255, 255, .12); }
+.fuel .ic { width: 30px; height: 30px; background: #c9d1da; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; }
+.fuel .ic.flip { transform: scaleX(-1); }
+.fuel.low .ic { background: var(--caution); }
+.fuel.low .head > .v { color: var(--caution); }
+.fuel.low .track i { background: linear-gradient(90deg, transparent, var(--caution)); }
+.fuel.low .track i::after { box-shadow: 0 0 14px var(--caution), 0 0 4px var(--caution); }
 .ends { display: flex; justify-content: space-between; font: 14px "BMW Type Global"; color: var(--mute); margin-top: 6px; letter-spacing: 2px; }
 
 /* Vertical bar gauge (towing temperatures). */

@@ -23,15 +23,16 @@
 <ul>
   <li>Off-road option A is locked. Every layout now uses the off-road A top bar: alarm row at top center, cruise region at x 810, y 104 (300 × 80).</li>
   <li>Left-hand drive: driver side is left on every vehicle graphic. Tire positions, doors, and the fuel door arrow follow the LHD plan view.</li>
+  <li>Fuel is on every layout: one shared gauge with level, range, a 1/8-tank reserve tick, and a caution colour at reserve. Add <code>?fuel=9</code> to preview the low state. The filler arrow follows <code>fuelRefuelingPortPositon</code> (0 = left).</li>
   <li>Drivetrain: rear-wheel drive with 2H, 4A, 4H, 4L, transfer neutral, and the rear e-locker. One drawn component replaces the stock sprite, which powers the axle at the engine in 2WD.</li>
 </ul>
 
 <h2>Daily</h2>
 <div class="pair">
   <div class="opt"><h3>A · Crescent</h3><a href="daily-a.html"><img src="shots/daily-a.png" alt=""></a>
-    <ul><li>Speed and tach crescents at the screen edges. Fuel and coolant arcs sit inside the crescents.</li><li>Center: large speed, gear row, drive mode chips, range, average, trip.</li></ul></div>
+    <ul><li>Speed and tach crescents at the screen edges. Oil and coolant arcs sit inside the crescents.</li><li>Center: large speed, gear row, drive mode chips, fuel gauge, average, trip.</li></ul></div>
   <div class="opt"><h3>B · Halo</h3><a href="daily-b.html"><img src="shots/daily-b.png" alt=""></a>
-    <ul><li>Tach halo wraps the speed. Side panels hold range, fluids, trips, and tire pressures.</li></ul></div>
+    <ul><li>Tach halo wraps the speed. Side panels hold fuel, fluids, trips, and tire pressures.</li></ul></div>
 </div>
 <div class="pick">Daily pick: A or B</div>
 
@@ -40,9 +41,10 @@
   <div class="opt"><h3>A · Crescent</h3><a href="tow-a.html"><img src="shots/tow-a.png" alt=""></a>
     <ul><li>Transmission temperature replaces fuel inside the speed crescent.</li><li>Center: truck and trailer tilted by grade, grade %, trailer brake gain, oil temperature, held gear.</li></ul></div>
   <div class="opt"><h3>B · Columns</h3><a href="tow-b.html"><img src="shots/tow-b.png" alt=""></a>
-    <ul><li>Transmission, coolant, and oil columns with a normal band. Trailer panel: brake gain, grade, tire pressures.</li></ul></div>
+    <ul><li>Transmission, coolant, and oil columns with a normal band. Fuel gauge under the speed. Trailer panel: brake gain, grade, tire pressures.</li></ul></div>
 </div>
-<div class="pick">Towing pick: A or B</div>
+<div class="pick">Towing pick: B (locked)</div>
+<div class="pair"><div class="opt"><h3>B · low fuel (<code>?fuel=9</code>)</h3><a href="tow-b.html?fuel=9"><img src="shots/tow-b-lowfuel.png" alt=""></a></div></div>
 
 <h2>Sport</h2>
 <div class="pair">

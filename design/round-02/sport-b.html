@@ -31,18 +31,18 @@ place(`
   <div class="abs big speed" data-field="speed">71</div>
   <div class="abs unit" data-field="vehicleSpeedUnit">MPH</div>
   <div class="abs gbox" data-field="getGearNum() trucksShiftGear"><div class="big">3</div><div class="k">S</div></div>
-  <div class="abs bar" style="left:110px;top:440px;width:340px" data-field="oilPressurePercentage">
+  ${fuel({ pct: 58, range: 236, at: "left:110px;top:430px;width:340px" })}
+  <div class="abs bar" style="left:110px;top:560px;width:340px" data-field="oilPressurePercentage">
     <div class="head"><span class="k"><img src="${ICON("oil")}" alt="">OIL PRESS</span><span class="v">64<span class="u">%</span></span></div>
     <div class="track"><i style="width:64%"></i><b style="left:20%"></b></div>
   </div>
-  <div class="abs bar" style="left:110px;top:540px;width:340px" data-field="oilTemp oilTempPercentage">
+  <div class="abs bar" style="left:110px;top:660px;width:340px" data-field="oilTemp oilTempPercentage">
     <div class="head"><span class="k"><img src="${ICON("oilTemp")}" alt="">OIL TEMP</span><span class="v">226<span class="u">°F</span></span></div>
     <div class="track"><i style="width:62%"></i><b style="left:80%"></b></div>
   </div>
   <div class="abs tiles tiles2">
     <div class="tile" data-field="waterTempPercentage"><div class="k">COOLANT</div><div class="v">NORM</div></div>
     <div class="tile" data-field="gearBoxTempPercentage"><div class="k">TRANS</div><div class="v">NORM</div></div>
-    <div class="tile" data-field="fuelPercentage"><div class="k">FUEL</div><div class="v">58%</div></div>
     <div class="tile" data-field="getGearAwd()"><div class="k">DRIVE</div><div class="v">2H</div></div>
   </div>
   <div class="abs dock">

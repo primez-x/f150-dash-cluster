@@ -200,6 +200,18 @@ function gforce({ cx, cy, r, gx, gy, peak }) {
   return s + `</g>`;
 }
 
+// Fuel gauge for every layout: level first, range second, caution colour at reserve.
+// RESERVE (1/8 tank) is a design value. ?fuel=<pct> previews any level; range scales with the level.
+// fuelRefuelingPortPositon (0 left, 1 right) sets the filler arrow; the stock icon points right.
+const RESERVE = 12.5;
+function fuel({ pct, range, at, port = 0 }) {
+  if (params.has("fuel")) { range = Math.round(range * +params.get("fuel") / pct); pct = +params.get("fuel"); }
+  return `<div class="abs bar fuel${pct <= RESERVE ? " low" : ""}" style="${at}" data-field="fuelPercentage DTE fuelRefuelingPortPositon">
+    <div class="head"><span class="k"><i class="ic${port ? "" : " flip"}" style="--src:url(${ICON("fuel")})"></i>FUEL</span><span class="v">${pct}<span class="u">%</span><span class="dte">${range}<span class="u">mi range</span></span></span></div>
+    <div class="track"><i style="width:${pct}%"></i><b style="left:${RESERVE}%"></b></div><div class="ends"><span>E</span><span>F</span></div>
+  </div>`;
+}
+
 function tpms(values = [35, 35, 34, 28], low = 3) {
   const t = (i, f) => `<span class="t${i === low ? " low" : ""}" data-field="mTpmsPressure ${f}">${values[i]}</span>`;
   return `<div class="tpms">${t(0, "LF")}<img src="${TRUCK_TOP}" alt="">${t(1, "RF")}${t(2, "LR")}${t(3, "RR")}</div>`;

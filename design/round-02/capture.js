@@ -20,6 +20,7 @@ async (page) => {
     await shot(m + ".html", m + ".png", 1920, 932);
     await shot(m + ".html?view=physical", m + "-physical.png", 1920, 720);
   }
+  await shot("tow-b.html?fuel=9", "tow-b-lowfuel.png", 1920, 932);
   await shot("drivetrain.html", "drivetrain.png", 1920, 420);
   return errors;
 }

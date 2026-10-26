@@ -8,8 +8,6 @@
 <style>
   .panel { top: 220px; width: 360px; box-sizing: border-box; padding: 26px 0 0; border-top: 1px solid rgba(255, 255, 255, .08); }
   .panel .bar { margin-bottom: 40px; }
-  .hero { margin-bottom: 36px; }
-  .hero .big { font-size: 76px; }
   .stack .row { display: flex; justify-content: space-between; align-items: baseline; padding: 18px 0; border-top: 1px solid var(--line); }
   .stack .row:first-child { border-top: 0; padding-top: 0; }
   .stack .big { font-size: 38px; }
@@ -45,11 +43,7 @@ topBar({ mode: "DAILY", telltales: [121], cruise: "set" });
 })();
 place(`
   <div class="abs panel" style="left:66px">
-    <div class="hero" data-field="DTE"><div class="k">RANGE</div><div class="big" style="margin-top:10px">312<span class="u">mi</span></div></div>
-    <div class="bar" data-field="fuelPercentage">
-      <div class="head"><span class="k"><img src="${ICON("range")}" alt="">FUEL</span><span class="v">62<span class="u">%</span></span></div>
-      <div class="track"><i style="width:62%"></i><b style="left:12.5%"></b></div><div class="ends"><span>E</span><span>F</span></div>
-    </div>
+    ${fuel({ pct: 62, range: 312, at: "position:relative;margin-bottom:56px" })}
     <div class="bar" data-field="waterTempPercentage">
       <div class="head"><span class="k"><img src="${ICON("water")}" alt="">COOLANT</span><span class="v">NORM</span></div>
       <div class="track"><i style="width:48%"></i><b style="left:80%"></b></div><div class="ends"><span>C</span><span>H</span></div>

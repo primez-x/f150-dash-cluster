@@ -11,7 +11,7 @@
   .gear .k { margin-top: 4px; }
   .spd { left: 960px; top: 640px; transform: translateX(-50%); display: flex; align-items: baseline; }
   .spd .big { font-size: 64px; }
-  .side { top: 230px; width: 360px; }
+  .side { top: 200px; width: 360px; }
   .side .bar { margin-bottom: 44px; }
   .gtitle { left: 1580px; top: 230px; transform: translateX(-50%); }
 </style>
@@ -31,6 +31,7 @@ place(`
   <div class="abs spd"><span class="big" data-field="speed">71</span><span class="u" data-field="vehicleSpeedUnit">MPH</span></div>
   <div class="abs" style="left:960px;top:720px;transform:translateX(-50%)"><span class="mid" style="font-size:30px;color:#9aa4af" data-field="tacho rpm">4350</span><span class="u">RPM</span></div>
   <div class="abs side" style="left:110px">
+    ${fuel({ pct: 58, range: 236, at: "position:relative;margin-bottom:56px" })}
     <div class="bar" data-field="oilPressurePercentage">
       <div class="head"><span class="k"><img src="${ICON("oil")}" alt="">OIL PRESS</span><span class="v">64<span class="u">%</span></span></div>
       <div class="track"><i style="width:64%"></i><b style="left:20%"></b></div>
@@ -50,7 +51,6 @@ place(`
   </div>
   <div class="abs gtitle k">G-FORCE · PEAK 0.79</div>
   <div class="abs dock">
-    <div class="chip" data-field="fuelPercentage"><span class="k">FUEL</span><span class="v">58%</span></div>
     <div class="chip" data-field="batterVoltage"><span class="k">BATT</span><span class="v">14.3 V</span></div>
     <div class="chip" data-field="getGearAwd()"><span class="k">DRIVE</span><span class="v">2H</span></div>
   </div>`);

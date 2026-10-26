@@ -16,7 +16,7 @@
   .unit { left: 820px; top: 470px; transform: translateX(-50%); font: 22px "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
   .trailer .big { font-size: 86px; }
   .trailer .row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-top: 1px solid var(--line); }
-  .rpm { left: 960px; top: 700px; transform: translateX(-50%); font-size: 28px; color: #9aa4af; }
+  .rpm { left: 960px; top: 728px; transform: translateX(-50%); font-size: 28px; color: #9aa4af; }
 </style>
 </head>
 <body class="tow">
@@ -25,7 +25,7 @@
 <script src="kit.js"></script>
 <script>
 topBar({ mode: "TOWING", telltales: [121], cruise: "off" });
-layer(segBar({ x0: 560, x1: 1360, y: 640, n: 48, max: 7000, value: 2600, redFrom: 6000, h: 22, w: 11 }));
+layer(segBar({ x0: 560, x1: 1360, y: 668, n: 48, max: 7000, value: 2600, redFrom: 6000, h: 22, w: 11 }));
 const col = (label, icon, pct, val, field) => `<div class="vbar" data-field="${field}">
   <div class="v">${val}</div>
   <div class="col"><span class="band" style="bottom:35%;height:30%"></span><i style="height:${pct}%"></i></div>
@@ -54,12 +54,12 @@ place(`
     <div class="g"><div class="big" data-field="trucksShiftGear getGearNum()">D<sup style="font-size:46px;color:var(--accent)">4</sup></div><div class="k">GEAR</div></div>
   </div>
   <div class="abs unit" data-field="vehicleSpeedUnit">MPH</div>
+  ${fuel({ pct: 46, range: 188, at: "left:560px;top:520px;width:800px" })}
   <div class="abs rpm mid" data-field="tacho rpm">2600<span class="u">RPM</span></div>
-  <div class="abs" style="left:960px;top:776px;transform:translateX(-50%)">${driveChips("2H", false)}</div>
+  <div class="abs" style="left:960px;top:800px;transform:translateX(-50%)">${driveChips("2H", false)}</div>
   <div class="abs dock">
     <div class="chip" data-field="batterVoltage"><span class="k">BATT</span><span class="v">14.1 V</span></div>
     <div class="chip" data-field="mAvgFuel"><span class="k">AVG</span><span class="v">9.6 mpg</span></div>
-    <div class="chip" data-field="DTE"><span class="k">RANGE</span><span class="v">188 mi</span></div>
     <div class="chip" data-field="mTripA"><span class="k">TRIP A</span><span class="v">86.2 mi</span></div>
   </div>`);
 </script>
