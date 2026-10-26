@@ -29,7 +29,7 @@ const BASE = {
   tow: {
     mode: "tow", speed: 58, gear: "D", gearNum: 4, drive: "2H", rpm: 2600, fuel: 46, range: 188, cruise: "off", telltales: [90],
     temps: { trans: 93, coolant: 99, oil: 110, diff: 85 }, tires: [38, 38, 41, 41], low: -1, trip: "86.2", avg: "9.6", mpgNow: 8.9,
-    gain: 5.5, grade: 6, pages: ["trailer", "trip", "economy", "vehicle"],
+    gain: 5.5, grade: 6, trailerMi: 342, brakeType: "Heavy", pages: ["trailer", "trip", "economy", "vehicle"],
   },
 };
 const COLD = { coolant: 38, oil: 31, trans: 24, diff: 20 };
@@ -112,12 +112,12 @@ const PAGES = {
     `<div class="cells">${["LF", "RF", "LR", "RR"].map((k, i) => cell(k, s.tires[i], "", `mTpmsPressure ${k}`)).join("")}</div>`],
   temps: s => ["TEMPERATURES", "getWaterTemp getOilTemp getGearBoxTemp getDiffOilTemp",
     `<div class="cells">${Object.values(s.T).map(T => `<div class="cell temp ${T.state}" data-field="${T.field}"><div class="k">${T.label}</div>${tempText(T)}</div>`).join("")}</div>`],
-  vehicle: s => ["VEHICLE", "OilLifeinfo.qml BatteryMeter.qml odometer",
-    `<div class="cells">${cell("ODO", "48213", "mi", "odometer")}${cell("OIL LIFE", "72", "%", "trucksOilLifePercentage")}${cell("BATT", "14.2", "V", "batterVoltage")}</div>`],
-  trailer: s => ["TRAILER", "trucksTrailerGain mPitch",
-    `<div class="cells">${cell("BRAKE GAIN", s.gain.toFixed(1), "", "trucksTrailerGain")}
-      <div class="cell" data-field="mPitch (grade = tan pitch)"><div class="k">GRADE</div><div class="rv"><svg width="64" height="30" style="margin-right:12px"><path d="M2 28 L62 ${28 - 26 * Math.min(1, s.grade / 10)} L62 28 Z" fill="var(--accent-dim)" stroke="var(--accent)" stroke-width="2"/></svg>+${s.grade}<span class="u">%</span></div></div></div>
-     <div class="meter"><i style="width:${s.gain * 10}%"></i></div>`],
+  // Oil pressure: trucksOilPressure arrives in bar; shown in psi. Values on this truck are unverified.
+  vehicle: s => ["VEHICLE", "OilLifeinfo.qml BatteryMeter.qml trucksOilPressure",
+    `<div class="cells">${cell("OIL PRESS", Math.round(2.9 * 14.5), "psi", "trucksOilPressure (bar)")}${cell("OIL LIFE", "72", "%", "trucksOilLifePercentage")}${cell("BATT", "14.2", "V", "batterVoltage")}</div>`],
+  // Trailer miles: trucksTrailerDistance. Brake type: trucksSetupInfo[17], Light or Heavy electric (vehicle setting).
+  trailer: s => ["TRAILER", "trucksTrailerDistance trucksSetupInfo[17] trucksTrailerGain",
+    `<div class="cells">${cell("TRAILER", s.trailerMi, "mi", "trucksTrailerDistance getTrucksTrailerDistance()")}${cell("BRAKE TYPE", s.brakeType, "", "trucksSetupInfo[17] mTrailerBreakType")}${cell("GAIN", s.gain.toFixed(1), "", "trucksTrailerGain")}</div>`],
 };
 
 // The card and the alert share one box. While an alert is active, the alert replaces the card.

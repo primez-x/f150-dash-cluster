@@ -47,8 +47,6 @@
 // Left half from towing A: speed, gear, RPM, and the paged card. Right half from towing B: temperature columns
 // over tire pressures, fuel, and trailer brake.
 const s = state("tow");
-s.pages = ["trip", "economy", "vehicle"];
-s.page = +(params.get("page") || 0) % s.pages.length;
 frame(s);
 layer(segBar({ x0: 200, x1: 860, y: 532, n: 44, max: 7000, value: s.rpm, redFrom: 6000, h: 20, w: 10 }));
 const segs = Array.from({ length: 20 }, (_, i) => {
