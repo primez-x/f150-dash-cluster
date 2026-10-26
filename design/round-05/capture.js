@@ -18,5 +18,10 @@ async (page) => {
   };
   for (const scene of ["normal", "braking", "warmcoolant", "hottrans", "turn", "lowtire"]) await shot(`tow.html?scene=${scene}&still=1`, `tow-${scene}.png`, 1920, 932);
   await shot("tow.html?view=physical&ruler=1", "tow-physical.png", 1920, 720);
+  for (const accent of ["teal", "ice", "blue", "slate"]) {
+    await shot(`tow.html?accent=${accent}&still=1`, `accent-${accent}-tow.png`, 1920, 932);
+    await shot(`../round-04/daily-a.html?accent=${accent}&still=1`, `accent-${accent}-daily-a.png`, 1920, 932);
+    await shot(`../round-04/daily-b.html?accent=${accent}&still=1`, `accent-${accent}-daily-b.png`, 1920, 932);
+  }
   return errors;
 }
