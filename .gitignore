@@ -15,6 +15,7 @@
 !/patches/capture-04/etc/init.d/S90mount
 !/patches/capture-04/etc/init.d/rcS
 !/handoff/claude-dashboard/**
+!/design/**
 
 # Firmware, captures, private settings, decoded credentials, and local tools stay local.
 *.env

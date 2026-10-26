@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 1</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  p, li { color: #9aa4af; max-width: 980px; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 14px; }
+  .opt h3 { margin: 0 0 8px; font-size: 16px; color: #fff; }
+  .opt img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  .opt ul { margin: 10px 0 0; padding-left: 18px; }
+  .opt a { color: #7fbfff; }
+  .strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; align-items: end; }
+  .strip figure { margin: 0; text-align: center; }
+  .strip img { max-width: 100%; border: 1px solid #222a33; border-radius: 4px; background: #000; }
+  .strip figcaption { font-size: 12px; color: #7d8792; }
+  .pick { margin-top: 16px; padding: 10px 14px; background: #141a21; border-radius: 6px; color: #fff; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 1</h1>
+<p>Two views, one A/B pick per view. Sample values only; no vehicle data. Canvas 1920 × 932 (declared design coordinates).
+  Each mock also has a physical preview at 1920 × 720 with the model index 0 transform (uniform 0.7752 scale, 216 px side bars). The F150 model index is unverified.
+  Open a mock with <code>?view=physical</code> or <code>?cruise=off|available|engaged|acc|lim</code>.</p>
+<p>Picking a letter also locks that letter's cross-layout contracts for all six layout slots: cruise region position, cruise state styles, and alarm grid position.</p>
+
+<h2>Driving view</h2>
+<div class="pair">
+  <div class="opt">
+    <h3>A · Twin Dial</h3>
+    <a href="driving-a.html"><img src="shots/driving-a.png" alt="Driving view A"></a>
+    <ul>
+      <li>Speedometer left, tachometer right, gear inside the tach. Fuel and coolant arcs sit in the lower gap of each dial.</li>
+      <li>Center column: cruise, tire pressures on the truck plan view, range, average, trip.</li>
+      <li>Alarm grid: top center row. Cruise region: 300 × 80 at x 810, y 104.</li>
+      <li><a href="shots/driving-a-physical.png">Physical preview</a></li>
+    </ul>
+    <div class="strip">
+      <figure><figcaption>Off: hidden</figcaption></figure>
+      <figure><img src="shots/cruise-a-available.png" alt=""><figcaption>Available</figcaption></figure>
+      <figure><img src="shots/cruise-a-engaged.png" alt=""><figcaption>Engaged + set speed</figcaption></figure>
+      <figure><img src="shots/cruise-a-acc.png" alt=""><figcaption>ACC + set speed</figcaption></figure>
+      <figure><img src="shots/cruise-a-lim.png" alt=""><figcaption>LIM + limit speed</figcaption></figure>
+    </div>
+  </div>
+  <div class="opt">
+    <h3>B · Horizon</h3>
+    <a href="driving-b.html"><img src="shots/driving-b.png" alt="Driving view B"></a>
+    <ul>
+      <li>Large center digital speed. The tachometer is a light bar across the top. Gear selector row under the speed.</li>
+      <li>Left column: fuel, coolant, oil, and transmission bars. Right column: range, average, trip, tire pressures.</li>
+      <li>Alarm grid: center band above the dock. Cruise region: 220 × 150 at x 470, y 360, beside the speed.</li>
+      <li><a href="shots/driving-b-physical.png">Physical preview</a></li>
+    </ul>
+    <div class="strip">
+      <figure><figcaption>Off: hidden</figcaption></figure>
+      <figure><img src="shots/cruise-b-available.png" alt=""><figcaption>Available</figcaption></figure>
+      <figure><img src="shots/cruise-b-engaged.png" alt=""><figcaption>Engaged + set speed</figcaption></figure>
+      <figure><img src="shots/cruise-b-acc.png" alt=""><figcaption>ACC + set speed</figcaption></figure>
+      <figure><img src="shots/cruise-b-lim.png" alt=""><figcaption>LIM + limit speed</figcaption></figure>
+    </div>
+  </div>
+</div>
+<div class="pick">Driving view pick: A or B</div>
+
+<h2>Off-road view</h2>
+<div class="pair">
+  <div class="opt">
+    <h3>A · Instrument</h3>
+    <a href="offroad-a.html"><img src="shots/offroad-a.png" alt="Off-road view A"></a>
+    <ul>
+      <li>Separate pitch and roll instruments with the genuine Ford side and rear truck art. Red ring index marks the live angle.</li>
+      <li>Center: compass tape and heading, drivetrain diagram, 4WD mode chips, speed and gear, trail assist icons.</li>
+      <li>Same top bar, alarm grid, and cruise region as driving A.</li>
+      <li><a href="shots/offroad-a-physical.png">Physical preview</a></li>
+    </ul>
+  </div>
+  <div class="opt">
+    <h3>B · Terrain</h3>
+    <a href="offroad-b.html"><img src="shots/offroad-b.png" alt="Off-road view B"></a>
+    <ul>
+      <li>One artificial horizon combines pitch and roll over the genuine Ford terrain wallpaper.</li>
+      <li>Left: drivetrain and 4WD mode. Right: trail assist states with labels. Normal states stay dim.</li>
+      <li>Same dock, alarm grid, and cruise region as driving B.</li>
+      <li><a href="shots/offroad-b-physical.png">Physical preview</a></li>
+    </ul>
+  </div>
+</div>
+<div class="pick">Off-road view pick: A or B</div>
+</body>
+</html>

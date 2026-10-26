@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 1 · Off-road view A · Instrument</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  #canvas { background: radial-gradient(ellipse 70% 60% at 50% 55%, #141a21 0%, #07090c 70%); }
+  .top { top: 26px; font-size: 34px; color: #c9d1da; }
+  .top small { font: 18px "BMW Type Global"; color: #7d8792; margin-left: 6px; }
+  .read { position: absolute; text-align: center; transform: translateX(-50%); }
+  .read .v { font-size: 84px; line-height: 1; }
+  .read .k { font: 20px "BMW Type Global"; letter-spacing: 3px; color: #8b95a1; margin-top: 8px; }
+  .heading { left: 960px; top: 300px; transform: translateX(-50%); text-align: center; font-size: 44px; }
+  .heading small { font: 20px "BMW Type Global"; color: #7d8792; letter-spacing: 3px; margin-left: 10px; }
+  .drive { left: 960px; top: 370px; width: 270px; transform: translateX(-50%); opacity: .9; }
+  .modes { left: 960px; top: 580px; transform: translateX(-50%); display: flex; gap: 10px; }
+  .modes span { font: 600 22px "BMW Type Global"; letter-spacing: 1px; color: #4d5661; padding: 6px 14px; border: 1px solid #222a33; border-radius: 6px; }
+  .modes .on { color: var(--ok); border-color: var(--ok); }
+  .spd { left: 960px; top: 650px; transform: translateX(-50%); display: flex; align-items: baseline; gap: 14px; }
+  .spd .v { font-size: 64px; }
+  .spd .k { font: 20px "BMW Type Global"; letter-spacing: 3px; color: #8b95a1; }
+  .spd .g { font-size: 64px; margin-left: 22px; padding-left: 26px; border-left: 1px solid #252d36; }
+  .assist { left: 960px; top: 770px; transform: translateX(-50%); display: flex; gap: 22px; }
+  .assist img { height: 48px; }
+  .assist .off { opacity: .28; }
+  .dock { left: 0; right: 0; top: 872px; height: 60px; display: flex; justify-content: center; }
+  .dock .chip { display: flex; align-items: baseline; gap: 12px; padding: 0 34px; border-left: 1px solid #1f262e; }
+  .dock .chip:first-child { border-left: 0; }
+  .dock .k { font: 16px "BMW Type Global"; letter-spacing: 2px; color: #6b7480; }
+  .dock .v { font-size: 26px; color: #c9d1da; }
+</style>
+</head>
+<body>
+<div id="stage"><div id="canvas">
+  <svg id="inst" class="abs" style="left:0;top:0" width="1920" height="932"></svg>
+
+  <div class="abs top num" style="left:64px" data-field="native RTC clock">10:42</div>
+  <div class="abs top num" style="right:64px" data-field="outSideTemp outSideTempUnit">68<small>°F</small></div>
+  <div class="abs telltales" style="left:960px;top:26px;transform:translateX(-50%)" data-field="alarmTable">
+    <img src="../../handoff/claude-dashboard/assets/installed/alarm/39.png" alt="">
+  </div>
+
+  <!-- Cruise region A: 300 x 80 at x 810, y 104. Same position on every layout A. -->
+  <div class="abs cruise" style="left:810px;top:104px;width:300px;height:80px" data-state="off" data-unit="MPH"></div>
+
+  <div class="read" style="left:460px;top:600px" data-field="mPitch mFordPitch">
+    <div class="v num">8°</div><div class="k">NOSE UP</div>
+  </div>
+  <div class="read" style="left:1460px;top:600px" data-field="mRoll mFordRoll">
+    <div class="v num">5°</div><div class="k">RIGHT DOWN</div>
+  </div>
+
+  <div class="abs heading num" data-field="gpsBearing">NE 042<small>HEADING</small></div>
+  <img class="abs drive" src="../../handoff/claude-dashboard/assets/installed/vehicles/4wd/4wd.png" alt="" data-field="m4wd mAwd">
+  <div class="abs modes" data-field="m2WD m4wd mAuto mAwdGear">
+    <span>2H</span><span>AUTO</span><span class="on">4H</span><span>4L</span>
+  </div>
+  <div class="abs spd">
+    <span class="v num" data-field="speed">12</span><span class="k" data-field="vehicleSpeedUnit">MPH</span>
+    <span class="g num" data-field="trucksShiftGear">D</span>
+  </div>
+  <div class="abs assist" data-field="truckOffRoadCamera truckOffRoadHDC truckOffRoadESP truckOffRoadMode">
+    <img src="../../handoff/claude-dashboard/assets/launcher/Trucks/images/common/offroad/offroad_h.png" alt="">
+    <img src="../../handoff/claude-dashboard/assets/launcher/Trucks/images/common/offroad/dac_h.png" alt="">
+    <img class="off" src="../../handoff/claude-dashboard/assets/launcher/Trucks/images/common/offroad/esp_n.png" alt="">
+    <img class="off" src="../../handoff/claude-dashboard/assets/launcher/Trucks/images/common/offroad/camera_n.png" alt="">
+  </div>
+
+  <div class="abs dock">
+    <div class="chip" data-field="altitude (ui1 info)"><span class="k">ALT</span><span class="v num">5280 ft</span></div>
+    <div class="chip" data-field="pressure (ui1 info)"><span class="k">BARO</span><span class="v num">24.9 inHg</span></div>
+    <div class="chip" data-field="trucksTrailerGain"><span class="k">TRAILER GAIN</span><span class="v num">—</span></div>
+    <div class="chip" data-field="batterVoltage"><span class="k">BATT</span><span class="v num">14.2 V</span></div>
+  </div>
+  <div id="physical-label">Physical preview · model index 0 assumption · scale 0.7752</div>
+</div></div>
+<script src="shared.js"></script>
+<script>
+// Pitch and roll instruments. Scale ±45° is a design value. Truck art: genuine Ford gyro assets, cropped to the vehicle band.
+const S = (tag, attrs) => `<${tag} ${Object.entries(attrs).map(([k, v]) => `${k}="${v}"`).join(" ")}/>`;
+let out = `<defs>
+  <radialGradient id="face" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#151b22"/><stop offset="1" stop-color="#090b0e"/></radialGradient>
+  <linearGradient id="bezel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a636d"/><stop offset=".5" stop-color="#1d2228"/><stop offset="1" stop-color="#3a424b"/></linearGradient>
+  <filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>`;
+
+function instrument(id, cx, cy, r, img, angle) {
+  out += S("circle", { cx, cy, r: r + 14, fill: "none", stroke: "url(#bezel)", "stroke-width": 6 });
+  out += S("circle", { cx, cy, r: r + 8, fill: "url(#face)" });
+  for (const side of [90, 270]) {
+    for (let d = -45; d <= 45; d += 5) {
+      const major = d % 15 === 0, a = side + d;
+      const [x0, y0] = polar(cx, cy, r - (major ? 28 : 14), a), [x1, y1] = polar(cx, cy, r, a);
+      out += S("line", { x1: x0, y1: y0, x2: x1, y2: y1, stroke: d === 0 ? "#ffd400" : major ? "#dfe5ec" : "#5d6670", "stroke-width": major ? 4 : 2 });
+      if (major && d !== 0) {
+        const [lx, ly] = polar(cx, cy, r - 56, a);
+        out += `<text x="${lx}" y="${ly + 9}" text-anchor="middle" font-family="Konexy" font-size="22" fill="#7d8792">${Math.abs(d)}</text>`;
+      }
+    }
+  }
+  // Live attitude marker: red index on the ring at the current angle (both sides).
+  for (const side of [90, 270]) {
+    const a = side + angle, [x0, y0] = polar(cx, cy, r - 40, a), [x1, y1] = polar(cx, cy, r + 4, a);
+    out += S("line", { x1: x0, y1: y0, x2: x1, y2: y1, stroke: "#ff3b30", "stroke-width": 6, "stroke-linecap": "round", filter: "url(#glow)" });
+  }
+  out += S("line", { x1: cx - r + 60, y1: cy, x2: cx + r - 60, y2: cy, stroke: "#2a323c", "stroke-width": 2, "stroke-dasharray": "6 8" });
+  const w = 560;
+  out += `<clipPath id="${id}"><rect x="${cx - w / 2 + 58}" y="${cy - 110}" width="${w - 116}" height="165"/></clipPath>`;
+  out += `<g transform="rotate(${angle} ${cx} ${cy})"><image href="${img}" x="${cx - w / 2}" y="${cy - w * .47}" width="${w}" height="${w}" clip-path="url(#${id})"/></g>`;
+}
+
+instrument("cp", 460, 440, 300, IMG + "/common/gyro/ford/pitch.png", 8);
+instrument("cr", 1460, 440, 300, IMG + "/common/gyro/ford/roll.png", 5);
+
+// Compass tape: 90° window, heading 42° (gpsBearing).
+const hdg = 42, tx = 810, tw = 300, ty = 222, ppd = tw / 90;
+out += S("rect", { x: tx, y: ty - 6, width: tw, height: 58, rx: 6, fill: "#0b0f14", stroke: "#1f262e" });
+for (let d = Math.ceil((hdg - 45) / 5) * 5; d <= hdg + 45; d += 5) {
+  const x = tx + tw / 2 + (d - hdg) * ppd, major = d % 30 === 0;
+  out += S("line", { x1: x, y1: ty, x2: x, y2: ty + (major ? 22 : 12), stroke: major ? "#c9d1da" : "#4d5661", "stroke-width": 2 });
+  if (major) {
+    const n = ((d % 360) + 360) % 360, label = { 0: "N", 90: "E", 180: "S", 270: "W" }[n] ?? n;
+    out += `<text x="${x}" y="${ty + 44}" text-anchor="middle" font-family="Konexy" font-size="18" fill="#8b95a1">${label}</text>`;
+  }
+}
+out += S("path", { d: `M${tx + tw / 2 - 9} ${ty - 6} L${tx + tw / 2 + 9} ${ty - 6} L${tx + tw / 2} ${ty + 8} Z`, fill: "#ff3b30" });
+document.getElementById("inst").innerHTML = out;
+</script>
+</body>
+</html>

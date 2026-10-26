@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 1 · Off-road view B · Terrain</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  #canvas { background: #05070a; }
+  .bg { left: 0; top: 0; width: 1920px; height: 932px; object-fit: cover; opacity: .55; filter: saturate(.8); }
+  .shade { left: 0; top: 0; width: 1920px; height: 932px;
+    background: radial-gradient(ellipse 34% 48% at 50% 44%, rgba(5, 7, 10, .55) 0%, rgba(5, 7, 10, .2) 60%, transparent 100%),
+      linear-gradient(90deg, rgba(5, 7, 10, .92) 0%, rgba(5, 7, 10, .45) 26%, rgba(5, 7, 10, .2) 50%, rgba(5, 7, 10, .45) 74%, rgba(5, 7, 10, .92) 100%),
+      linear-gradient(rgba(5, 7, 10, .85), transparent 22%, transparent 70%, rgba(5, 7, 10, .95)); }
+  .col { top: 210px; width: 330px; }
+  .col h4 { margin: 0 0 14px; font: 18px "BMW Type Global"; letter-spacing: 4px; color: #7fa3b8; font-weight: 400; }
+  .drive { width: 300px; display: block; margin: 0 auto 18px; }
+  .modes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .modes span { text-align: center; font: 600 20px "BMW Type Global"; color: #56606b; padding: 8px 0; border-radius: 6px; background: rgba(20, 26, 33, .8); }
+  .modes .on { color: #05070a; background: #e8f6ff; box-shadow: 0 0 18px rgba(120, 200, 255, .45); }
+  .row { display: flex; align-items: center; gap: 16px; padding: 12px 0; border-top: 1px solid rgba(40, 50, 60, .7); }
+  .row:first-of-type { border-top: 0; }
+  .row img { height: 44px; }
+  .row .k { flex: 1; font: 20px "BMW Type Global"; letter-spacing: 2px; color: #c9d1da; }
+  .row .s { font: 600 18px "BMW Type Global"; letter-spacing: 2px; }
+  .row .s.on { color: #7fd0ff; }
+  .row .s.off { color: #4d5661; }
+  .row.dim img, .row.dim .k { opacity: .35; }
+  .att { top: 640px; text-align: center; transform: translateX(-50%); }
+  .att .v { font-size: 52px; line-height: 1; }
+  .att .k { font: 16px "BMW Type Global"; letter-spacing: 3px; color: #7fa3b8; margin-top: 6px; }
+  .spd { left: 960px; top: 632px; transform: translateX(-50%); display: flex; align-items: baseline; gap: 12px; }
+  .spd .v { font-size: 80px; line-height: 1; }
+  .spd .k { font: 20px "BMW Type Global"; letter-spacing: 4px; color: #7fa3b8; }
+  .spd .g { font-size: 80px; line-height: 1; margin-left: 18px; }
+  .dock { left: 0; right: 0; top: 864px; height: 68px; display: flex; justify-content: space-between; align-items: center; padding: 0 70px; box-sizing: border-box; border-top: 1px solid rgba(40, 50, 60, .5); }
+  .dock .v { font-size: 30px; color: #c9d1da; }
+  .dock .v small { font: 18px "BMW Type Global"; color: #6b7480; margin-left: 6px; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+<div id="stage"><div id="canvas">
+  <img class="abs bg" src="../../handoff/claude-dashboard/assets/launcher/Trucks/images/ui345/muddy/ford/bg.jpg" alt="" data-field="mWallpaper">
+  <div class="abs shade"></div>
+  <svg id="hz" class="abs" style="left:0;top:0" width="1920" height="932"></svg>
+
+  <!-- Cruise region B: 220 x 150 at x 470, y 360. Same position on every layout B. -->
+  <div class="abs cruise" style="left:470px;top:360px;width:220px;height:150px;flex-direction:column;gap:6px" data-state="off" data-unit="MPH"></div>
+
+  <div class="abs col" style="left:70px">
+    <h4>DRIVETRAIN</h4>
+    <img class="drive" src="../../handoff/claude-dashboard/assets/installed/vehicles/4wd/4wd.png" alt="" data-field="m4wd mAwd">
+    <div class="modes" data-field="m2WD m4wd mAuto mAwdGear"><span>2H</span><span>AUTO</span><span class="on">4H</span><span>4L</span></div>
+  </div>
+
+  <div class="abs col" style="right:70px" data-field="truckOffRoadCamera truckOffRoadHDC truckOffRoadESP truckOffRoadMode">
+    <h4>TRAIL ASSIST</h4>
+    <div class="row"><img src="../../handoff/claude-dashboard/assets/launcher/Trucks/images/common/offroad/offroad_h.png" alt=""><span class="k">Off-road mode</span><span class="s on">ON</span></div>
+    <div class="row"><img src="../../handoff/claude-dashboard/assets/launcher/Trucks/images/common/offroad/dac_h.png" alt=""><span class="k">Hill descent</span><span class="s on">ON</span></div>
+    <div class="row dim"><img src="../../handoff/claude-dashboard/assets/launcher/Trucks/images/common/offroad/esp_n.png" alt=""><span class="k">Stability control</span><span class="s off">ON</span></div>
+    <div class="row dim"><img src="../../handoff/claude-dashboard/assets/launcher/Trucks/images/common/offroad/camera_n.png" alt=""><span class="k">Front camera</span><span class="s off">OFF</span></div>
+  </div>
+
+  <div class="abs att" style="left:700px" data-field="mPitch mFordPitch"><div class="v num">8°</div><div class="k">PITCH · UP</div></div>
+  <div class="abs att" style="left:1220px" data-field="mRoll mFordRoll"><div class="v num">5°</div><div class="k">ROLL · RIGHT</div></div>
+  <div class="abs spd">
+    <span class="v num" data-field="speed">12</span><span class="k" data-field="vehicleSpeedUnit">MPH</span>
+    <span class="g num" data-field="trucksShiftGear">D</span>
+  </div>
+
+  <!-- Alarm grid B: centered band above the dock. Only active alarms render. -->
+  <div class="abs telltales" style="left:960px;top:770px;transform:translateX(-50%)" data-field="alarmTable">
+    <img src="../../handoff/claude-dashboard/assets/installed/alarm/39.png" alt="">
+  </div>
+
+  <div class="abs dock">
+    <span class="v num" data-field="native RTC clock">10:42</span>
+    <span class="v num" data-field="altitude (ui1 info)">5280<small>FT</small></span>
+    <span class="v num" data-field="odometer">48213<small>MI</small></span>
+    <span class="v num" data-field="batterVoltage">14.2<small>V</small></span>
+    <span class="v num" data-field="outSideTemp outSideTempUnit">68<small>°F</small></span>
+  </div>
+  <div id="physical-label">Physical preview · model index 0 assumption · scale 0.7752</div>
+</div></div>
+<script src="shared.js"></script>
+<script>
+// Artificial horizon: roll rotates the horizon, pitch shifts the horizon. 6 px per degree is a design value.
+const cx = 960, cy = 400, r = 210, pitch = 8, roll = 5, ppd = 6, hdg = 42;
+let o = `<defs>
+  <clipPath id="disc"><circle cx="${cx}" cy="${cy}" r="${r}"/></clipPath>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d3550"/><stop offset="1" stop-color="#2a6f93"/></linearGradient>
+  <linearGradient id="gnd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a3a22"/><stop offset="1" stop-color="#22160d"/></linearGradient>
+</defs>`;
+o += `<circle cx="${cx}" cy="${cy}" r="${r + 10}" fill="rgba(5,7,10,.6)" stroke="#e8f6ff" stroke-opacity=".25" stroke-width="2"/>`;
+// Nose up: horizon moves down. Right side down: horizon rotates counterclockwise from the driver view.
+o += `<g clip-path="url(#disc)" opacity=".9"><g transform="rotate(${-roll} ${cx} ${cy}) translate(0 ${pitch * ppd})">
+  <rect x="${cx - 2 * r}" y="${cy - 3 * r}" width="${4 * r}" height="${3 * r}" fill="url(#sky)"/>
+  <rect x="${cx - 2 * r}" y="${cy}" width="${4 * r}" height="${3 * r}" fill="url(#gnd)"/>
+  <line x1="${cx - 2 * r}" y1="${cy}" x2="${cx + 2 * r}" y2="${cy}" stroke="#fff" stroke-width="3"/>`;
+for (let d = -30; d <= 30; d += 5) {
+  if (!d) continue;
+  const y = cy - d * ppd, w = d % 10 === 0 ? 120 : 60;
+  o += `<line x1="${cx - w / 2}" y1="${y}" x2="${cx + w / 2}" y2="${y}" stroke="#fff" stroke-opacity=".7" stroke-width="2"/>`;
+  if (d % 10 === 0) o += `<text x="${cx + w / 2 + 12}" y="${y + 7}" font-family="Konexy" font-size="18" fill="#fff" fill-opacity=".75">${Math.abs(d)}</text>`;
+}
+o += `</g></g>`;
+// Roll scale on the bezel and fixed vehicle reference.
+for (const d of [-45, -30, -20, -10, 0, 10, 20, 30, 45]) {
+  const [x0, y0] = polar(cx, cy, r + 12, d), [x1, y1] = polar(cx, cy, r + (d % 30 === 0 || Math.abs(d) === 45 ? 34 : 24), d);
+  o += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="#e8f6ff" stroke-opacity=".8" stroke-width="3"/>`;
+}
+const [px, py] = polar(cx, cy, r + 12, roll);
+o += `<path d="M${px} ${py} l-10 -18 h20 Z" transform="rotate(${roll} ${px} ${py}) rotate(180 ${px} ${py})" fill="#ffd400"/>`;
+o += `<path d="M${cx - 120} ${cy} h70 l20 20 l20 -20 l20 20 l20 -20 h70" fill="none" stroke="#ffd400" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>`;
+o += `<circle cx="${cx}" cy="${cy}" r="5" fill="#ffd400"/>`;
+
+// Compass arc tape across the top.
+const tx = 660, tw = 600, ty = 52, pd = tw / 120;
+for (let d = Math.ceil((hdg - 60) / 5) * 5; d <= hdg + 60; d += 5) {
+  const x = tx + tw / 2 + (d - hdg) * pd, major = d % 30 === 0, fade = 1 - Math.abs(d - hdg) / 64;
+  o += `<line x1="${x}" y1="${ty}" x2="${x}" y2="${ty + (major ? 22 : 12)}" stroke="#e8f6ff" stroke-opacity="${(major ? .9 : .5) * fade}" stroke-width="2"/>`;
+  if (major) {
+    const n = ((d % 360) + 360) % 360, label = { 0: "N", 90: "E", 180: "S", 270: "W" }[n] ?? n;
+    o += `<text x="${x}" y="${ty + 48}" text-anchor="middle" font-family="Konexy" font-size="20" fill="#e8f6ff" fill-opacity="${fade}">${label}</text>`;
+  }
+}
+o += `<text x="${cx}" y="${ty + 100}" text-anchor="middle" font-family="Konexy" font-size="40" fill="#fff" data-field="gpsBearing">NE 042</text>`;
+o += `<path d="M${cx - 9} ${ty - 12} h18 l-9 14 Z" fill="#ffd400"/>`;
+document.getElementById("hz").innerHTML = o;
+</script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 1 · Driving view B · Horizon</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  #canvas { background:
+    radial-gradient(ellipse 45% 40% at 50% 50%, rgba(40, 120, 160, .16) 0%, transparent 70%),
+    linear-gradient(#05070a, #0a0e13 60%, #05070a); }
+  .speed { left: 960px; top: 300px; transform: translateX(-50%); font-size: 280px; line-height: 1; text-align: center; letter-spacing: -6px; }
+  .unit { left: 960px; top: 590px; transform: translateX(-50%); font: 26px "BMW Type Global"; letter-spacing: 8px; color: #7fa3b8; }
+  .gears { left: 960px; top: 650px; transform: translateX(-50%); display: flex; gap: 30px; font-size: 40px; color: #39424c; }
+  .gears .on { color: #fff; text-shadow: 0 0 18px rgba(120, 200, 255, .6); }
+  .gears .num-sel { font-size: 24px; vertical-align: super; color: #7fa3b8; margin-left: 2px; }
+  .rpm { left: 1700px; top: 104px; font-size: 34px; color: #c9d1da; }
+  .rpm small { font: 18px "BMW Type Global"; letter-spacing: 3px; color: #6b7480; margin-left: 8px; }
+
+  .col { top: 220px; width: 330px; }
+  .bar { margin-bottom: 34px; }
+  .bar .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .bar .k { font: 18px "BMW Type Global"; letter-spacing: 3px; color: #7d8792; display: flex; align-items: center; gap: 10px; }
+  .bar .k img { height: 26px; opacity: .85; }
+  .bar .v { font-size: 30px; }
+  .bar .v small { font: 16px "BMW Type Global"; color: #7d8792; margin-left: 4px; }
+  .track { position: relative; height: 10px; border-radius: 5px; background: #161c23; }
+  .track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; background: linear-gradient(90deg, #4aa8d8, #e8f6ff); }
+  .track.warn i { background: linear-gradient(90deg, #a86a00, var(--caution)); }
+  .ends { display: flex; justify-content: space-between; font: 15px "BMW Type Global"; color: #4d5661; margin-top: 6px; letter-spacing: 2px; }
+
+  .card { border-top: 1px solid #1c232b; padding: 18px 2px; display: flex; justify-content: space-between; align-items: baseline; }
+  .card:first-child { border-top: 0; }
+  .card .k { font: 18px "BMW Type Global"; letter-spacing: 3px; color: #7d8792; }
+  .card .v { font-size: 34px; }
+  .card .v small { font: 16px "BMW Type Global"; color: #7d8792; margin-left: 6px; }
+  .tpms { display: grid; grid-template-columns: 1fr 64px 1fr; align-items: center; gap: 6px 14px; padding-top: 14px; }
+  .tpms .t { font-size: 28px; text-align: center; }
+  .tpms img { grid-row: 1 / span 2; grid-column: 2; height: 120px; justify-self: center; }
+
+  .dock { left: 0; right: 0; top: 864px; height: 68px; display: flex; justify-content: space-between; align-items: center; padding: 0 70px; box-sizing: border-box; border-top: 1px solid #141a20; }
+  .dock .v { font-size: 30px; color: #c9d1da; }
+  .dock .v small { font: 18px "BMW Type Global"; color: #6b7480; margin-left: 6px; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+<div id="stage"><div id="canvas">
+  <svg id="bar" class="abs" style="left:0;top:0" width="1920" height="200"></svg>
+  <div class="abs rpm num" data-field="tacho rpm">2150<small>RPM</small></div>
+
+  <!-- Cruise region B: 220 x 150 at x 470, y 360. Same position on every layout B. -->
+  <div class="abs cruise" style="left:470px;top:360px;width:220px;height:150px;flex-direction:column;gap:6px" data-state="engaged" data-unit="MPH"></div>
+
+  <div class="abs speed num" data-field="speed">64</div>
+  <div class="abs unit" data-field="vehicleSpeedUnit metricSystem">MPH</div>
+  <div class="abs gears num" data-field="trucksShiftGear getGearNum()">
+    <span>P</span><span>R</span><span>N</span><span class="on">D<span class="num-sel">6</span></span><span>S</span><span>M</span>
+  </div>
+
+  <div class="abs col" style="left:70px">
+    <div class="bar" data-field="fuelPercentage">
+      <div class="head"><span class="k"><img src="../../handoff/claude-dashboard/assets/launcher/Trucks/images/common/icon/range.png" alt="">FUEL</span><span class="v num">62<small>%</small></span></div>
+      <div class="track"><i style="width:62%"></i></div><div class="ends"><span>E</span><span>F</span></div>
+    </div>
+    <div class="bar" data-field="waterTempPercentage">
+      <div class="head"><span class="k"><img src="../../handoff/claude-dashboard/assets/launcher/Trucks/images/common/icon/water.png" alt="">COOLANT</span><span class="v num">NORM</span></div>
+      <div class="track"><i style="width:48%"></i></div><div class="ends"><span>C</span><span>H</span></div>
+    </div>
+    <div class="bar" data-field="oilTemp oilTempPercentage">
+      <div class="head"><span class="k"><img src="../../handoff/claude-dashboard/assets/launcher/Trucks/images/common/icon/oilTemp.png" alt="">OIL</span><span class="v num">208<small>°F</small></span></div>
+      <div class="track"><i style="width:55%"></i></div>
+    </div>
+    <div class="bar" data-field="gearBoxTempPercentage">
+      <div class="head"><span class="k"><img src="../../handoff/claude-dashboard/assets/launcher/Trucks/images/common/icon/gearBoxTemp.png" alt="">TRANS</span><span class="v num">NORM</span></div>
+      <div class="track"><i style="width:44%"></i></div>
+    </div>
+  </div>
+
+  <div class="abs col" style="right:70px">
+    <div class="card" data-field="DTE"><span class="k">RANGE</span><span class="v num">312<small>mi</small></span></div>
+    <div class="card" data-field="mAvgFuel"><span class="k">AVG</span><span class="v num">17.8<small>mpg</small></span></div>
+    <div class="card" data-field="mTripA"><span class="k">TRIP A</span><span class="v num">128.4<small>mi</small></span></div>
+    <div class="card tpms" data-field="mTpmsPressure">
+      <span class="t num">35</span><img src="../../handoff/claude-dashboard/assets/installed/vehicles/ford/door/black.png" alt=""><span class="t num">35</span>
+      <span class="t num">34</span><span class="t num" style="color:var(--caution)">28</span>
+    </div>
+  </div>
+
+  <!-- Alarm grid B: centered band above the dock. Only active alarms render. -->
+  <div class="abs telltales" style="left:960px;top:770px;transform:translateX(-50%)" data-field="alarmTable">
+    <img src="../../handoff/claude-dashboard/assets/installed/alarm/9.png" alt="">
+    <img src="../../handoff/claude-dashboard/assets/installed/alarm/39.png" alt="">
+    <img src="../../handoff/claude-dashboard/assets/installed/alarm/24.png" alt="">
+  </div>
+
+  <div class="abs dock">
+    <span class="v num" data-field="native RTC clock">10:42</span>
+    <span class="v num" data-field="gpsBearing">NE<small>42°</small></span>
+    <span class="v num" data-field="odometer">48213<small>MI</small></span>
+    <span class="v num" data-field="batterVoltage">14.2<small>V</small></span>
+    <span class="v num" data-field="outSideTemp outSideTempUnit">68<small>°F</small></span>
+  </div>
+  <div id="physical-label">Physical preview · model index 0 assumption · scale 0.7752</div>
+</div></div>
+<script src="shared.js"></script>
+<script>
+// Tach light bar: segmented shallow arc. Max binds to tachoSpeedMax at integration; 7000 is a design value.
+const max = 7000, rpm = 2150, red = 6000, n = 70;
+let out = "";
+const x0 = 260, x1 = 1660, sag = 46, y0 = 86;
+for (let i = 0; i < n; i++) {
+  const t = (i + .5) / n, x = x0 + (x1 - x0) * t, y = y0 + sag * Math.pow(2 * t - 1, 2);
+  const v = max * t, lit = v <= rpm, isRed = v >= red;
+  const h = 26 + (isRed ? 8 : 0);
+  const fill = lit ? (isRed ? "#ff3b30" : `rgba(${140 + 115 * t},${215 + 40 * t},255,${.55 + .45 * t})`) : (isRed ? "#3a1512" : "#151b22");
+  out += `<rect x="${(x - 7).toFixed(1)}" y="${(y - h / 2).toFixed(1)}" width="14" height="${h}" rx="3" fill="${fill}"${lit ? ' filter="url(#g)"' : ""}/>`;
+}
+for (let k = 0; k <= 7; k++) {
+  const t = k / 7, x = x0 + (x1 - x0) * t, y = y0 + sag * Math.pow(2 * t - 1, 2);
+  out += `<text x="${x}" y="${y + 50}" text-anchor="middle" font-family="Konexy" font-size="22" fill="${k >= 6 ? "#ff3b30" : "#56606b"}">${k}</text>`;
+}
+document.getElementById("bar").innerHTML =
+  `<defs><filter id="g"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>` + out;
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+/* Round 1 shared canvas, fonts, and cruise region styles. */
+@font-face { font-family: "Konexy"; src: url("../../handoff/claude-dashboard/assets/fonts/KonexyPersonalUseRegular.ttf"); }
+@font-face { font-family: "BMW Type Global"; src: url("../../handoff/claude-dashboard/assets/fonts/BMW.ttf"); }
+
+:root {
+  --assets: "../../handoff/claude-dashboard/assets";
+  --ok: #3ee07a;
+  --caution: #ffb020;
+  --warn: #ff3b30;
+  --info: #3b8cff;
+}
+
+html, body { margin: 0; background: #000; overflow: hidden; }
+body { font-family: "BMW Type Global", sans-serif; color: #e8ecf1; }
+
+/* Declared design canvas: 1920 x 932. shared.js scales the stage to the window. */
+#stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; background: #000; }
+#canvas { position: absolute; left: 0; top: 0; width: 1920px; height: 932px; overflow: hidden; }
+.abs { position: absolute; }
+.num { font-family: "Konexy", sans-serif; font-variant-numeric: tabular-nums; }
+
+/* Physical preview: 1920 x 720, model index 0 assumption (uniform 0.7752 scale, top origin). */
+body.physical #stage { width: 1920px; height: 720px; }
+body.physical #canvas { left: 960px; transform: translateX(-960px) scale(0.7752); transform-origin: 960px 0; }
+#physical-label { display: none; position: absolute; right: 12px; bottom: 8px; font: 14px "BMW Type Global"; color: #6b7480; }
+body.physical #physical-label { display: block; }
+
+/* Telltales: only active alarms render. Inactive states stay hidden. */
+.telltales { display: flex; gap: 18px; align-items: center; }
+.telltales img { height: 46px; }
+
+/* Cruise region. One region per letter, identical position on every layout of that letter. */
+.cruise { display: flex; align-items: center; justify-content: center; gap: 14px; box-sizing: border-box; }
+.cruise[data-state="off"] { visibility: hidden; }
+.cruise .ico { height: 48px; }
+.cruise .tag { font: 600 20px "BMW Type Global"; letter-spacing: 2px; }
+.cruise .val { white-space: nowrap; }
+.cruise .set { font-family: "Konexy"; font-size: 40px; line-height: 1; }
+.cruise .unit { font: 16px "BMW Type Global"; color: #8b95a1; letter-spacing: 1px; margin-left: 8px; }
+.cruise[data-state="available"] .ico { filter: grayscale(1) brightness(1.6); opacity: .8; }
+.cruise[data-state="available"] .tag { color: #c9d1da; }
+.cruise[data-state="available"] .set { color: #5d6670; }
+.cruise[data-state="engaged"] .tag,
+.cruise[data-state="engaged"] .set,
+.cruise[data-state="acc"] .tag,
+.cruise[data-state="acc"] .set { color: var(--ok); }
+.cruise[data-state="lim"] .tag { color: #e8ecf1; border: 2px solid currentColor; border-radius: 6px; padding: 2px 8px; }
+.cruise[data-state="lim"] .set { color: var(--lim-color, #e8ecf1); }
