@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 2 · Race A · Shift Dial</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="kit.css">
+<style>
+  #canvas { background: radial-gradient(ellipse 60% 60% at 50% 58%, #0f1318 0%, #030405 70%); }
+  .gear { left: 960px; top: 390px; transform: translateX(-50%); font-size: 250px; }
+  .rpmv { left: 960px; top: 660px; transform: translateX(-50%); font-size: 46px; }
+  .spd { left: 960px; top: 730px; transform: translateX(-50%); display: flex; align-items: baseline; }
+  .spd .big { font-size: 40px; color: #9aa4af; }
+  .stat { width: 300px; }
+  .stat .row { padding: 18px 0; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; }
+  .stat .row:first-child { border-top: 0; }
+  .stat .big { font-size: 52px; }
+</style>
+</head>
+<body class="race">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="kit.js"></script>
+<script>
+topBar({ mode: "RACE", telltales: [], cruise: "off" });
+// Shift lights start at 4500 and reach the 6000 shift point (design values tied to tachoSpeedMax).
+layer(
+  shiftLights({ cx: 960, y: 222, n: 15, d: 28, gap: 12, value: 5650, from: 4500, to: 6000 }) +
+  dial270({ cx: 960, cy: 570, r: 280, max: 7, major: 1, labelStep: 1, value: 5.65, redFrom: 6, field: "tacho rpm" }) +
+  gforce({ cx: 1600, cy: 500, r: 150, gx: -.52, gy: .31, peak: [-.88, .41] })
+);
+place(`
+  <div class="abs big gear" data-field="getGearNum() trucksShiftGear">3</div>
+  <div class="abs big rpmv" data-field="tacho rpm">5650</div>
+  <div class="abs spd"><span class="big" data-field="speed">74</span><span class="u" data-field="vehicleSpeedUnit">MPH</span></div>
+  <div class="abs stat" style="left:120px;top:260px">
+    <div class="row" data-field="oilTemp"><span class="k">OIL °F</span><span class="big">231</span></div>
+    <div class="row" data-field="oilPressurePercentage"><span class="k">OIL PRESS</span><span class="big">71<span class="u">%</span></span></div>
+    <div class="row" data-field="waterTempPercentage"><span class="k">COOLANT</span><span class="big" style="font-size:40px">NORM</span></div>
+    <div class="row" data-field="gearBoxTempPercentage"><span class="k">TRANS</span><span class="big" style="font-size:40px">NORM</span></div>
+  </div>
+  <div class="abs k" style="left:1600px;top:300px;transform:translateX(-50%)">G-FORCE · PEAK 0.97</div>
+  <div class="abs dock">
+    <div class="chip" data-field="fuelPercentage"><span class="k">FUEL</span><span class="v">41%</span></div>
+    <div class="chip" data-field="batterVoltage"><span class="k">BATT</span><span class="v">14.3 V</span></div>
+  </div>`);
+</script>
+</body>
+</html>

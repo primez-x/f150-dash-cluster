@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 2 · Race B · Strip</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="kit.css">
+<style>
+  #canvas { background: linear-gradient(#030405, #0b0e12 55%, #030405); }
+  .gbox { left: 960px; top: 400px; transform: translateX(-50%); width: 300px; height: 330px; border-radius: 22px; border: 3px solid #e8ecf1;
+    display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, .03); }
+  .gbox .big { font-size: 290px; }
+  .side { top: 440px; text-align: center; transform: translateX(-50%); }
+  .side .big { font-size: 120px; }
+  .tiles3 { left: 960px; top: 780px; transform: translateX(-50%); }
+</style>
+</head>
+<body class="race">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="kit.js"></script>
+<script>
+topBar({ mode: "RACE", telltales: [], cruise: "off" });
+layer(
+  shiftLights({ cx: 960, y: 222, n: 21, d: 30, gap: 14, value: 5650, from: 4500, to: 6000 }) +
+  segBar({ x0: 120, x1: 1800, y: 340, n: 84, max: 7000, value: 5650, redFrom: 6000, h: 54, w: 14 })
+);
+place(`
+  <div class="abs gbox" data-field="getGearNum() trucksShiftGear"><span class="big">3</span></div>
+  <div class="abs side" style="left:470px" data-field="speed"><div class="big">74</div><div class="k">MPH</div></div>
+  <div class="abs side" style="left:1450px" data-field="tacho rpm"><div class="big">5650</div><div class="k">RPM</div></div>
+  <div class="abs tiles tiles3">
+    <div class="tile" data-field="oilTemp"><div class="k">OIL °F</div><div class="v">231</div></div>
+    <div class="tile" data-field="oilPressurePercentage"><div class="k">OIL PRESS</div><div class="v">71%</div></div>
+    <div class="tile" data-field="waterTempPercentage"><div class="k">COOLANT</div><div class="v">NORM</div></div>
+    <div class="tile" data-field="gearBoxTempPercentage"><div class="k">TRANS</div><div class="v">NORM</div></div>
+    <div class="tile" data-field="getGforceX() getGforceY()"><div class="k">G LAT / LONG</div><div class="v">0.52 / 0.31</div></div>
+    <div class="tile" data-field="fuelPercentage"><div class="k">FUEL</div><div class="v">41%</div></div>
+  </div>`);
+</script>
+</body>
+</html>

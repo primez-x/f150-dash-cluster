@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 2 · Sport B · Blade</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="kit.css">
+<style>
+  .rpm { left: 1700px; top: 268px; transform: translateX(-50%); text-align: center; }
+  .rpm .big { font-size: 40px; }
+  .speed { left: 860px; top: 400px; transform: translateX(-50%); font-size: 230px; letter-spacing: -4px; }
+  .unit { left: 860px; top: 640px; transform: translateX(-50%); font: 22px "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
+  .gbox { left: 1170px; top: 420px; width: 170px; height: 200px; border: 3px solid var(--accent); border-radius: 18px; box-shadow: 0 0 30px var(--accent-dim), inset 0 0 30px var(--accent-dim);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .gbox .big { font-size: 140px; }
+  .tiles2 { left: 960px; top: 730px; transform: translateX(-50%); }
+</style>
+</head>
+<body class="sport">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="kit.js"></script>
+<script>
+topBar({ mode: "SPORT", telltales: [121], cruise: "off" });
+layer(
+  segBar({ x0: 160, x1: 1560, y: 330, n: 46, max: 7000, value: 4350, redFrom: 6000, h: 100, w: 20, grow: true }) +
+  gforce({ cx: 1600, cy: 560, r: 120, gx: .38, gy: -.22, peak: [.71, .35] })
+);
+place(`
+  <div class="abs rpm" data-field="tacho rpm"><div class="big">4350</div><div class="k">RPM</div></div>
+  <div class="abs big speed" data-field="speed">71</div>
+  <div class="abs unit" data-field="vehicleSpeedUnit">MPH</div>
+  <div class="abs gbox" data-field="getGearNum() trucksShiftGear"><div class="big">3</div><div class="k">S</div></div>
+  <div class="abs bar" style="left:110px;top:440px;width:340px" data-field="oilPressurePercentage">
+    <div class="head"><span class="k"><img src="${ICON("oil")}" alt="">OIL PRESS</span><span class="v">64<span class="u">%</span></span></div>
+    <div class="track"><i style="width:64%"></i><b style="left:20%"></b></div>
+  </div>
+  <div class="abs bar" style="left:110px;top:540px;width:340px" data-field="oilTemp oilTempPercentage">
+    <div class="head"><span class="k"><img src="${ICON("oilTemp")}" alt="">OIL TEMP</span><span class="v">226<span class="u">°F</span></span></div>
+    <div class="track"><i style="width:62%"></i><b style="left:80%"></b></div>
+  </div>
+  <div class="abs tiles tiles2">
+    <div class="tile" data-field="waterTempPercentage"><div class="k">COOLANT</div><div class="v">NORM</div></div>
+    <div class="tile" data-field="gearBoxTempPercentage"><div class="k">TRANS</div><div class="v">NORM</div></div>
+    <div class="tile" data-field="fuelPercentage"><div class="k">FUEL</div><div class="v">58%</div></div>
+    <div class="tile" data-field="getGearAwd()"><div class="k">DRIVE</div><div class="v">2H</div></div>
+  </div>
+  <div class="abs dock">
+    <div class="chip" data-field="batterVoltage"><span class="k">BATT</span><span class="v">14.3 V</span></div>
+    <div class="chip" data-field="mTripA"><span class="k">TRIP A</span><span class="v">42.0 mi</span></div>
+  </div>`);
+</script>
+</body>
+</html>

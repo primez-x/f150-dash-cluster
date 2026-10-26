@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 2 · Daily A · Crescent</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="kit.css">
+<style>
+  .speed { left: 960px; top: 220px; transform: translateX(-50%); font-size: 240px; letter-spacing: -4px; }
+  .unit { left: 960px; top: 470px; transform: translateX(-50%); font: 24px "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
+  .gearrow { left: 960px; top: 540px; transform: translateX(-50%); display: flex; gap: 40px; align-items: center; }
+  .info { left: 960px; top: 650px; transform: translateX(-50%); }
+  .rpm { left: 1450px; top: 440px; transform: translateX(-50%); text-align: center; }
+  .rpm .big { font-size: 40px; }
+</style>
+</head>
+<body class="daily">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="kit.js"></script>
+<script>
+topBar({ mode: "DAILY", telltales: [121], cruise: "set" });
+layer(
+  crescent({ cx: 800, cy: 470, r: 560, a0: 232, a1: 305, max: 120, major: 10, labelStep: 20, value: 64, field: "speed", labelSide: 1 }) +
+  crescent({ cx: 1120, cy: 470, r: 560, a0: 128, a1: 55, max: 7, major: 1, labelStep: 1, value: 2.15, redFrom: 6, field: "tacho rpm" }) +
+  miniArc({ cx: 800, cy: 470, r: 470, from: 236, to: 262, pct: .62, lo: "E", hi: "F", field: "fuelPercentage" }) +
+  miniArc({ cx: 1120, cy: 470, r: 470, from: 124, to: 98, pct: .48, lo: "C", hi: "H", field: "waterTempPercentage" }) +
+  `<image href="${ICON("range")}" x="420" y="668" width="34" height="34"/>` +
+  `<image href="${ICON("water")}" x="1466" y="668" width="34" height="34"/>`
+);
+place(`
+  <div class="abs big speed" data-field="speed">64</div>
+  <div class="abs unit" data-field="vehicleSpeedUnit">MPH</div>
+  <div class="abs rpm" data-field="tacho rpm"><div class="big">2150</div><div class="k">RPM</div></div>
+  <div class="abs gearrow">
+    <div class="prnd" data-field="trucksShiftGear getGearNum()"><span>P</span><span>R</span><span>N</span><span class="on">D<sup>6</sup></span><span>S</span><span>M</span></div>
+    ${driveChips("2H", false)}
+  </div>
+  <div class="abs tiles info">
+    <div class="tile" data-field="DTE"><div class="k">RANGE</div><div class="v">312<span class="u">mi</span></div></div>
+    <div class="tile" data-field="mAvgFuel"><div class="k">AVG</div><div class="v">17.8<span class="u">mpg</span></div></div>
+    <div class="tile" data-field="mTripA"><div class="k">TRIP A</div><div class="v">128.4<span class="u">mi</span></div></div>
+  </div>
+  <div class="abs dock">
+    <div class="chip" data-field="odometer"><span class="k">ODO</span><span class="v">48213</span></div>
+    <div class="chip" data-field="trucksOilLifePercentage"><span class="k">OIL LIFE</span><span class="v">72%</span></div>
+    <div class="chip" data-field="batterVoltage"><span class="k">BATT</span><span class="v">14.2 V</span></div>
+    <div class="chip" data-field="mTpmsPressure RR"><span class="k">TIRE RR</span><span class="v" style="color:var(--caution)">28 PSI</span></div>
+  </div>`);
+</script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+/* Round 2 kit. Builds on round 1 shared.css (fonts, stage, cruise region). */
+:root { --accent: #8fd3ff; --accent-dim: rgba(143, 211, 255, .18); --line: #1f262e; --text: #e8ecf1; --sub: #7d8792; --mute: #4d5661; }
+body.daily { --accent: #8fd3ff; --accent-dim: rgba(143, 211, 255, .18); }
+body.tow   { --accent: #5ad1c0; --accent-dim: rgba(90, 209, 192, .18); }
+body.sport { --accent: #b48cff; --accent-dim: rgba(180, 140, 255, .18); }
+body.race  { --accent: #f2f5f8; --accent-dim: rgba(242, 245, 248, .14); }
+body.offroad { --accent: #8fd3ff; --accent-dim: rgba(143, 211, 255, .18); }
+
+#canvas { background: radial-gradient(ellipse 70% 62% at 50% 52%, #121820 0%, #06080b 72%); }
+
+/* Top bar: identical on every layout. Cruise region sits at 810, 104 (300 x 80). */
+.tb { top: 26px; font-size: 34px; color: #c9d1da; }
+.tb small { font: 18px "BMW Type Global"; color: var(--sub); margin-left: 6px; }
+.mode-tag { left: 66px; top: 82px; font: 600 16px "BMW Type Global"; letter-spacing: 5px; color: var(--accent); }
+
+.k { font: 18px "BMW Type Global"; letter-spacing: 3px; color: var(--sub); }
+.u { font: 16px "BMW Type Global"; color: var(--sub); margin-left: 6px; letter-spacing: 1px; }
+.big { font-family: "Konexy"; line-height: 1; }
+
+/* Gear selector row. */
+.prnd { display: flex; gap: 26px; font-family: "Konexy"; font-size: 36px; color: #313942; align-items: baseline; }
+.prnd .on { color: #fff; text-shadow: 0 0 16px var(--accent); }
+.prnd sup { font-size: 22px; color: var(--accent); margin-left: 2px; }
+
+/* Info tiles. */
+.tiles { display: flex; }
+.tile { padding: 0 30px; border-left: 1px solid var(--line); text-align: center; }
+.tile:first-child { border-left: 0; }
+.tile .k, .tile .v { white-space: nowrap; }
+.tile .v { font-family: "Konexy"; font-size: 34px; margin-top: 6px; }
+
+/* Linear bar gauge. */
+.bar .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.bar .head .k { display: flex; align-items: center; gap: 10px; }
+.bar .head img { height: 26px; opacity: .85; }
+.bar .v { font-family: "Konexy"; font-size: 30px; }
+.track { position: relative; height: 8px; border-radius: 4px; background: #161c23; }
+.track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--accent); box-shadow: 0 0 10px var(--accent-dim); }
+.track b { position: absolute; top: -4px; bottom: -4px; width: 2px; background: #3a434d; }
+.ends { display: flex; justify-content: space-between; font: 14px "BMW Type Global"; color: var(--mute); margin-top: 6px; letter-spacing: 2px; }
+
+/* Vertical bar gauge (towing temperatures). */
+.vbar { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.vbar .col { position: relative; width: 26px; height: 300px; border-radius: 13px; background: #141a21; overflow: hidden; }
+.vbar .col i { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(0deg, var(--accent-dim), var(--accent)); }
+.vbar .band { position: absolute; left: -10px; right: -10px; border-top: 1px dashed #56606b; border-bottom: 1px dashed #56606b; }
+.vbar .v { font-family: "Konexy"; font-size: 28px; }
+.vbar img { height: 30px; opacity: .85; }
+
+/* Drivetrain mode chips. */
+.chips { display: flex; gap: 8px; }
+.chips span { font: 600 20px "BMW Type Global"; letter-spacing: 1px; color: var(--mute); padding: 6px 12px; border: 1px solid #222a33; border-radius: 6px; }
+.chips .on { color: #fff; border-color: var(--accent); box-shadow: inset 0 0 12px var(--accent-dim); }
+.chips .lock.on { color: var(--caution); border-color: var(--caution); box-shadow: none; }
+
+/* Tire pressures around the LHD truck plan view. Driver side is left. */
+.tpms { display: grid; grid-template-columns: auto 70px auto; gap: 8px 16px; align-items: center; }
+.tpms .t { font-family: "Konexy"; font-size: 28px; text-align: center; }
+.tpms .t.low { color: var(--caution); }
+.tpms img { grid-row: 1 / span 2; grid-column: 2; height: 130px; justify-self: center; }
+
+/* Dock. */
+.dock { left: 0; right: 0; top: 872px; height: 60px; display: flex; justify-content: center; }
+.dock .chip { display: flex; align-items: baseline; gap: 12px; padding: 0 34px; border-left: 1px solid var(--line); }
+.dock .chip:first-child { border-left: 0; }
+.dock .v { font-family: "Konexy"; font-size: 26px; color: #c9d1da; }

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 2 · Off-road (locked A) · RWD drivetrain</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="kit.css">
+<style>
+  .read { position: absolute; text-align: center; transform: translateX(-50%); }
+  .read .big { font-size: 84px; }
+  .read .k { margin-top: 8px; }
+  .heading { left: 960px; top: 296px; transform: translateX(-50%); font-size: 40px; }
+  .drive { left: 960px; top: 350px; transform: translateX(-50%); }
+  .chipsrow { left: 960px; top: 592px; transform: translateX(-50%); }
+  .chipsrow .chips span { font-size: 17px; padding: 5px 8px; }
+  .spd { left: 960px; top: 650px; transform: translateX(-50%); display: flex; align-items: baseline; gap: 12px; }
+  .spd .big { font-size: 60px; }
+  .spd .g { margin-left: 20px; padding-left: 24px; border-left: 1px solid #252d36; }
+  .assist { left: 960px; top: 760px; transform: translateX(-50%); display: flex; gap: 20px; }
+  .assist img { height: 46px; }
+  .assist .off { opacity: .28; }
+</style>
+</head>
+<body class="offroad">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="kit.js"></script>
+<script>
+topBar({ mode: "OFF-ROAD", telltales: [40, 76], cruise: "off" });
+// Pitch and roll instruments from round 1 option A (locked). ±45° scale is a design value.
+let out = `<defs>
+  <radialGradient id="face" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#151b22"/><stop offset="1" stop-color="#090b0e"/></radialGradient>
+  <linearGradient id="bezel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a636d"/><stop offset=".5" stop-color="#1d2228"/><stop offset="1" stop-color="#3a424b"/></linearGradient>
+</defs>`;
+function instrument(id, cx, cy, r, img, angle) {
+  out += `<circle cx="${cx}" cy="${cy}" r="${r + 14}" fill="none" stroke="url(#bezel)" stroke-width="6"/><circle cx="${cx}" cy="${cy}" r="${r + 8}" fill="url(#face)"/>`;
+  for (const side of [90, 270]) for (let d = -45; d <= 45; d += 5) {
+    const major = d % 15 === 0, a = side + d;
+    const [x0, y0] = polar(cx, cy, r - (major ? 28 : 14), a), [x1, y1] = polar(cx, cy, r, a);
+    out += line(x0, y0, x1, y1, d === 0 ? "#ffd400" : major ? "#dfe5ec" : "#5d6670", major ? 4 : 2);
+    if (major && d !== 0) { const [lx, ly] = polar(cx, cy, r - 56, a); out += text(lx, ly + 9, Math.abs(d), 22, "#7d8792"); }
+  }
+  for (const side of [90, 270]) {
+    const a = side + angle, [x0, y0] = polar(cx, cy, r - 40, a), [x1, y1] = polar(cx, cy, r + 4, a);
+    out += line(x0, y0, x1, y1, "#ff3b30", 6, `stroke-linecap="round" filter="url(#glow)"`);
+  }
+  out += line(cx - r + 60, cy, cx + r - 60, cy, "#2a323c", 2, `stroke-dasharray="6 8"`);
+  const w = 560;
+  out += `<clipPath id="${id}"><rect x="${cx - w / 2 + 58}" y="${cy - 110}" width="${w - 116}" height="165"/></clipPath>`;
+  out += `<g transform="rotate(${angle} ${cx} ${cy})"><image href="${img}" x="${cx - w / 2}" y="${cy - w * .47}" width="${w}" height="${w}" clip-path="url(#${id})"/></g>`;
+}
+instrument("cp", 460, 440, 300, IMG + "/common/gyro/ford/pitch.png", 8);
+instrument("cr", 1460, 440, 300, IMG + "/common/gyro/ford/roll.png", 5);
+const hdg = 42, tx = 810, tw = 300, ty = 222, ppd = tw / 90;
+out += `<rect x="${tx}" y="${ty - 6}" width="${tw}" height="58" rx="6" fill="#0b0f14" stroke="#1f262e"/>`;
+for (let d = Math.ceil((hdg - 45) / 5) * 5; d <= hdg + 45; d += 5) {
+  const x = tx + tw / 2 + (d - hdg) * ppd, major = d % 30 === 0;
+  out += line(x, ty, x, ty + (major ? 22 : 12), major ? "#c9d1da" : "#4d5661", 2);
+  if (major) { const n = ((d % 360) + 360) % 360; out += text(x, ty + 44, { 0: "N", 90: "E", 180: "S", 270: "W" }[n] ?? n, 18, "#8b95a1"); }
+}
+out += `<path d="M${tx + tw / 2 - 9} ${ty - 6} L${tx + tw / 2 + 9} ${ty - 6} L${tx + tw / 2} ${ty + 8} Z" fill="#ff3b30"/>`;
+layer(out);
+place(`
+  <div class="read" style="left:460px;top:600px" data-field="mPitch mFordPitch"><div class="big">8°</div><div class="k">NOSE UP</div></div>
+  <div class="read" style="left:1460px;top:600px" data-field="mRoll mFordRoll"><div class="big">5°</div><div class="k">RIGHT DOWN</div></div>
+  <div class="abs big heading" data-field="gpsBearing">NE 042</div>
+  <div class="abs drive">${drivetrain("4L", true, 170)}</div>
+  <div class="abs chipsrow">${driveChips("4L", true)}</div>
+  <div class="abs spd"><span class="big" data-field="speed">4</span><span class="u" data-field="vehicleSpeedUnit">MPH</span><span class="big g" data-field="trucksShiftGear">D</span></div>
+  <div class="abs assist" data-field="truckOffRoadCamera truckOffRoadHDC truckOffRoadESP truckOffRoadMode">
+    <img src="${IMG}/common/offroad/offroad_h.png" alt=""><img src="${IMG}/common/offroad/dac_h.png" alt="">
+    <img class="off" src="${IMG}/common/offroad/esp_n.png" alt=""><img class="off" src="${IMG}/common/offroad/camera_n.png" alt="">
+  </div>
+  <div class="abs dock">
+    <div class="chip" data-field="altitude (ui1 info)"><span class="k">ALT</span><span class="v">5280 ft</span></div>
+    <div class="chip" data-field="pressure (ui1 info)"><span class="k">BARO</span><span class="v">24.9 inHg</span></div>
+    <div class="chip" data-field="mTpmsPressure"><span class="k">TIRES</span><span class="v">18 PSI</span></div>
+    <div class="chip" data-field="batterVoltage"><span class="k">BATT</span><span class="v">14.2 V</span></div>
+  </div>`);
+</script>
+</body>
+</html>

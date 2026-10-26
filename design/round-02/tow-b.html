@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 2 · Towing B · Columns</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="kit.css">
+<style>
+  .panel { top: 200px; width: 400px; height: 560px; box-sizing: border-box; padding: 30px 34px; border-radius: 18px;
+    background: linear-gradient(180deg, rgba(22, 29, 37, .75), rgba(12, 16, 21, .35)); border: 1px solid #161d25; }
+  .temps { display: flex; justify-content: space-between; margin-top: 22px; }
+  .temps .v { font-size: 22px; }
+  .speedbox { left: 960px; top: 250px; transform: translateX(-50%); display: flex; align-items: flex-end; gap: 46px; }
+  .speedbox .big.s { font-size: 210px; letter-spacing: -4px; }
+  .speedbox .g { text-align: center; padding-left: 40px; border-left: 1px solid #222a33; }
+  .speedbox .g .big { font-size: 120px; }
+  .unit { left: 820px; top: 470px; transform: translateX(-50%); font: 22px "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
+  .trailer .big { font-size: 86px; }
+  .trailer .row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-top: 1px solid var(--line); }
+  .rpm { left: 960px; top: 700px; transform: translateX(-50%); font-size: 28px; color: #9aa4af; }
+</style>
+</head>
+<body class="tow">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="kit.js"></script>
+<script>
+topBar({ mode: "TOWING", telltales: [121], cruise: "off" });
+layer(segBar({ x0: 560, x1: 1360, y: 640, n: 48, max: 7000, value: 2600, redFrom: 6000, h: 22, w: 11 }));
+const col = (label, icon, pct, val, field) => `<div class="vbar" data-field="${field}">
+  <div class="v">${val}</div>
+  <div class="col"><span class="band" style="bottom:35%;height:30%"></span><i style="height:${pct}%"></i></div>
+  <img src="${ICON(icon)}" alt=""><div class="k">${label}</div></div>`;
+const pitch = 3.4, grade = Math.tan(pitch * Math.PI / 180) * 100;
+place(`
+  <div class="abs panel" style="left:66px">
+    <div class="k">TEMPERATURES</div>
+    <div class="temps">
+      ${col("TRANS", "gearBoxTemp", 58, "NORM", "gearBoxTempPercentage")}
+      ${col("COOLANT", "water", 52, "NORM", "waterTempPercentage")}
+      ${col("OIL", "oilTemp", 60, "214°", "oilTemp oilTempPercentage")}
+    </div>
+  </div>
+  <div class="abs panel trailer" style="right:66px">
+    <div data-field="trucksTrailerGain"><div class="k">TRAILER BRAKE GAIN</div><div class="big">5.5</div></div>
+    <div class="row" style="margin-top:18px" data-field="mPitch (grade = tan pitch)">
+      <span class="k">GRADE</span>
+      <svg width="120" height="44"><path d="M4 40 L116 ${40 - 36 * Math.min(1, grade / 10)} L116 40 Z" fill="var(--accent-dim)" stroke="var(--accent)" stroke-width="2"/></svg>
+      <span class="big" style="font-size:40px">+${grade.toFixed(0)}<span class="u">%</span></span>
+    </div>
+    <div class="row" style="display:block"><div class="k" style="margin-bottom:12px">TIRES · PSI</div>${tpms([38, 38, 41, 41], -1)}</div>
+  </div>
+  <div class="abs speedbox">
+    <div class="big s" data-field="speed">58</div>
+    <div class="g"><div class="big" data-field="trucksShiftGear getGearNum()">D<sup style="font-size:46px;color:var(--accent)">4</sup></div><div class="k">GEAR</div></div>
+  </div>
+  <div class="abs unit" data-field="vehicleSpeedUnit">MPH</div>
+  <div class="abs rpm big" data-field="tacho rpm">2600<span class="u">RPM</span></div>
+  <div class="abs" style="left:960px;top:776px;transform:translateX(-50%)">${driveChips("2H", false)}</div>
+  <div class="abs dock">
+    <div class="chip" data-field="batterVoltage"><span class="k">BATT</span><span class="v">14.1 V</span></div>
+    <div class="chip" data-field="mAvgFuel"><span class="k">AVG</span><span class="v">9.6 mpg</span></div>
+    <div class="chip" data-field="DTE"><span class="k">RANGE</span><span class="v">188 mi</span></div>
+    <div class="chip" data-field="mTripA"><span class="k">TRIP A</span><span class="v">86.2 mi</span></div>
+  </div>`);
+</script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 2 · Towing A · Crescent</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="kit.css">
+<style>
+  .speed { left: 960px; top: 200px; transform: translateX(-50%); font-size: 170px; letter-spacing: -3px; }
+  .unit { left: 960px; top: 378px; transform: translateX(-50%); font: 22px "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
+  .rpm { left: 1450px; top: 440px; transform: translateX(-50%); text-align: center; }
+  .rpm .big { font-size: 40px; }
+  .rig-read { top: 640px; text-align: center; transform: translateX(-50%); }
+  .rig-read .big { font-size: 46px; margin-top: 6px; }
+  .gear { left: 960px; top: 742px; transform: translateX(-50%); display: flex; gap: 26px; align-items: center; }
+  .gear .big { font-size: 64px; }
+</style>
+</head>
+<body class="tow">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="kit.js"></script>
+<script>
+topBar({ mode: "TOWING", telltales: [121], cruise: "off" });
+// Rig: genuine Ford side-view art plus a drawn trailer, tilted by grade. Grade % = tan(pitch).
+const pitch = 3.4, grade = Math.tan(pitch * Math.PI / 180) * 100;
+const rig = `<g transform="rotate(${pitch} 960 590)" data-field="mPitch mFordPitch">
+  <clipPath id="truckband"><rect x="690" y="500" width="294" height="110"/></clipPath>
+  <image href="${IMG}/common/gyro/ford/pitch.png" x="640" y="370" width="390" height="390" clip-path="url(#truckband)"/>
+  <line x1="1006" y1="572" x2="1062" y2="572" stroke="#9aa4af" stroke-width="5"/>
+  <rect x="1060" y="468" width="230" height="100" rx="8" fill="#141a21" stroke="${ACC}" stroke-width="3"/>
+  <line x1="1074" y1="490" x2="1276" y2="490" stroke="#1f262e" stroke-width="2"/>
+  <circle cx="1160" cy="580" r="18" fill="#0c1014" stroke="#9aa4af" stroke-width="4"/>
+  <circle cx="1206" cy="580" r="18" fill="#0c1014" stroke="#9aa4af" stroke-width="4"/>
+  <line x1="600" y1="600" x2="1330" y2="600" stroke="#2a323c" stroke-width="2"/>
+</g>`;
+layer(
+  crescent({ cx: 800, cy: 470, r: 560, a0: 232, a1: 305, max: 120, major: 10, labelStep: 20, value: 58, field: "speed" }) +
+  crescent({ cx: 1120, cy: 470, r: 560, a0: 128, a1: 55, max: 7, major: 1, labelStep: 1, value: 2.6, redFrom: 6, field: "tacho rpm" }) +
+  miniArc({ cx: 800, cy: 470, r: 470, from: 236, to: 262, pct: .58, lo: "C", hi: "H", field: "gearBoxTempPercentage" }) +
+  miniArc({ cx: 1120, cy: 470, r: 470, from: 124, to: 98, pct: .52, lo: "C", hi: "H", field: "waterTempPercentage" }) +
+  `<image href="${ICON("gearBoxTemp")}" x="420" y="668" width="34" height="34"/>` +
+  `<image href="${ICON("water")}" x="1466" y="668" width="34" height="34"/>` + rig
+);
+place(`
+  <div class="abs big speed" data-field="speed">58</div>
+  <div class="abs unit" data-field="vehicleSpeedUnit">MPH</div>
+  <div class="abs rpm" data-field="tacho rpm"><div class="big">2600</div><div class="k">RPM</div></div>
+  <div class="abs rig-read" style="left:700px" data-field="mPitch (grade = tan pitch)"><div class="k">GRADE</div><div class="big">+${grade.toFixed(0)}<span class="u">%</span></div></div>
+  <div class="abs rig-read" style="left:960px" data-field="trucksTrailerGain"><div class="k">TRAILER GAIN</div><div class="big">5.5</div></div>
+  <div class="abs rig-read" style="left:1220px" data-field="oilTemp"><div class="k">OIL</div><div class="big">214<span class="u">°F</span></div></div>
+  <div class="abs gear">
+    <span class="big" data-field="trucksShiftGear getGearNum()">D<sup style="font-size:30px;color:var(--accent)">4</sup></span>
+    ${driveChips("2H", false)}
+  </div>
+  <div class="abs dock">
+    <div class="chip" data-field="gearBoxTempPercentage"><span class="k">TRANS</span><span class="v">NORM</span></div>
+    <div class="chip" data-field="mTpmsPressure"><span class="k">TIRES</span><span class="v">OK</span></div>
+    <div class="chip" data-field="batterVoltage"><span class="k">BATT</span><span class="v">14.1 V</span></div>
+    <div class="chip" data-field="mTripA"><span class="k">TRIP A</span><span class="v">86.2 mi</span></div>
+  </div>`);
+</script>
+</body>
+</html>

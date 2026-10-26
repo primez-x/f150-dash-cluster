@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 2 · RWD drivetrain states</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="kit.css">
+<style>
+  body { overflow: hidden; }
+  .row { position: absolute; left: 0; top: 0; width: 1920px; height: 420px; display: flex; justify-content: space-evenly; align-items: flex-start; padding-top: 26px; box-sizing: border-box;
+    background: radial-gradient(ellipse 70% 80% at 50% 50%, #121820 0%, #06080b 80%); }
+  .st { text-align: center; }
+  .st .name { font: 600 26px "BMW Type Global"; color: #fff; margin-top: 10px; }
+  .st .nat { font: 15px "BMW Type Global"; color: var(--sub); letter-spacing: 1px; margin-top: 4px; }
+</style>
+</head>
+<body class="daily">
+<div id="stage" style="display:none"></div>
+<div class="row" id="row"></div>
+<script src="../round-01/shared.js"></script>
+<script src="kit.js"></script>
+<script>
+// Native strings: mFord4wd ["", "2WD", "4WD  LOCK", "N", "4WD  LOW", "4HLC", "4LLC", "4WD  AUTO"] via getGearAwd().
+// The rear e-locker indicator source is pending verification (alarm 76 DIFF LOCK is the candidate).
+const states = [
+  ["2H", false, "2H · rear drive", "2WD"], ["4A", false, "4A · front on demand", "4WD  AUTO"], ["4H", false, "4H", "4WD  LOCK"],
+  ["4L", false, "4L · low range", "4WD  LOW"], ["N", false, "N · transfer neutral", "N"], ["2H", true, "2H + rear locked", "2WD + locker"], ["4L", true, "4L + rear locked", "4WD  LOW + locker"],
+];
+document.getElementById("row").innerHTML = states.map(([s, l, name, nat]) =>
+  `<div class="st">${drivetrain(s, l, 170)}<div class="name">${name}</div><div class="nat">${nat}</div></div>`).join("");
+</script>
+</body>
+</html>

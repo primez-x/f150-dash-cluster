@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 2</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 14px; }
+  .opt h3 { margin: 0 0 8px; font-size: 16px; color: #fff; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  .opt ul { margin: 10px 0 0; padding-left: 18px; }
+  a { color: #7fbfff; }
+  .pick { margin-top: 16px; padding: 10px 14px; background: #141a21; border-radius: 6px; color: #fff; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 2</h1>
+<p>Four driving modes, one A/B pick per mode. A uses analog arcs and dials. B uses digital numerals and bars. Both families stay in scope, so modes can mix.
+  Sample values only. Canvas 1920 × 932. Add <code>?view=physical</code> for the model index 0 preview (unverified for the F150).</p>
+<ul>
+  <li>Off-road option A is locked. Every layout now uses the off-road A top bar: alarm row at top center, cruise region at x 810, y 104 (300 × 80).</li>
+  <li>Left-hand drive: driver side is left on every vehicle graphic. Tire positions, doors, and the fuel door arrow follow the LHD plan view.</li>
+  <li>Drivetrain: rear-wheel drive with 2H, 4A, 4H, 4L, transfer neutral, and the rear e-locker. One drawn component replaces the stock sprite, which powers the axle at the engine in 2WD.</li>
+</ul>
+
+<h2>Daily</h2>
+<div class="pair">
+  <div class="opt"><h3>A · Crescent</h3><a href="daily-a.html"><img src="shots/daily-a.png" alt=""></a>
+    <ul><li>Speed and tach crescents at the screen edges. Fuel and coolant arcs sit inside the crescents.</li><li>Center: large speed, gear row, drive mode chips, range, average, trip.</li></ul></div>
+  <div class="opt"><h3>B · Halo</h3><a href="daily-b.html"><img src="shots/daily-b.png" alt=""></a>
+    <ul><li>Tach halo wraps the speed. Side panels hold range, fluids, trips, and tire pressures.</li></ul></div>
+</div>
+<div class="pick">Daily pick: A or B</div>
+
+<h2>Towing</h2>
+<div class="pair">
+  <div class="opt"><h3>A · Crescent</h3><a href="tow-a.html"><img src="shots/tow-a.png" alt=""></a>
+    <ul><li>Transmission temperature replaces fuel inside the speed crescent.</li><li>Center: truck and trailer tilted by grade, grade %, trailer brake gain, oil temperature, held gear.</li></ul></div>
+  <div class="opt"><h3>B · Columns</h3><a href="tow-b.html"><img src="shots/tow-b.png" alt=""></a>
+    <ul><li>Transmission, coolant, and oil columns with a normal band. Trailer panel: brake gain, grade, tire pressures.</li></ul></div>
+</div>
+<div class="pick">Towing pick: A or B</div>
+
+<h2>Sport</h2>
+<div class="pair">
+  <div class="opt"><h3>A · Center Dial</h3><a href="sport-a.html"><img src="shots/sport-a.png" alt=""></a>
+    <ul><li>One tach dial with the gear inside. Oil pressure, oil and fluid temperatures on the left. G-force on the right.</li></ul></div>
+  <div class="opt"><h3>B · Blade</h3><a href="sport-b.html"><img src="shots/sport-b.png" alt=""></a>
+    <ul><li>Rising tach blade across the top. Speed with a boxed gear. Oil readouts and G-force flank the speed.</li></ul></div>
+</div>
+<div class="pick">Sport pick: A or B</div>
+
+<h2>Race</h2>
+<div class="pair">
+  <div class="opt"><h3>A · Shift Dial</h3><a href="race-a.html"><img src="shots/race-a.png" alt=""></a>
+    <ul><li>Shift lights over a tach dial. Gear dominates. Oil, coolant, and transmission stats on the left. G-force on the right.</li></ul></div>
+  <div class="opt"><h3>B · Strip</h3><a href="race-b.html"><img src="shots/race-b.png" alt=""></a>
+    <ul><li>Shift lights and a full-width bar tach. Boxed gear between speed and rpm. One stat row below.</li></ul></div>
+</div>
+<div class="pick">Race pick: A or B</div>
+
+<h2>Off-road (locked A) and drivetrain states</h2>
+<a href="offroad.html"><img src="shots/offroad.png" alt=""></a>
+<p>Sample: 4L with the rear locker engaged. DIFF LOCK telltale (alarm 76) shown in the alarm row.</p>
+<a href="drivetrain.html"><img src="shots/drivetrain.png" alt=""></a>
+</body>
+</html>

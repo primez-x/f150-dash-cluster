@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 2 · Daily B · Halo</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="kit.css">
+<style>
+  .panel { top: 200px; width: 380px; height: 560px; box-sizing: border-box; padding: 34px 34px; border-radius: 18px;
+    background: linear-gradient(180deg, rgba(22, 29, 37, .75), rgba(12, 16, 21, .35)); border: 1px solid #161d25; }
+  .panel .bar { margin-bottom: 40px; }
+  .hero { margin-bottom: 36px; }
+  .hero .big { font-size: 76px; }
+  .stack .row { display: flex; justify-content: space-between; align-items: baseline; padding: 18px 0; border-top: 1px solid var(--line); }
+  .stack .row:first-child { border-top: 0; padding-top: 0; }
+  .stack .big { font-size: 38px; }
+  .speed { left: 960px; top: 355px; transform: translateX(-50%); font-size: 220px; letter-spacing: -4px; }
+  .unit { left: 960px; top: 585px; transform: translateX(-50%); font: 24px "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
+  .rpm { left: 960px; top: 628px; transform: translateX(-50%); font-size: 30px; color: #9aa4af; }
+  .prnd { left: 960px; top: 760px; transform: translateX(-50%); }
+</style>
+</head>
+<body class="daily">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="kit.js"></script>
+<script>
+topBar({ mode: "DAILY", telltales: [121], cruise: "set" });
+// Halo tach: radial segments around the speed. 7000 max and 6000 redline are design values (tachoSpeedMax at integration).
+(() => {
+  const cx = 960, cy = 545, r = 280, n = 60, max = 7000, rpm = 2150, red = 6000;
+  let s = `<g data-field="tacho rpm">`;
+  for (let i = 0; i < n; i++) {
+    const t = (i + .5) / n, a = -105 + 210 * t, v = max * t, lit = v <= rpm, isRed = v >= red;
+    const [x0, y0] = polar(cx, cy, r, a), [x1, y1] = polar(cx, cy, r + (isRed ? 34 : 26), a);
+    s += line(x0, y0, x1, y1, lit ? (isRed ? "#ff3b30" : ACC) : isRed ? "#3a1512" : "#161c23", 9, `stroke-linecap="round"${lit ? ' filter="url(#glow)"' : ""}`);
+  }
+  for (let k = 0; k <= 7; k++) {
+    const [lx, ly] = polar(cx, cy, r + 60, -105 + 210 * k / 7);
+    s += text(lx, ly + 8, k, 22, k >= 6 ? "#ff3b30" : "#56606b");
+  }
+  s += `<circle cx="${cx}" cy="${cy}" r="${r - 30}" fill="none" stroke="#11161c" stroke-width="1"/>`;
+  layer(s + `</g>`);
+})();
+place(`
+  <div class="abs panel" style="left:66px">
+    <div class="hero" data-field="DTE"><div class="k">RANGE</div><div class="big">312<span class="u">mi</span></div></div>
+    <div class="bar" data-field="fuelPercentage">
+      <div class="head"><span class="k"><img src="${ICON("range")}" alt="">FUEL</span><span class="v">62<span class="u">%</span></span></div>
+      <div class="track"><i style="width:62%"></i><b style="left:12.5%"></b></div><div class="ends"><span>E</span><span>F</span></div>
+    </div>
+    <div class="bar" data-field="waterTempPercentage">
+      <div class="head"><span class="k"><img src="${ICON("water")}" alt="">COOLANT</span><span class="v">NORM</span></div>
+      <div class="track"><i style="width:48%"></i><b style="left:80%"></b></div><div class="ends"><span>C</span><span>H</span></div>
+    </div>
+    <div class="bar" data-field="oilTemp oilTempPercentage">
+      <div class="head"><span class="k"><img src="${ICON("oilTemp")}" alt="">OIL</span><span class="v">208<span class="u">°F</span></span></div>
+      <div class="track"><i style="width:55%"></i><b style="left:80%"></b></div>
+    </div>
+  </div>
+  <div class="abs panel stack" style="right:66px">
+    <div class="row" data-field="mAvgFuel"><span class="k">AVG</span><span class="big">17.8<span class="u">mpg</span></span></div>
+    <div class="row" data-field="mTripA"><span class="k">TRIP A</span><span class="big">128.4<span class="u">mi</span></span></div>
+    <div class="row" data-field="mTripB"><span class="k">TRIP B</span><span class="big">2041<span class="u">mi</span></span></div>
+    <div class="row" style="display:block"><div class="k" style="margin-bottom:14px">TIRES · PSI</div>${tpms()}</div>
+  </div>
+  <div class="abs big speed" data-field="speed">64</div>
+  <div class="abs unit" data-field="vehicleSpeedUnit">MPH</div>
+  <div class="abs rpm big" data-field="tacho rpm">2150<span class="u">RPM</span></div>
+  <div class="abs prnd" data-field="trucksShiftGear getGearNum()"><span>P</span><span>R</span><span>N</span><span class="on">D<sup>6</sup></span><span>S</span><span>M</span></div>
+  <div class="abs dock">
+    <div class="chip" data-field="odometer"><span class="k">ODO</span><span class="v">48213</span></div>
+    <div class="chip" data-field="trucksOilLifePercentage"><span class="k">OIL LIFE</span><span class="v">72%</span></div>
+    <div class="chip" data-field="batterVoltage"><span class="k">BATT</span><span class="v">14.2 V</span></div>
+    <div class="chip" data-field="getGearAwd()"><span class="k">DRIVE</span><span class="v">2H</span></div>
+  </div>`);
+</script>
+</body>
+</html>

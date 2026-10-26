@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 2 · Sport A · Center Dial</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="kit.css">
+<style>
+  .gear { left: 960px; top: 380px; transform: translateX(-50%); text-align: center; }
+  .gear .big { font-size: 200px; }
+  .gear .k { margin-top: 4px; }
+  .spd { left: 960px; top: 640px; transform: translateX(-50%); display: flex; align-items: baseline; }
+  .spd .big { font-size: 64px; }
+  .side { top: 230px; width: 360px; }
+  .side .bar { margin-bottom: 44px; }
+  .gtitle { left: 1580px; top: 230px; transform: translateX(-50%); }
+</style>
+</head>
+<body class="sport">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="kit.js"></script>
+<script>
+topBar({ mode: "SPORT", telltales: [121], cruise: "off" });
+layer(
+  dial270({ cx: 960, cy: 530, r: 300, max: 7, major: 1, labelStep: 1, value: 4.35, redFrom: 6, field: "tacho rpm" }) +
+  gforce({ cx: 1580, cy: 470, r: 170, gx: .38, gy: -.22, peak: [.71, .35] })
+);
+place(`
+  <div class="abs gear" data-field="getGearNum() trucksShiftGear"><div class="big">3</div><div class="k">S · GEAR</div></div>
+  <div class="abs spd"><span class="big" data-field="speed">71</span><span class="u" data-field="vehicleSpeedUnit">MPH</span></div>
+  <div class="abs" style="left:960px;top:720px;transform:translateX(-50%)"><span class="big" style="font-size:30px;color:#9aa4af" data-field="tacho rpm">4350</span><span class="u">RPM</span></div>
+  <div class="abs side" style="left:110px">
+    <div class="bar" data-field="oilPressurePercentage">
+      <div class="head"><span class="k"><img src="${ICON("oil")}" alt="">OIL PRESS</span><span class="v">64<span class="u">%</span></span></div>
+      <div class="track"><i style="width:64%"></i><b style="left:20%"></b></div>
+    </div>
+    <div class="bar" data-field="oilTemp oilTempPercentage">
+      <div class="head"><span class="k"><img src="${ICON("oilTemp")}" alt="">OIL TEMP</span><span class="v">226<span class="u">°F</span></span></div>
+      <div class="track"><i style="width:62%"></i><b style="left:80%"></b></div>
+    </div>
+    <div class="bar" data-field="waterTempPercentage">
+      <div class="head"><span class="k"><img src="${ICON("water")}" alt="">COOLANT</span><span class="v">NORM</span></div>
+      <div class="track"><i style="width:52%"></i><b style="left:80%"></b></div>
+    </div>
+    <div class="bar" data-field="gearBoxTempPercentage">
+      <div class="head"><span class="k"><img src="${ICON("gearBoxTemp")}" alt="">TRANS</span><span class="v">NORM</span></div>
+      <div class="track"><i style="width:50%"></i><b style="left:80%"></b></div>
+    </div>
+  </div>
+  <div class="abs gtitle k">G-FORCE · PEAK 0.79</div>
+  <div class="abs dock">
+    <div class="chip" data-field="fuelPercentage"><span class="k">FUEL</span><span class="v">58%</span></div>
+    <div class="chip" data-field="batterVoltage"><span class="k">BATT</span><span class="v">14.3 V</span></div>
+    <div class="chip" data-field="getGearAwd()"><span class="k">DRIVE</span><span class="v">2H</span></div>
+  </div>`);
+</script>
+</body>
+</html>
