@@ -71,6 +71,9 @@ body.glow-hot { --ambient: var(--hot); --ambient-o: .24; }
 .still .turn.on { animation: none; opacity: 1; }
 @keyframes flash { 0%, 50% { opacity: 1; } 62%, 100% { opacity: 0; } }
 
+.bezel { left: 0; top: 0; pointer-events: none; }
+.bezel path { fill: #060708; stroke: rgba(255, 255, 255, .07); stroke-width: 2; }
+body.nobezel .bezel { display: none; }
 #ruler { display: none; position: absolute; left: 150px; top: 52px; width: 14px; height: 616px; border: 2px solid #ffb020; border-left: 0; box-sizing: border-box; }
 #ruler span { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); font: 22px/1.3 "BMW Type Global"; color: #ffb020; text-align: right; }
 body.physical.ruler #ruler { display: block; }

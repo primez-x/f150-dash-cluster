@@ -1,6 +1,7 @@
 // Capture the round 5 towing hybrid scenes and physical preview.
 // Serve the repository root first: python -m http.server 8731 --bind 127.0.0.1
 // Then run this file through the Playwright MCP browser_run_code_unsafe tool (filename argument).
+// The result lists page errors and any content inside the steering column shroud margin; an empty list passes.
 async (page) => {
   const base = "http://127.0.0.1:8731/design/round-05/";
   const out = "design/round-05/shots/";
@@ -15,6 +16,7 @@ async (page) => {
     await page.goto(base + url);
     await page.evaluate(() => document.fonts.ready);
     await page.screenshot({ path: out + path });
+    if (h === 932) for (const v of await page.evaluate(() => shroudViolations())) errors.push(`${url}: shroud ${v}`);
   };
   for (const scene of ["normal", "cruise", "braking", "warmcoolant", "hottrans", "lowfuel", "reserve", "turn", "lowtire"]) await shot(`tow.html?scene=${scene}&still=1`, `tow-${scene}.png`, 1920, 932);
   await shot("tow.html?view=physical&ruler=1", "tow-physical.png", 1920, 720);

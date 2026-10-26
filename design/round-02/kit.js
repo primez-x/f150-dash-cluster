@@ -19,8 +19,8 @@ const near = (v, step) => Math.abs(v / step - Math.round(v / step)) < 1e-6;
 const focus = (a, av, span = 32) => Math.max(0, 1 - Math.abs(a - av) / span);
 
 // Backdrop: faint topographic contours (marching squares on a smooth field) and a low accent bloom.
-// On the device this is one static image per mode.
-function backdrop() {
+// On the device this is one static image per mode. floor: canvas y of the bloom center (bottom edge by default).
+function backdrop(floor = 932) {
   const W = 1920, H = 932, c = 24, nx = W / c, ny = Math.ceil(H / c);
   const hills = [[300, 820, 1, 330], [1650, 160, .9, 300], [1180, 980, .8, 380], [700, 40, .55, 260], [1880, 700, .6, 240]];
   const f = (x, y) => hills.reduce((t, [hx, hy, a, sd]) => t + a * Math.exp(-((x - hx) ** 2 + (y - hy) ** 2) / (2 * sd * sd)), 0)
@@ -40,9 +40,9 @@ function backdrop() {
     <defs>
       <radialGradient id="topoFade" cx="50%" cy="48%" r="62%"><stop offset="0" stop-color="#fff" stop-opacity=".12"/><stop offset=".55" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="1"/></radialGradient>
       <mask id="topoMask"><rect width="${W}" height="${H}" fill="url(#topoFade)"/></mask>
-      <radialGradient id="floor" cx="50%" cy="100%" r="60%"><stop offset="0" style="stop-color:var(--ambient, var(--accent));stop-opacity:var(--ambient-o, .13)"/><stop offset="1" style="stop-color:var(--ambient, var(--accent));stop-opacity:0"/></radialGradient>
+      <radialGradient id="floor" gradientUnits="userSpaceOnUse" cx="960" cy="${floor}" r="1152" gradientTransform="translate(0 ${floor}) scale(1 .21875) translate(0 -${floor})"><stop offset="0" style="stop-color:var(--ambient, var(--accent));stop-opacity:var(--ambient-o, .13)"/><stop offset="1" style="stop-color:var(--ambient, var(--accent));stop-opacity:0"/></radialGradient>
     </defs>
-    <rect x="0" y="${H - 420}" width="${W}" height="420" fill="url(#floor)"/>
+    <rect x="0" y="${floor - 420}" width="${W}" height="${H - floor + 420}" fill="url(#floor)"/>
     <path d="${d}" fill="none" stroke="var(--accent)" stroke-opacity=".085" stroke-width="1.2" mask="url(#topoMask)"/>
   </svg>`);
 }

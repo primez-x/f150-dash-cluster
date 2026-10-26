@@ -60,6 +60,7 @@ function state(mode) {
   document.body.style.setProperty("--accent-dim", `rgba(${accent}, .18)`);
   if (params.has("still")) document.body.classList.add("still");
   if (params.has("ruler")) document.body.classList.add("ruler");
+  if (params.get("bezel") === "0") document.body.classList.add("nobezel");
   const s = (SCENES[params.get("scene")] || SCENES.normal)(structuredClone(BASE[mode]));
   s.page = +(params.get("page") || 0) % s.pages.length;
   s.T = Object.fromEntries(Object.entries(s.temps).map(([k, c]) => [k, temp(k, c)]));
@@ -73,12 +74,46 @@ function state(mode) {
 
 // Corners hold only low-priority items (wheel rim). Telltales and cruise stay top center.
 function frame(s) {
-  backdrop();
+  backdrop(SHROUD_TOP);
   place(`
   <div class="abs tb" style="left:64px" data-field="native RTC clock">10:42</div>
   <div class="abs tb" style="right:64px" data-field="outSideTemp outSideTempUnit">68<small>°F</small></div>
   <div class="abs telltales" style="left:960px;top:22px;transform:translateX(-50%)" data-field="alarmTable">${s.telltales.map(id => `<img src="${ALARM(id)}" alt="">`).join("")}</div>
-  <div class="abs cruise" style="left:810px;top:104px;width:300px;height:80px" data-state="${s.cruise}" data-unit="MPH"></div>`);
+  <div class="abs cruise" style="left:810px;top:80px;width:300px;height:80px" data-state="${s.cruise}" data-unit="MPH"></div>`);
+}
+
+// Steering column shroud: the bezel hides this arch at the bottom center of the canvas (traced from a photo of the
+// installed cluster running stock UI1). Shown by default so every preview matches the driver view; ?bezel=0 hides the shape.
+// Keep content at least SHROUD_MARGIN px clear of the arch. The floor glow rises from the arch top so the glow stays visible.
+const SHROUD = "M165 932 C240 820 470 758 960 752 C1450 758 1680 820 1755 932 Z", SHROUD_TOP = 752, SHROUD_MARGIN = 20;
+const BEZEL = `<svg class="abs bezel" width="1920" height="932" aria-hidden="true"><path d="${SHROUD}"/></svg>`;
+
+// Captures call this: every drawn element that reaches into the shroud margin, with the overlap in canvas px.
+function shroudViolations() {
+  const arch = document.querySelector(".bezel path"), top = new Array(1921).fill(Infinity), len = arch.getTotalLength();
+  for (let l = 0; l <= len; l += 1) { const p = arch.getPointAtLength(l), x = Math.round(p.x); top[x] = Math.min(top[x], p.y); }
+  const limit = (x0, x1) => { let m = Infinity; for (let x = Math.max(0, Math.floor(x0)); x <= Math.min(1920, Math.ceil(x1)); x++) m = Math.min(m, top[x]); return m - SHROUD_MARGIN; };
+  const c = document.getElementById("canvas").getBoundingClientRect(), k = 1920 / c.width;
+  const name = el => `${el.tagName.toLowerCase()}${el.classList.length ? "." + [...el.classList].join(".") : ""}${el.closest("[data-field]") ? ` [${el.closest("[data-field]").dataset.field.slice(0, 40)}]` : ""}`;
+  const out = new Map();
+  for (const el of document.querySelectorAll("#canvas *")) {
+    if (el.closest("svg[aria-hidden], defs, .turn, #physical-label") || ["svg", "g", "defs", "stop", "filter"].includes(el.tagName.toLowerCase())) continue;
+    let over = -Infinity;
+    if (el instanceof SVGGeometryElement) {
+      const m = el.getScreenCTM(), sw = parseFloat(getComputedStyle(el).strokeWidth) || 0, n = el.getTotalLength();
+      if (getComputedStyle(el).display === "none" || !el.getBoundingClientRect().width && !el.getBoundingClientRect().height) continue;
+      for (let l = 0; l <= n; l += 2) {
+        const p = new DOMPoint(el.getPointAtLength(l).x, el.getPointAtLength(l).y).matrixTransform(m), x = (p.x - c.left) * k, y = (p.y - c.top) * k;
+        over = Math.max(over, y + sw / 2 - limit(x - sw / 2, x + sw / 2));
+      }
+    } else {
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) continue;
+      over = (r.bottom - c.top) * k - limit((r.left - c.left) * k, (r.right - c.left) * k);
+    }
+    if (over > 0) out.set(name(el), Math.max(out.get(name(el)) || 0, Math.round(over)));
+  }
+  return [...out].map(([n, o]) => `${n} +${o}px`);
 }
 
 // Turn edges and the true-size ruler go last so they sit above everything.
@@ -86,6 +121,7 @@ function finish(s) {
   place(`
   <div class="abs turn l${s.turn === "l" ? " on" : ""}" data-field="turnLeftLight turnLeftLightEnabled"></div>
   <div class="abs turn r${s.turn === "r" ? " on" : ""}" data-field="turnRightLight turnRightLightEnabled"></div>
+  ${BEZEL}
   <div id="physical-label">Physical preview · model index 0 assumption · scale 0.7752</div>`);
   document.getElementById("stage").insertAdjacentHTML("beforeend", `<div id="ruler"><span>100 mm<br>on the<br>real<br>screen</span></div>`);
 }

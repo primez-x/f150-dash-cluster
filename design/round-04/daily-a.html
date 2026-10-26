@@ -7,9 +7,9 @@
 <link rel="stylesheet" href="../round-02/kit.css">
 <link rel="stylesheet" href="kit4.css">
 <style>
-  .speed { left: 960px; top: 196px; transform: translateX(-50%); font-size: 230px; letter-spacing: -4px; }
-  .sunit { left: 960px; top: 432px; transform: translateX(-50%); font: 22px "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
-  .grow { left: 960px; top: 486px; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; }
+  .speed { left: 960px; top: 124px; transform: translateX(-50%); font-size: 210px; letter-spacing: -4px; }
+  .sunit { left: 960px; top: 322px; transform: translateX(-50%); font: 22px "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
+  .grow { left: 960px; top: 368px; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; }
   .tread { top: 560px; display: flex; align-items: center; gap: 12px; }
 </style>
 </head>
@@ -23,8 +23,8 @@
 const s = state("daily");
 frame(s);
 layer(
-  crescent({ cx: 800, cy: 470, r: 560, a0: 232, a1: 305, max: 120, major: 10, labelStep: 20, value: s.speed, field: "speed", labelSide: 1 }) +
-  crescent({ cx: 1120, cy: 470, r: 560, a0: 128, a1: 55, max: 7, major: 1, labelStep: 1, value: s.rpm / 1000, redFrom: 6, field: "tacho rpm" }) +
+  crescent({ cx: 800, cy: 470, r: 560, a0: 238, a1: 305, max: 120, major: 10, labelStep: 20, value: s.speed, field: "speed", labelSide: 1 }) +
+  crescent({ cx: 1120, cy: 470, r: 560, a0: 122, a1: 55, max: 7, major: 1, labelStep: 1, value: s.rpm / 1000, redFrom: 6, field: "tacho rpm" }) +
   tempArc({ cx: 800, cy: 470, r: 470, from: 238, to: 290, T: s.T.coolant }) +
   tempArc({ cx: 1120, cy: 470, r: 470, from: 122, to: 70, T: s.T.oil })
 );
@@ -34,8 +34,8 @@ place(`
   <div class="abs grow">${gear(s, 84)}${chip(s)}</div>
   <div class="abs tread temp ${s.T.coolant.state}" style="left:430px">${tIcon(s.T.coolant)}${tempText(s.T.coolant)}</div>
   <div class="abs tread temp ${s.T.oil.state}" style="right:430px">${tempText(s.T.oil)}${tIcon(s.T.oil)}</div>
-  ${fuel4(s, "left:690px;top:584px;width:540px")}
-  ${card(s, "left:640px;top:690px;width:640px;height:156px")}`);
+  ${fuel4(s, "left:690px;top:466px;width:540px")}
+  ${card(s, "left:640px;top:576px;width:640px;height:156px")}`);
 finish(s);
 </script>
 </body>

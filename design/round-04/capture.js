@@ -1,6 +1,8 @@
 // Capture every round 4 design, scene, and physical preview.
 // Serve the repository root first: python -m http.server 8731 --bind 127.0.0.1
 // Then run this file through the Playwright MCP browser_run_code_unsafe tool (filename argument).
+// The result lists page errors and any daily content inside the steering column shroud margin; an empty list passes.
+// Towing A and B are superseded by round 5 and keep the pre-shroud layout.
 async (page) => {
   const base = "http://127.0.0.1:8731/design/round-04/";
   const out = "design/round-04/shots/";
@@ -21,6 +23,7 @@ async (page) => {
     await page.goto(base + url);
     await page.evaluate(() => document.fonts.ready);
     await page.screenshot({ path: out + path });
+    if (h === 932 && url.startsWith("daily")) for (const v of await page.evaluate(() => shroudViolations())) errors.push(`${url}: shroud ${v}`);
   };
   for (const [name, scenes] of shots) {
     for (const scene of scenes) await shot(`${name}.html?scene=${scene}&still=1`, `${name}-${scene}.png`, 1920, 932);

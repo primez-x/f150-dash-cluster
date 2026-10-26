@@ -28,6 +28,10 @@
   <li>Temperatures show real °F from <code>waterTemp</code>, <code>gearBoxTemp</code>, <code>oilTemp</code>, and <code>diffOilTemp</code>. Colour: blue cold, white normal, amber warm, red hot. A reading the truck does not send stays hidden.</li>
   <li>Background glow: the floor glow turns amber when any temperature is warm or fuel reaches 1/8 tank. The glow turns red when any temperature is hot or the truck low-fuel light (alarm 151) comes on. Other alerts leave the glow alone.</li>
   <li>Colour: every layout shares one accent palette, teal by default. See the accent setting in <a href="../round-05/">round 5</a>.</li>
+  <li>Usable area: the steering column shroud hides an arch at the bottom center of the screen, traced from a photo of the installed cluster.
+    Every preview draws the arch in black. Content stays at least 20 px clear of the arch, and the bottom corners stay usable.
+    The floor glow rises from the arch top so the glow stays visible. Add <code>?bezel=0</code> to hide the arch.
+    Each capture run checks every element against the arch and reports any overlap.</li>
   <li>Turn signals: green light along the screen edge only, no arrow. Telltales and cruise stay top center. Top corners hold only clock and outside temperature. No mode label: the TOW light and the automatic layout switch already show towing.</li>
 </ul>
 <table>
@@ -63,7 +67,7 @@
   <div><h3>A · left turn, cruise set</h3><a href="tow-a.html?scene=turn"><img src="shots/tow-a-turn.png" alt=""></a></div>
   <div><h3>B · left turn, cruise set</h3><a href="tow-b.html?scene=turn"><img src="shots/tow-b-turn.png" alt=""></a></div>
 </div>
-<div class="pick">Towing: hybrid of A and B, see <a href="../round-05/">round 5</a>.</div>
+<div class="pick">Towing: hybrid of A and B, see <a href="../round-05/">round 5</a>. A and B keep the layout from before the shroud check.</div>
 
 <h2>True-size check</h2>
 <p>Open a physical preview with the ruler, for example <a href="tow-b.html?view=physical&amp;ruler=1">towing B physical</a>.
