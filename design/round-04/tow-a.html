@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 4 · Towing A · Rig</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="../round-02/kit.css">
+<link rel="stylesheet" href="kit4.css">
+<style>
+  .speed { right: 1300px; top: 214px; text-align: right; font-size: 210px; letter-spacing: -4px; }
+  .sunit { right: 1304px; top: 430px; font: 22px "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
+  .gdiv { left: 646px; top: 236px; width: 1px; height: 210px; background: rgba(255, 255, 255, .1); }
+  .gblk { left: 674px; top: 240px; display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+  .call { display: flex; flex-direction: column; gap: 4px; }
+  .call.l { align-items: flex-end; }
+  .call .k { font-size: 18px; }
+  .rig .rv { font-size: 34px; }
+  .tr { width: 208px; height: 170px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+  .tr .rv { font-size: 34px; }
+  .tr .k { font-size: 18px; }
+</style>
+</head>
+<body class="tow">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="../round-02/kit.js"></script>
+<script src="kit4.js"></script>
+<script>
+// Rig view: the truck from above with tire pressures at each wheel and temperatures at their components,
+// the trailer behind with brake gain and grade. Speed, gear, fuel, and the paged card on the left.
+const s = state("tow");
+s.pages = ["trip", "economy", "vehicle"];
+s.page = +(params.get("page") || 0) % s.pages.length;
+frame(s);
+const cx = 1340, y0 = 210, h = 420, w = 234 * h / 377, axF = y0 + .22 * h, axR = y0 + .8 * h;
+const comp = { coolant: [cx - 26, y0 + .12 * h], oil: [cx + 26, y0 + .12 * h], trans: [cx, y0 + .4 * h], diff: [cx, axR] };
+const callAt = { coolant: [1080, 222, "l"], oil: [1600, 222, "r"], trans: [1080, 380, "l"], diff: [1600, 430, "r"] };
+const SCOL = { cold: "#a0ccf5", normal: "#c9d1da", warm: "#ffb020", hot: "#ff3b30" };
+let g = "";
+for (const k of Object.keys(callAt)) {
+  const T = s.T[k], [px, py] = comp[k], [x, y, side] = callAt[k], col = SCOL[T.state], lx = side === "l" ? x + 14 : x - 14;
+  g += `<path d="M${lx} ${y + 30} L${(lx + px) / 2} ${y + 30} L${px} ${py}" fill="none" stroke="${col}" stroke-opacity=".45" stroke-width="1.5"/>`;
+  g += `<circle cx="${px}" cy="${py}" r="9" fill="${col}" opacity=".35" filter="url(#bloom)"/><circle cx="${px}" cy="${py}" r="5" fill="${col}"/>`;
+}
+const ty = y0 + h + 66;
+g += `<g data-field="trailer (drawn)"><path d="M${cx} ${y0 + h - 6} L${cx} ${y0 + h + 34}" stroke="#5d6670" stroke-width="4"/><circle cx="${cx}" cy="${y0 + h + 36}" r="6" fill="#c9d1da"/>
+  <path d="M${cx - 40} ${ty} L${cx} ${y0 + h + 38} L${cx + 40} ${ty}" fill="none" stroke="#5d6670" stroke-width="4"/>
+  <rect x="${cx - 104}" y="${ty}" width="208" height="170" rx="14" fill="url(#trailerFill)" stroke="var(--accent)" stroke-opacity=".5" stroke-width="2"/>
+  ${[0, 1].map(i => [-1, 1].map(sd => `<rect x="${cx + sd * 112 - 7}" y="${ty + 72 + i * 44}" width="14" height="34" rx="4" fill="#2a323c"/>`).join("")).join("")}</g>`;
+place(`<img class="abs" src="${TRUCK_TOP}" style="left:${cx - w / 2}px;top:${y0}px;height:${h}px" alt="">`);
+layer(`<defs><linearGradient id="trailerFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a222b"/><stop offset="1" stop-color="#0d1217"/></linearGradient></defs>` + g);
+const tp = (i, f) => `<span class="rv${i === s.low ? " low" : ""}" data-field="mTpmsPressure ${f}">${s.tires[i]}</span>`;
+place(`
+  <div class="abs big speed" data-field="speed">${s.speed}</div>
+  <div class="abs sunit" data-field="vehicleSpeedUnit">MPH</div>
+  <div class="abs gdiv"></div>
+  <div class="abs gblk">${gear(s, 120)}${chip(s)}</div>
+  ${fuel4(s, "left:200px;top:500px;width:660px")}
+  ${card(s, "left:200px;top:640px;width:660px;height:170px")}
+  <div class="abs rig" style="left:0;top:0;width:1920px;height:932px">
+    <div class="abs" style="right:${1920 - (cx - w / 2) + 18}px;top:${axF - 19}px">${tp(0, "LF")}</div>
+    <div class="abs" style="left:${cx + w / 2 + 18}px;top:${axF - 19}px">${tp(1, "RF")}</div>
+    <div class="abs" style="right:${1920 - (cx - w / 2) + 18}px;top:${axR - 19}px">${tp(2, "LR")}</div>
+    <div class="abs" style="left:${cx + w / 2 + 18}px;top:${axR - 19}px">${tp(3, "RR")}</div>
+    ${Object.entries(callAt).map(([k, [x, y, side]]) => { const T = s.T[k];
+      return `<div class="abs call ${side} temp ${T.state}" data-field="${T.field}" style="${side === "l" ? `right:${1920 - x}px` : `left:${x}px`};top:${y}px"><span class="k">${T.label}</span>${tempText(T)}</div>`; }).join("")}
+  </div>
+  <div class="abs tr" style="left:${cx - 104}px;top:${ty}px" data-field="trucksTrailerGain mPitch"><span class="k">GAIN</span><span class="rv">${s.gain.toFixed(1)}</span>
+    <span class="k" style="margin-top:6px">GRADE</span><span class="rv">+${s.grade}<span class="u">%</span></span></div>`);
+finish(s);
+</script>
+</body>
+</html>

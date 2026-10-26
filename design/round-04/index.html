@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 4</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+  .pick { margin-top: 16px; padding: 10px 14px; background: #141a21; border-radius: 6px; color: #fff; }
+  table { border-collapse: collapse; margin-top: 10px; color: #c9d1da; }
+  td, th { padding: 4px 16px 4px 0; text-align: left; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 4</h1>
+<p>Round 2 look with round 3 priorities. Speed and gear are the hero. Fuel, temperatures, and tires are gauges whose shape and colour show the state.
+  Less-used data moves to a paged card. Sample values only.</p>
+<ul>
+  <li>Paged card: the steering wheel left and right keys change the page, as the stock layouts do with <code>drivingInfoIndex</code>.
+    Daily pages: trip, fuel economy, tires, temperatures, vehicle. Towing pages: trailer, trip, fuel economy, vehicle. Add <code>?page=1</code> and so on to preview a page.</li>
+  <li>Alerts take the card position while active, so a problem appears where the eye already looks for secondary data.</li>
+  <li>Temperatures show real °F from <code>waterTemp</code>, <code>gearBoxTemp</code>, <code>oilTemp</code>, and <code>diffOilTemp</code>. Colour: blue cold, white normal, amber warm, red hot. A reading the truck does not send stays hidden.</li>
+  <li>Turn signals: green light along the screen edge with the stock arrow. Telltales and cruise stay top center. Top corners hold only clock, mode, and outside temperature.</li>
+</ul>
+<table>
+  <tr><th>Reading</th><th>Cold below</th><th>Warm from</th><th>Hot from</th></tr>
+  <tr><td>Coolant</td><td>140 °F</td><td>226 °F</td><td>235 °F (also firmware waterLevel 1 / 2)</td></tr>
+  <tr><td>Transmission</td><td>104 °F</td><td>232 °F</td><td>250 °F</td></tr>
+  <tr><td>Engine oil</td><td>158 °F (firmware)</td><td>259 °F</td><td>277 °F</td></tr>
+  <tr><td>Rear diff</td><td>120 °F (firmware)</td><td>232 °F</td><td>268 °F</td></tr>
+</table>
+<p>Limits not marked "firmware" are design values until checked against the truck.</p>
+
+<h2>Daily · pick A or B</h2>
+<div class="grid">
+  <div><h3>A · Crescent</h3><a href="daily-a.html"><img src="shots/daily-a-normal.png" alt=""></a></div>
+  <div><h3>B · Halo</h3><a href="daily-b.html"><img src="shots/daily-b-normal.png" alt=""></a></div>
+  <div><h3>A · cold start</h3><a href="daily-a.html?scene=cold"><img src="shots/daily-a-cold.png" alt=""></a></div>
+  <div><h3>B · cold start</h3><a href="daily-b.html?scene=cold"><img src="shots/daily-b-cold.png" alt=""></a></div>
+  <div><h3>A · low tire (alert in the card position)</h3><a href="daily-a.html?scene=lowtire"><img src="shots/daily-a-lowtire.png" alt=""></a></div>
+  <div><h3>B · low fuel</h3><a href="daily-b.html?scene=lowfuel"><img src="shots/daily-b-lowfuel.png" alt=""></a></div>
+  <div><h3>A · left turn, cruise set</h3><a href="daily-a.html?scene=turn"><img src="shots/daily-a-turn.png" alt=""></a></div>
+  <div><h3>A · card page 4 of 5 (temperatures)</h3><a href="daily-a.html?page=3"><img src="shots/daily-a-page3.png" alt=""></a></div>
+</div>
+<div class="pick">Daily pick: A or B</div>
+
+<h2>Towing · pick A or B</h2>
+<div class="grid">
+  <div><h3>A · Rig: truck from above, tire pressures at the wheels, temperatures at their parts</h3><a href="tow-a.html"><img src="shots/tow-a-normal.png" alt=""></a></div>
+  <div><h3>B · Columns: four temperature columns, tires right</h3><a href="tow-b.html"><img src="shots/tow-b-normal.png" alt=""></a></div>
+  <div><h3>A · grade, transmission hot, diff warm</h3><a href="tow-a.html?scene=hottrans"><img src="shots/tow-a-hottrans.png" alt=""></a></div>
+  <div><h3>B · grade, transmission hot, diff warm</h3><a href="tow-b.html?scene=hottrans"><img src="shots/tow-b-hottrans.png" alt=""></a></div>
+  <div><h3>A · left turn, cruise set</h3><a href="tow-a.html?scene=turn"><img src="shots/tow-a-turn.png" alt=""></a></div>
+  <div><h3>B · left turn, cruise set</h3><a href="tow-b.html?scene=turn"><img src="shots/tow-b-turn.png" alt=""></a></div>
+</div>
+<div class="pick">Towing pick: A or B</div>
+
+<h2>True-size check</h2>
+<p>Open a physical preview with the ruler, for example <a href="tow-b.html?view=physical&amp;ruler=1">towing B physical</a>.
+  Resize the window until the orange bar measures 100 mm, then look from your driving distance.</p>
+</body>
+</html>

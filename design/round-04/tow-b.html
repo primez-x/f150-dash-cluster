@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 4 · Towing B · Columns</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="../round-02/kit.css">
+<link rel="stylesheet" href="kit4.css">
+<style>
+  .cols { left: 64px; top: 240px; width: 500px; display: flex; justify-content: space-between; }
+  .tc { width: 118px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .tc .rv { font-size: 34px; }
+  .tc .lab { height: 34px; display: flex; align-items: center; }
+  .speed { right: 860px; top: 214px; text-align: right; font-size: 220px; letter-spacing: -4px; }
+  .sunit { right: 864px; top: 436px; font: 22px "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
+  .gdiv { left: 1088px; top: 236px; width: 1px; height: 214px; background: rgba(255, 255, 255, .1); }
+  .gblk { left: 1116px; top: 240px; display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+  .rpmq { left: 1196px; top: 590px; }
+  .rpmq .rv { font-size: 30px; color: #9aa4af; }
+</style>
+</head>
+<body class="tow">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="../round-02/kit.js"></script>
+<script src="kit4.js"></script>
+<script>
+// Columns from round 2 towing B: four temperature columns, speed with gear, fuel under the speed, tires right.
+const s = state("tow");
+frame(s);
+layer(segBar({ x0: 600, x1: 1170, y: 622, n: 36, max: 7000, value: s.rpm, redFrom: 6000, h: 24, w: 10, labels: false }));
+place(`
+  <div class="abs cols">${["trans", "coolant", "oil", "diff"].map(k => { const T = s.T[k];
+    return `<div class="tc temp ${T.state}" data-field="${T.field}">${tempText(T, false)}${tempCol(T, 270)}<div class="lab">${tIcon(T)}</div>${T.icon ? `<div class="k" style="font-size:16px;letter-spacing:2px;margin-top:-6px">${T.label}</div>` : ""}</div>`; }).join("")}</div>
+  <div class="abs big speed" data-field="speed">${s.speed}</div>
+  <div class="abs sunit" data-field="vehicleSpeedUnit">MPH</div>
+  <div class="abs gdiv"></div>
+  <div class="abs gblk">${gear(s, 120)}${chip(s)}</div>
+  ${fuel4(s, "left:600px;top:486px;width:720px")}
+  <div class="abs rpmq" data-field="tacho rpm"><span class="rv">${s.rpm}</span><span class="u">rpm</span></div>
+  ${card(s, "left:600px;top:670px;width:720px;height:160px")}
+  ${tires4(s, 250, "left:1420px;top:236px;width:400px")}`);
+finish(s);
+</script>
+</body>
+</html>
