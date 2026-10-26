@@ -22,12 +22,12 @@ const tempText = (T, deg = true) => `<span class="rv">${T.f}${deg ? `<span class
 
 const BASE = {
   daily: {
-    mode: "daily", name: "DAILY", speed: 64, gear: "D", gearNum: 6, drive: "2H", rpm: 2150, fuel: 62, range: 312, cruise: "off", telltales: [],
+    mode: "daily", speed: 64, gear: "D", gearNum: 6, drive: "2H", rpm: 2150, fuel: 62, range: 312, cruise: "off", telltales: [],
     temps: { coolant: 96, oil: 104, trans: 82 }, tires: [35, 35, 35, 35], low: -1, trip: "128.4", avg: "17.8", mpgNow: 21.4,
     pages: ["trip", "economy", "tires", "temps", "vehicle"],
   },
   tow: {
-    mode: "tow", name: "TOWING", speed: 58, gear: "D", gearNum: 4, drive: "2H", rpm: 2600, fuel: 46, range: 188, cruise: "off", telltales: [90],
+    mode: "tow", speed: 58, gear: "D", gearNum: 4, drive: "2H", rpm: 2600, fuel: 46, range: 188, cruise: "off", telltales: [90],
     temps: { trans: 93, coolant: 99, oil: 110, diff: 85 }, tires: [38, 38, 41, 41], low: -1, trip: "86.2", avg: "9.6", mpgNow: 8.9,
     gain: 5.5, grade: 6, pages: ["trailer", "trip", "economy", "vehicle"],
   },
@@ -76,7 +76,6 @@ function frame(s) {
   backdrop();
   place(`
   <div class="abs tb" style="left:64px" data-field="native RTC clock">10:42</div>
-  <div class="abs mode-tag">${s.name}</div>
   <div class="abs tb" style="right:64px" data-field="outSideTemp outSideTempUnit">68<small>°F</small></div>
   <div class="abs telltales" style="left:960px;top:22px;transform:translateX(-50%)" data-field="alarmTable">${s.telltales.map(id => `<img src="${ALARM(id)}" alt="">`).join("")}</div>
   <div class="abs cruise" style="left:810px;top:104px;width:300px;height:80px" data-state="${s.cruise}" data-unit="MPH"></div>`);
