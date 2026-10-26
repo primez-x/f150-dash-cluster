@@ -16,10 +16,11 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parents[1]
 DECODER_PATH = BASE / "tools" / "decode_qml_units.py"
 SOURCE_DEFAULT = BASE / "installed" / "capture-04" / "rootfs" / "usr" / "bin" / "Launcher"
-OUTPUT_DEFAULT = BASE / "analysis" / "capture-04" / "ui-candidate-settings-v4"
+OUTPUT_DEFAULT = BASE / "analysis" / "capture-04" / "ui-candidate-direct-factory-v2"
 ANALYSIS_ROOT = (BASE / "analysis").resolve()
 SCHEMA_PATH = BASE / "evidence" / "qt-5.14.2" / "qv4instr_moth_p.h"
 LAYOUT_PATH = BASE / "evidence" / "fixtures" / "capture-04" / "launcher-layout.json"
+GATE_FIXTURE = BASE / "evidence/fixtures/capture-04/factory-code-records.json"
 PATCHES = (
     {
         "unit_qrc_path": "main.qml",
@@ -54,6 +55,8 @@ PATCHES = (
         "source_path": BASE / "patches" / "capture-04" / "etc" / "vnF.qml",
     },
 )
+SOURCE_FILES = {item["destination"]: item["source_path"] for item in PATCHES}
+SOURCE_FILES["etc/vnB.qml"] = BASE / "patches/capture-04/etc/vnB.qml"
 ELF_HEADER = struct.Struct("<16sHHIQQQIHHHHHH")
 
 
@@ -174,6 +177,39 @@ def patch_strings(binary: bytes, units: dict[str, dict[str, object]]) -> tuple[b
     return bytes(candidate), patch_rows, permitted_offsets
 
 
+def clear_factory_codes(binary, units, fixture):
+    unit = units[fixture["unit_qrc_path"]]
+    require(unit["sha256"] == fixture["compiled_unit_sha256"], "factory gate unit identity mismatch")
+    function = unit["functions"][fixture["dispatcher_function_index"]]
+    require(function["name"] == "key_enter_hold" and function["code_sha256"] == fixture["dispatcher_code_sha256"],
+            "factory dispatcher identity mismatch")
+    records = fixture["code_records"]
+    indices = {row["index"] for row in records}
+    require(len(records) == 13 and indices == set(range(104, 117)), "factory code-record set mismatch")
+    uses = [(fn["index"], op["args"]["stringId"]) for fn in unit["functions"] for op in fn["bytecode"]
+            if op.get("args", {}).get("stringId") in indices]
+    require(sorted(uses) == [(function["index"], index) for index in sorted(indices)],
+            "factory code strings have unexpected consumers")
+    candidate = bytearray(binary)
+    permitted = set()
+    rows = []
+    for record in records:
+        decoded = unit["strings"][record["index"]]
+        offset = record["file_offset"]
+        value = decoded["value"]
+        require(decoded["file_offset"] == offset and re.fullmatch(r"[0-9]{4}", value) is not None,
+                "factory code record identity mismatch")
+        require(struct.unpack_from("<iiIIQ", binary, offset) == (-1, 4, 0, 24, 24), "factory code allocation mismatch")
+        require(binary[offset+24:offset+34] == value.encode("utf-16-le") + b"\0\0", "factory code payload mismatch")
+        candidate[offset+4:offset+8] = bytes(4)
+        candidate[offset+24:offset+34] = bytes(10)
+        permitted.update(range(offset+4, offset+8))
+        permitted.update(range(offset+24, offset+34))
+        rows.append({"string_index":record["index"], "record_file_offset":offset,
+                     "length_field_range":{"start":offset+4,"size":4}, "payload_range":{"start":offset+24,"size":10}})
+    return bytes(candidate), rows, permitted
+
+
 def verify_elf_geometry(source: bytes, candidate: bytes, layout: dict[str, object], changed: set[int]) -> dict[str, bool]:
     require(len(source) == len(candidate), "Launcher size changed")
     require(source[:4] == b"\x7fELF", "source is not ELF")
@@ -217,14 +253,17 @@ def build_candidate(source: Path, output: Path) -> dict[str, object]:
     require(sha256(source_bytes) == decoder.SHA256, "source SHA-256 differs from decoder baseline")
     schema = decoder.opcode_schema(SCHEMA_PATH)
     before_units, before_spans, before_registry = decode_binary(decoder, source_bytes, schema)
-    modified_units = {item["unit_qrc_path"] for item in PATCHES}
-    require(modified_units == {"main.qml", "Trucks/menu/system/MenuSystemSettings.qml"}, "unexpected affected cache unit set")
+    gate = json.loads(GATE_FIXTURE.read_text(encoding="utf-8"))
+    modified_units = {item["unit_qrc_path"] for item in PATCHES} | {gate["unit_qrc_path"]}
+    require(modified_units == {"main.qml", "Trucks/menu/system/MenuSystemSettings.qml", "Trucks/menu/system/MenuSystemFactory.qml"}, "unexpected affected cache unit set")
     for path in modified_units:
         require(path in before_units, f"affected cache unit missing: {path}")
         start, size = before_spans[path]
         require_hash_fields_zero(before_units[path], source_bytes[start:start + size])
 
     candidate_bytes, patch_rows, permitted_offsets = patch_strings(source_bytes, before_units)
+    candidate_bytes, code_rows, code_offsets = clear_factory_codes(candidate_bytes, before_units, gate)
+    permitted_offsets.update(code_offsets)
     after_units, after_spans, after_registry = decode_binary(decoder, candidate_bytes, schema)
     require(before_registry == after_registry, "cache registry changed")
     require(before_spans == after_spans, "cache unit geometry changed")
@@ -242,6 +281,9 @@ def build_candidate(source: Path, output: Path) -> dict[str, object]:
         before_strings = before_units[path]["strings"]
         after_strings = after_units[path]["strings"]
         expected_strings = [row["value"] for row in before_strings]
+        if path == gate["unit_qrc_path"]:
+            for row in gate["code_records"]:
+                expected_strings[row["index"]] = ""
         for item in PATCHES:
             if item["unit_qrc_path"] != path:
                 continue
@@ -256,12 +298,11 @@ def build_candidate(source: Path, output: Path) -> dict[str, object]:
     elf_checks = verify_elf_geometry(source_bytes, candidate_bytes, layout, changed_offsets)
     copy_rows = {}
     copy_bytes = {}
-    for item in PATCHES:
-        qml_bytes = item["source_path"].read_bytes()
-        destination = item["destination"]
+    for destination, source_path in SOURCE_FILES.items():
+        qml_bytes = source_path.read_bytes()
         copy_bytes[destination] = qml_bytes
         copy_rows[destination] = {
-            "source_path": item["source_path"].relative_to(BASE).as_posix(),
+            "source_path": source_path.relative_to(BASE).as_posix(),
             "size": len(qml_bytes),
             "sha256": sha256(qml_bytes),
         }
@@ -284,9 +325,8 @@ def build_candidate(source: Path, output: Path) -> dict[str, object]:
     }
     require(all(value is True for key, value in validation.items() if isinstance(value, bool)), "candidate validation failed")
     require(source.read_bytes() == source_bytes, "source changed during candidate preparation")
-    for item in PATCHES:
-        destination = item["destination"]
-        require(item["source_path"].read_bytes() == copy_bytes[destination], f"QML source changed during preparation: {destination}")
+    for destination, source_path in SOURCE_FILES.items():
+        require(source_path.read_bytes() == copy_bytes[destination], f"QML source changed during preparation: {destination}")
     manifest = {
         "schema_version": 1,
         "status": "inactive_unverified_runtime",
@@ -294,6 +334,8 @@ def build_candidate(source: Path, output: Path) -> dict[str, object]:
         "candidate": {"launcher": "Launcher", "sha256": sha256(candidate_bytes), "size": len(candidate_bytes)},
         "source_copies": copy_rows,
         "patches": patch_rows,
+        "factory_code_removal": {"unit_qrc_path":gate["unit_qrc_path"],"records_cleared":len(code_rows),
+                                 "records":code_rows,"system_login_changes":False},
         "validation": validation,
         "runtime_status": {
             "candidate_active": False,

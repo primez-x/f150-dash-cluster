@@ -137,7 +137,7 @@ def child(phase, fixture, candidate_dir=None):
                    "MenuItemSelectButton.qml", "GlowImage.qml", "GlowText.qml",
                    "FuelConsumptionUnit.qml", "TripUnit.qml", "TemperatureUnit.qml", "PressureUnit.qml"]
         if phase == "patched-settings-redirects":
-            require(original_digest == "b1c8b09f255295807012ae8c80a5ce9fd5cc28bb2066318272ea7eea0a4aa239", "Settings v2 candidate identity mismatch")
+            require(original_digest == "74f3d2ecfe80bbf2b8d58d7812ba277af5289f9dc48cae73d14f59944d6d6005", "Direct factory candidate identity mismatch")
             allowed = [name for name in allowed if name not in ("FuelConsumptionUnit.qml", "TripUnit.qml", "TemperatureUnit.qml", "PressureUnit.qml", "MenuItemSelectButton.qml")]
             allowed.append("MenuListProgressbar.qml")
         for name in allowed:
@@ -174,6 +174,13 @@ def child(phase, fixture, candidate_dir=None):
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes((ROOT / "recovered-resources/latest-Launcher" / alias).read_bytes())
             files[alias] = None
+    if phase == "settings-pages":
+        for name, index in (("FactorySeniorSetting",1),("FactoryOdoSetup",2),("FactoryTankSetup",3),
+                            ("FactoryVehicleModel",4),("FactoryShellCmd",6)):
+            back = 1 if index in (2,3,4) else 0
+            files["Trucks/menu/system/factory/"+name+".qml"] = ('import QtQuick 2.12\nItem { objectName: "vendor-page-'+str(index)+'"; '
+                'function key(code,state) { if(state===0 && (code===mGlobalId.item.swcBack || code===mGlobalId.item.swcLeft)) '
+                '{ mGlobalId.item.menuSettingsSubPageItemSetup='+str(back)+'; return 1 } return 0 } }')
     for name, text in files.items():
         (fixture / name).parent.mkdir(parents=True, exist_ok=True)
         if text is None:
@@ -183,6 +190,10 @@ def child(phase, fixture, candidate_dir=None):
                 "file:///etc/vnV.qml": fixture / "ExternalVehicle.qml"}
     external["file:///etc/vnG.qml"].write_text(marker("external-global", props))
     external["file:///etc/vnV.qml"].write_text(marker("external-vehicle"))
+    if phase == "settings-pages":
+        external["file:///etc/vnB.qml"] = fixture / "Factory.qml"
+        external["file:///etc/qmldir"] = fixture / "isolated-etc-qmldir"
+        external["file:///etc/qmldir"].write_text("")
     if phase == "patched-settings-redirects":
         external["file:///etc/vnU.qml"] = fixture / "RouteUnits.qml"
         external["file:///etc/vnF.qml"] = fixture / "RouteFactory.qml"
@@ -330,7 +341,7 @@ def child(phase, fixture, candidate_dir=None):
 
 
 def settings_pages(fixture, result, app, engine, callbacks, intercepted, denied, ui_units):
-    from PyQt5 import QtCore, QtQml, QtQuick, QtTest
+    from PyQt5 import QtCore, QtGui, QtQml, QtQuick, QtTest
     titles = ["Front TPMS side exchange", "Rear TPMS side exchange", "Fuel filler side", "Tyre pressure",
               "Reverse alarm", "Tachometer range", "Sub tank", "Maximum speed", "Vehicle angle",
               "Outside temperature", "Eco information", "Gear information", "Oil temperature", "Range",
@@ -343,7 +354,7 @@ def settings_pages(fixture, result, app, engine, callbacks, intercepted, denied,
     result["precompiled_ui_dependencies"] = precompiled
     require(all((entry['ready'] for entry in precompiled)), precompiled)
     pages = []
-    for name, alias in (("vnF.qml", "Factory.qml"), ("vnU.qml", "Units.qml")):
+    for name, alias in (("vnB.qml", "Factory.qml"), ("vnU.qml", "Units.qml"), ("vnF.qml", "Catalog.qml")):
         source = ROOT / "patches/capture-04/etc" / name
         content = source.read_bytes()
         copy = fixture / alias
@@ -353,6 +364,12 @@ def settings_pages(fixture, result, app, engine, callbacks, intercepted, denied,
                           ready=component.status() == QtQml.QQmlComponent.Ready,
                           errors=[error.toString() for error in component.errors()]))
     result["settings_compile"] = pages
+    if result["phase"] == "settings-pages":
+        route_fixture = json.loads((ROOT/"evidence/fixtures/capture-04/factory-code-records.json").read_text())
+        for route in route_fixture["routes"]:
+            if route["index"] != 5:
+                prepared = QtQml.QQmlComponent(engine, QtCore.QUrl(route["qrc_path"]))
+                require(prepared.status() == QtQml.QQmlComponent.Ready, "Factory route marker compile failed")
     result["registered_ui_units"] = {url: hashlib.sha256(payload).hexdigest() for url, payload in ui_units.items()}
     if not all(page["ready"] for page in pages):
         result.update(passed=False, gap="Candidate page compile failed with actual captured UI component metadata.")
@@ -375,6 +392,10 @@ Window {
         property QtObject item: QtObject {
             id: g
             property int menuSettingsPageIndex: 6
+            property int menuSettingsSubPageItemSetup: 0
+            property int uartDebugEnabled: 0
+            property int mediaImageEnabled: 0
+            property bool modelCarSelection: false
             property int menuBarItemIndex: 0
             property int language: 1
             property string rtcDate: "2026-01-01"
@@ -416,7 +437,11 @@ Window {
             id: e
             property var calls: []
             property var queryCalls: []
+            property var shellQueries: []
+            property var adbCalls: []
             function systemInquire() { queryCalls=queryCalls.concat(["systemInquire"]) }
+            function shellCmdInquire() { shellQueries=shellQueries.concat(["shellCmdInquire"]) }
+            function adb(value) { adbCalls=adbCalls.concat([value]) }
             function setUnit2(type, value) { calls=calls.concat([[type,value]]) }
             function followVehicleUnits() {
                 calls=calls.concat([["follow"]])
@@ -470,7 +495,9 @@ Window {
     checks = []
     renders = []
     def advance():
-        app.processEvents()
+        loop = QtCore.QEventLoop()
+        QtCore.QTimer.singleShot(0, loop.quit)
+        loop.exec_()
     def verify(name, condition):
         checks.append(dict(name=name, passed=bool(condition)))
         print("CHECK " + name, flush=True)
@@ -480,20 +507,21 @@ Window {
         return entry.toVariant() if isinstance(entry, QtQml.QJSValue) else entry
     def press(key, release=True):
         bridge.forceActiveFocus()
-        QtTest.QTest.keyPress(window, key, delay=0)
+        # Queue keyboard events so Qt compiler callbacks can acquire the Python GIL.
+        app.postEvent(window, QtGui.QKeyEvent(QtCore.QEvent.KeyPress, key, QtCore.Qt.NoModifier))
         advance()
         if release:
-            QtTest.QTest.keyRelease(window, key, delay=0)
+            app.postEvent(window, QtGui.QKeyEvent(QtCore.QEvent.KeyRelease, key, QtCore.Qt.NoModifier))
             advance()
     def release(key):
-        QtTest.QTest.keyRelease(window, key, delay=0)
+        app.postEvent(window, QtGui.QKeyEvent(QtCore.QEvent.KeyRelease, key, QtCore.Qt.NoModifier))
         advance()
     def select_page(index):
         window.setProperty("pageUrl", QtCore.QUrl.fromLocalFile(pages[index]["copy"]).toString())
         advance()
         page = window.property("page")
         verify("page instantiated: " + pages[index]["source"], page is not None)
-        count = 20 if index == 0 else 6
+        count = (20,6,16)[index]
         candidates = [obj for obj in page.findChildren(QtCore.QObject)
                       if obj.metaObject().className().startswith("SwipeView") and obj.property("count") == count]
         if not candidates:
@@ -601,7 +629,7 @@ Window {
     verify("all nineteen factory actions", value(global_state,"factoryCalls") == list(range(19)))
     press(QtCore.Qt.Key_Down)
     press(QtCore.Qt.Key_Return)
-    verify("factory Back route", value(global_state,"menuSettingsPageIndex") == 0 and len(value(global_state,"factoryCalls")) == 19)
+    verify("general Back returns to catalog", value(global_state,"menuSettingsSubPageItemSetup") == 0 and len(value(global_state,"factoryCalls")) == 19)
     global_state.setProperty("menuSettingsPageIndex", 6)
     page, swipe, rows = select_page(1)
     QtTest.QTest.qWait(80)
@@ -627,8 +655,89 @@ Window {
     press(QtCore.Qt.Key_Down)
     press(QtCore.Qt.Key_Return)
     verify("units Back route", value(global_state,"menuSettingsPageIndex") == 0)
+    catalog, menu, catalog_rows = select_page(2)
+    QtTest.QTest.qWait(350)
+    verify("catalog startup query preserves vendor schedule", value(event_state,"shellQueries") == ["shellCmdInquire"])
+    verify("catalog startup leaves diagnostic settings unchanged", value(event_state,"adbCalls") == [] and
+           value(global_state,"uartDebugEnabled") == 0 and value(global_state,"mediaImageEnabled") == 0 and
+           value(global_state,"modelCarSelection") is False)
+    expected_titles = ["General settings","Advanced settings","Fuel tank setup","Vehicle profile","Odometer setup",
+                       "Service commands","ADB debugging: enable","ADB debugging: disable","Debug logging: off",
+                       "Debug logging: warnings","Debug logging: UART receive","Debug logging: UART transmit",
+                       "Debug logging: MCU","USB image preview: enable","Car model options","Back"]
+    verify("catalog exposes all settings and tools", [value(row,"mTitle") for row in catalog_rows] == expected_titles)
+    press(QtCore.Qt.Key_Up)
+    verify("catalog Up wraps to Back", menu.property("currentIndex") == 15)
+    press(QtCore.Qt.Key_Down)
+    verify("catalog Down wraps to General", menu.property("currentIndex") == 0)
+    press(QtCore.Qt.Key_Down,False)
+    verify("catalog Down press preserves selection", menu.property("currentIndex") == 0)
+    release(QtCore.Qt.Key_Down)
+    verify("catalog Down release advances", menu.property("currentIndex") == 1)
+    for row_index, expected_page in enumerate((5,1,3,4,2,6)):
+        menu.setProperty("currentIndex", row_index)
+        press(QtCore.Qt.Key_Return, False)
+        verify("page opens only on release " + str(expected_page), value(global_state,"menuSettingsSubPageItemSetup") == 0)
+        release(QtCore.Qt.Key_Return)
+        verify("direct page route " + str(expected_page), value(global_state,"menuSettingsSubPageItemSetup") == expected_page)
+        if expected_page == 5:
+            child_views = [obj for obj in catalog.findChildren(QtCore.QObject)
+                           if obj.metaObject().className().startswith("SwipeView") and obj.property("count") == 20]
+            verify("general route loads the actual candidate page", len(child_views) == 1 and child_views[0].property("currentIndex") == 0)
+        else:
+            verify("service route loads a safe marker " + str(expected_page), catalog.findChild(QtCore.QObject,"vendor-page-"+str(expected_page)) is not None)
+        press(QtCore.Qt.Key_Escape)
+        expected_parent = 0
+        verify("direct Back returns to catalog " + str(expected_page), value(global_state,"menuSettingsSubPageItemSetup") == expected_parent)
+        if expected_parent:
+            press(QtCore.Qt.Key_Escape)
+        verify("return to the direct catalog " + str(expected_page), value(global_state,"menuSettingsSubPageItemSetup") == 0)
+    menu.setProperty("currentIndex",1)
+    press(QtCore.Qt.Key_Return)
+    global_state.setProperty("menuSettingsSubPageItemSetup",3)
+    press(QtCore.Qt.Key_Escape)
+    verify("nested tank Back preserves Advanced parent", value(global_state,"menuSettingsSubPageItemSetup") == 1)
+    press(QtCore.Qt.Key_Escape)
+    verify("Advanced Back returns to catalog", value(global_state,"menuSettingsSubPageItemSetup") == 0)
+    for row_index, argument in ((6,1),(7,0)):
+        menu.setProperty("currentIndex",row_index)
+        before = list(value(event_state,"adbCalls"))
+        press(QtCore.Qt.Key_Return,False)
+        verify("USB debug command waits for release " + str(argument), value(event_state,"adbCalls") == before)
+        release(QtCore.Qt.Key_Return)
+        verify("explicit USB debug command " + str(argument), value(event_state,"adbCalls") == before+[argument])
+    for row_index, mode in enumerate((0,1,2,4,8),8):
+        menu.setProperty("currentIndex",row_index)
+        press(QtCore.Qt.Key_Return)
+        verify("debug mode exact vendor value " + str(mode), value(global_state,"uartDebugEnabled") == mode)
+        verify("debug selection feedback " + str(mode), value(catalog_rows[row_index],"mData") == "Selected")
+    menu.setProperty("currentIndex",13)
+    press(QtCore.Qt.Key_Return)
+    verify("explicit image preview enable", value(global_state,"mediaImageEnabled") == 1)
+    menu.setProperty("currentIndex",14)
+    press(QtCore.Qt.Key_Return)
+    verify("explicit model options toggle", value(global_state,"modelCarSelection") is True)
+    def mode_event(state):
+        QtCore.QMetaObject.invokeMethod(catalog,"key",QtCore.Qt.QueuedConnection,
+            QtCore.Q_ARG("QVariant",value(global_state,"swcModes")),QtCore.Q_ARG("QVariant",state))
+        advance()
+    for state in (1,2,2,2,0):
+        mode_event(state)
+    verify("mode hold activates once and consumes release", value(global_state,"modelCarSelection") is False and
+           menu.property("currentIndex") == 14)
+    menu.setProperty("currentIndex",0)
+    for state in (1,2,2,0):
+        mode_event(state)
+    verify("mode entry reaches General without a release advance", value(global_state,"menuSettingsSubPageItemSetup") == 5 and
+           any(obj.metaObject().className().startswith("SwipeView") and obj.property("count") == 20 and obj.property("currentIndex") == 0
+               for obj in catalog.findChildren(QtCore.QObject)))
+    press(QtCore.Qt.Key_Escape)
+    menu.setProperty("currentIndex",15)
+    press(QtCore.Qt.Key_Return)
+    verify("catalog Back reaches System Settings", value(global_state,"menuSettingsPageIndex") == 0)
+    result["factory_catalog_scope"] = "Actual catalog and General candidate. Other vendor pages use safe markers with recorded Back contracts. Diagnostic methods record arguments only."
     # Capture fixture previews with actual cached component geometry and safe state.
-    for page_index, title in ((0,"Factory settings"),(1,"Unit settings")):
+    for page_index, title in ((0,"General settings"),(1,"Unit settings"),(2,"Factory menu")):
         page, swipe, rows = select_page(page_index)
         window.setProperty("previewTitle", "Host Qt fixture preview - " + title)
         verify("preview row0 checked and released", value(rows[0],"mChecked") and not value(rows[0],"mClicked"))
@@ -688,7 +797,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--child", choices=PHASES)
     parser.add_argument("--fixture")
-    parser.add_argument("--candidate-dir", default=str(ROOT / "analysis/capture-04/ui-candidate-settings-v4"))
+    parser.add_argument("--candidate-dir", default=str(ROOT / "analysis/capture-04/ui-candidate-direct-factory-v2"))
     args = parser.parse_args()
     if args.child:
         return child(args.child, Path(args.fixture), args.candidate_dir)

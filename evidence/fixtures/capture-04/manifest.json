@@ -309,12 +309,33 @@
         "reviewed_date": "2026-10-26",
         "boundary": "No account files, network configurations, runtime settings, or binary payloads selected. Vendor rights remain unchanged."
       }
+    },
+    {
+      "path": "factory-code-records.json",
+      "source": "analysis/capture-04/qml-cache/072-Trucks_menu_system_MenuSystemFactory.qml.json",
+      "source_sha256": "7c441ab0474151a15ec703bcc4c61edb84802b7a3f8a7ca6233354b75e66dc9f",
+      "recipe": "Retain the 13 code-record indices, file offsets, and lengths. Omit code values and code hashes. Retain six page paths, unit identities, and Back functions with resolved instructions.",
+      "runtime_data": "Static metadata only. No code values or runtime settings.",
+      "export_bytes": 35851,
+      "export_sha256": "ba11ff37585c734b229b322eb90cc71624e72547c1fe915335b64345f5aedc56",
+      "screening": {
+        "categories": [
+          "private_key_header",
+          "email",
+          "credential_literal",
+          "token_shape"
+        ],
+        "matches": 0,
+        "root_review": "Selected static code and reduced metadata reviewed for public Git selection.",
+        "reviewed_date": "2026-10-26",
+        "boundary": "No account files, network configurations, runtime settings, or binary payloads selected. Vendor rights remain unchanged."
+      }
     }
   ],
   "screening_limit": "Pattern checks and root content review cover selected static files. Neither method proves complete absence of unknown secrets.",
   "sensitive_reference_note": "Global.qml contains an mSSID identifier without a credential literal. Shared QML bytes match the vendor baseline.",
-  "export_count": 11,
-  "export_bytes": 344310,
+  "export_count": 12,
+  "export_bytes": 380161,
   "qt_source_provenance": {
     "path": "evidence/qt-5.14.2/PROVENANCE.json",
     "sha256": "e3206d3bcc37615364a13d98dde7311a4204de442978f66f30da027f133310e2",

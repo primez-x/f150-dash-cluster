@@ -18,7 +18,7 @@ GENERATOR = BASE / "tools" / "prepare_ui_candidate.py"
 DECODER_PATH = BASE / "tools" / "decode_qml_units.py"
 SOURCE = BASE / "installed" / "capture-04" / "rootfs" / "usr" / "bin" / "Launcher"
 OUTPUT_PARENT = BASE / "analysis" / "capture-04"
-OUTPUT = OUTPUT_PARENT / "ui-candidate-settings-v4"
+OUTPUT = OUTPUT_PARENT / "ui-candidate-direct-factory-v2"
 RESULT = OUTPUT_PARENT / "ui-loader-replay-results.json"
 SCHEMA = BASE / "evidence" / "qt-5.14.2" / "qv4instr_moth_p.h"
 EXPECTED_SOURCE_SHA256 = "2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b"
@@ -136,6 +136,8 @@ def inspect_candidate(directory: Path, decoder) -> dict[str, object]:
     }, "runtime status does not fail closed")
 
     patches = manifest["patches"]
+    require(manifest.get("factory_code_removal", {}).get("records_cleared") == 13,
+            "candidate retains vendor factory code records")
     require(len(patches) == 4, f"expected four loader patches, found {len(patches)}")
     patch_by_old = {patch["old_string"]: patch for patch in patches}
     require(set(patch_by_old) == set(LOADERS), "manifest loader set mismatch")
@@ -160,14 +162,26 @@ def inspect_candidate(directory: Path, decoder) -> dict[str, object]:
         require(payload[:len(encoded)] == encoded, f"payload mismatch for {old_string}")
         require(payload[len(encoded):] == b"\0" * (payload_size - len(encoded)), f"payload tail is not zero for {old_string}")
 
+    gate = json.loads((BASE/"evidence/fixtures/capture-04/factory-code-records.json").read_text(encoding="utf-8"))
+    removed = manifest["factory_code_removal"]
+    require(removed["system_login_changes"] is False and removed["unit_qrc_path"] == gate["unit_qrc_path"], "factory removal scope mismatch")
+    require(len(removed["records"]) == len(gate["code_records"]) == 13, "factory code removal count mismatch")
+    for expected, actual in zip(gate["code_records"], removed["records"]):
+        record = expected["file_offset"]
+        require(actual == {"string_index":expected["index"],"record_file_offset":record,
+            "length_field_range":{"start":record+4,"size":4},"payload_range":{"start":record+24,"size":10}}, "factory cleared-record metadata mismatch")
+        require(struct.unpack_from("<iiIIQ", candidate, record) == (-1,0,0,24,24), "factory code length was not cleared")
+        require(candidate[record+24:record+34] == bytes(10), "factory code payload remains")
+        allowed.update(range(record+4,record+8))
+        allowed.update(range(record+24,record+34))
     changed = {index for index, (left, right) in enumerate(zip(original, candidate)) if left != right}
-    require(changed and changed <= allowed, "binary changes escaped the four approved string records")
+    require(changed and changed <= allowed, "binary changes escaped the four loader and thirteen code records")
     validations = manifest["validation"]
     require(validations["cache_units_before"] == validations["cache_units_after"] == 198, "cache unit count mismatch")
-    require(validations["modified_units"] == 2, "modified cache unit count mismatch")
-    require(validations["modified_unit_paths"] == ["Trucks/menu/system/MenuSystemSettings.qml", "main.qml"], "modified cache unit path set mismatch")
+    require(validations["modified_units"] == 3, "modified cache unit count mismatch")
+    require(validations["modified_unit_paths"] == ["Trucks/menu/system/MenuSystemFactory.qml", "Trucks/menu/system/MenuSystemSettings.qml", "main.qml"], "modified cache unit path set mismatch")
     require(validations["cache_hash_checked_unit_paths"] == validations["modified_unit_paths"], "cache hash validation path set mismatch")
-    require(validations["other_units_unchanged"] == 196, "other cache unit count mismatch")
+    require(validations["other_units_unchanged"] == 195, "other cache unit count mismatch")
     for key in (
         "registry_unchanged",
         "binary_size_unchanged",
@@ -182,8 +196,9 @@ def inspect_candidate(directory: Path, decoder) -> dict[str, object]:
         require(validations[key] is True, f"manifest validation failed: {key}")
 
     copies = manifest["source_copies"]
-    require(set(copies) == {item["destination"] for item in LOADERS.values()}, "source copy set mismatch")
-    for expected in LOADERS.values():
+    sources = list(LOADERS.values()) + [{"source":BASE/"patches/capture-04/etc/vnB.qml", "destination":"etc/vnB.qml"}]
+    require(set(copies) == {item["destination"] for item in sources}, "source copy set mismatch")
+    for expected in sources:
         destination = expected["destination"]
         source_bytes = expected["source"].read_bytes()
         copied = (directory / destination).read_bytes()
@@ -195,7 +210,9 @@ def inspect_candidate(directory: Path, decoder) -> dict[str, object]:
     require(original_registry == candidate_registry, "cache registry changed")
     require(original_spans == candidate_spans, "cache unit geometry changed")
     require(set(original_units) == set(candidate_units), "decoded qrc unit set changed")
-    modified_units = {item["unit_qrc_path"] for item in LOADERS.values()}
+    modified_units = {item["unit_qrc_path"] for item in LOADERS.values()} | {gate["unit_qrc_path"]}
+    for row in gate["code_records"]:
+        require(candidate_units[gate["unit_qrc_path"]]["strings"][row["index"]]["value"] == "", "decoded factory code remains")
     for path, (start, size) in original_spans.items():
         if path not in modified_units:
             require(original[start:start + size] == candidate[start:start + size], f"unaffected cache unit changed: {path}")
@@ -251,12 +268,13 @@ def main() -> int:
         successful = inspect_candidate(successful_output, decoder)
         tests["baseline_source"] = {"result": "accepted", "source_sha256": EXPECTED_SOURCE_SHA256}
         tests["exact_loader_redirects"] = {"result": "passed", "records": len(LOADERS), "units": 2}
-        tests["source_copy_hashes"] = {"result": "passed", "copies": len(LOADERS)}
+        tests["factory_code_removal"] = {"result":"passed", "records":13, "native_text_unchanged":True}
+        tests["source_copy_hashes"] = {"result": "passed", "copies": len(LOADERS)+1}
         tests["cache_integrity"] = {
             "result": "passed",
             "decoded_units": 198,
-            "modified_units": 2,
-            "unchanged_other_units": 196,
+            "modified_units": 3,
+            "unchanged_other_units": 195,
             "size_unchanged": successful["candidate_size"] == len(source_bytes),
         }
 
@@ -316,7 +334,7 @@ def main() -> int:
         "device_execution": False,
     }
     write_result(result)
-    print("PASS: UI loader candidate replay completed; 198 units decoded, four records changed across two units.")
+    print("PASS: UI candidate replay completed; 198 units decoded, four loaders redirected, thirteen factory codes cleared.")
     print(f"Result: {RESULT}")
     print(f"Candidate: {OUTPUT}")
     return 0

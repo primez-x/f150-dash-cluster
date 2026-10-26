@@ -21,6 +21,7 @@
 !/evidence/fixtures/capture-04/system-settings-loaders.json
 !/evidence/fixtures/capture-04/mode-key-functions.json
 !/evidence/fixtures/capture-04/settings-page-lifecycle.json
+!/evidence/fixtures/capture-04/factory-code-records.json
 !/evidence/fixtures/capture-04/launcher-layout.json
 !/evidence/fixtures/capture-04/qml-placeholders.json
 !/evidence/qt-5.14.2/PROVENANCE.json
@@ -34,6 +35,7 @@
 !/patches/capture-04/etc/init.d/S90mount
 !/patches/capture-04/etc/init.d/rcS
 !/patches/capture-04/etc/vnF.qml
+!/patches/capture-04/etc/vnB.qml
 !/patches/capture-04/etc/vnU.qml
 !/handoff/claude-dashboard/**
 !/design/**

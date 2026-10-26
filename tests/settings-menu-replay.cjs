@@ -11,7 +11,7 @@ const fixtures = path.join(base, 'evidence/fixtures/capture-04');
 const pages = path.join(base, 'patches/capture-04/etc');
 const expected = [
   'Factory rows forward all 19 indexes to the existing setter.',
-  'Factory Back, Left, and the Back row return to System Settings on release.',
+  'General settings Back, Left, and the Back row return to the factory catalog on release.',
   'Factory and Units Up/Down wrap without changes on press or hold.',
   'Factory source contains no gate, odometer, shell, or update route.',
   'Models zero through eight preserve vendor unit assignments and native calls.',
@@ -30,11 +30,15 @@ const report = {schema_version: 2, authority: 'PC source and reduced decoded ven
   source_verification: 'failed', qt_verification: 'Root owns Qt 5.14.2 checks.',
   vehicle_verification: 'Not run', cases: 0,
   page_contracts: {
-    factory: {base: 'qrc:/Trucks/common/ItemInfo.qml', width: 820, height: 510,
+    factory_catalog: {base: 'qrc:/Trucks/common/ItemInfo.qml', width:820, height:510,
+      controls:'15 labeled settings and diagnostic entries plus Back',
+      verification:'Host Qt owns actual catalog key and action checks.',
+      return:'menuSettingsPageIndex=0'},
+    general: {base: 'qrc:/Trucks/common/ItemInfo.qml', width: 820, height: 510,
       controls: '19 vendor rows plus Back', setter: 'mGlobalId.item.setFactory(index)',
-      return: 'menuSettingsPageIndex=0',
+      return: 'menuSettingsSubPageItemSetup=0',
       context: ['mGlobalId', 'mTranslationId'],
-      reuse_rejection: 'Compiled Back-row activation resets the former gate subpage index directly. Base component IDs remain private.'},
+      navigation: 'Back now resets the subpage index and returns to the direct catalog.'},
     units: {base: 'qrc:/Trucks/common/ItemInfo.qml', width: 600, height: 510,
       controls: ['Consumption', 'Distance', 'Temperature', 'Pressure', 'Follow vehicle units', 'Back'],
       context: ['mGlobalId', 'mTranslationId', 'mEventHandleId', 'mTrucksModel'],
@@ -42,7 +46,7 @@ const report = {schema_version: 2, authority: 'PC source and reduced decoded ven
       manual_state: 'Independent saved speedUnitOverride and tempUnitOverride',
       follow: 'mEventHandleId.item.followVehicleUnits()'},
     keys: 'Inherited ItemInfo.key(key,state) dispatches overridden key_back/up/down/left/right/enter/modes methods.',
-    states: 'Enter release activates. Enter press records feedback. Each mode state-2 event activates. Mode release advances selection.'
+    states: 'General and Units preserve vendor state behavior. The catalog activates a mode hold once and consumes the matching release.'
   }, limitations: [
     'Source replay does not prove QML component rendering or native context lookup.',
     'Loader offsets and identities come from reduced metadata fixtures. This replay does not verify native binary bytes.',
@@ -107,7 +111,10 @@ try {
     return {path: 'evidence/fixtures/capture-04/' + name, sha256,
       authority: 'Reduced decoded metadata; no native byte verification'};
   });
-  const factoryText = fs.readFileSync(path.join(pages, 'vnF.qml'), 'utf8');
+  const catalogText = fs.readFileSync(path.join(pages, 'vnF.qml'), 'utf8');
+  check(catalogText.includes('mFactoryMenu'), 'Factory entry exposes a direct settings catalog');
+  check(!/mFactoryPasswd|mPasswdSelect|PasswdTumber|key_enter_hold/.test(catalogText), 'Direct catalog contains no vendor code gate');
+  const factoryText = fs.readFileSync(path.join(pages, 'vnB.qml'), 'utf8');
   const unitText = fs.readFileSync(path.join(pages, 'vnU.qml'), 'utf8');
   const lifecycleBytes = fs.readFileSync(path.join(fixtures, 'settings-page-lifecycle.json'));
   const lifecycleHash = crypto.createHash('sha256').update(lifecycleBytes).digest('hex');
@@ -149,7 +156,7 @@ try {
   let queryStarts = 0;
   const factory = methods(factoryText, {mPressed: 0,
     mFactoryRows: {currentIndex: 0, count: 20},
-    mGlobalId: {item: {menuSettingsPageIndex: 1, setFactory(index) { factory.calls.push(index); }}},
+    mGlobalId: {item: {menuSettingsPageIndex: 1, menuSettingsSubPageItemSetup:5, setFactory(index) { factory.calls.push(index); }}},
     mPostActionTimerId: {restart() { queryStarts++; }},
     mEventHandleId: {item: {systemInquire(...args) { queryCalls.push(args); }}},
     calls: []});
@@ -173,13 +180,13 @@ try {
   }
   factory.mFactoryRows.currentIndex = 19;
   factory.key_enter(0);
-  check(factory.mGlobalId.item.menuSettingsPageIndex === 0, 'Factory Back row');
+  check(factory.mGlobalId.item.menuSettingsSubPageItemSetup === 0, 'General settings Back row returns to the catalog');
   for (const name of ['key_back', 'key_left']) {
-    factory.mGlobalId.item.menuSettingsPageIndex = 1;
+    factory.mGlobalId.item.menuSettingsSubPageItemSetup = 5;
     factory[name](1); factory[name](2);
-    check(factory.mGlobalId.item.menuSettingsPageIndex === 1, name + ' press/hold');
+    check(factory.mGlobalId.item.menuSettingsSubPageItemSetup === 5, name + ' press/hold');
     factory[name](0);
-    check(factory.mGlobalId.item.menuSettingsPageIndex === 0, name + ' release');
+    check(factory.mGlobalId.item.menuSettingsSubPageItemSetup === 0, name + ' release');
   }
   factory.mFactoryRows.currentIndex = 0; factory.key_up(0);
   check(factory.mFactoryRows.currentIndex === 19, 'Factory wrap up');
@@ -397,7 +404,7 @@ try {
       replacement_utf16_bytes: Buffer.from(replacement, 'utf16le').length,
       original_utf16_bytes: Buffer.from(original, 'utf16le').length};
   });
-  report.pages = ['vnF.qml', 'vnU.qml'].map(name => ({path: 'patches/capture-04/etc/' + name,
+  report.pages = ['vnF.qml', 'vnB.qml', 'vnU.qml'].map(name => ({path: 'patches/capture-04/etc/' + name,
     sha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(pages, name))).digest('hex')}));
   report.source_verification = 'passed';
 } catch (error) {

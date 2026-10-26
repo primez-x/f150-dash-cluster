@@ -65,9 +65,10 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - Boot candidates remove automatic formatting after mount failure and stop later init scripts after critical mount failures.
 - Private-data migration restores the original directory after a failed mount. If rollback fails, the data remains in `/private-move`.
 - A failed copy preserves the migration backup. Independent review approved the boot candidates for a local commit.
-- New Factory and Units source pages pass 1,060 source assertions and 49 host Qt UI checks.
+- General settings and Units pass 1,062 source assertions. The catalog, General settings, and Units pass 120 host Qt checks.
 - Thirteen additional Qt checks execute the patched System Settings cache and verify route creation, removal, and recreation.
-- Native Qt fixture previews cover both pages at 1920×932 and 1920×720. Real vehicle rendering remains unverified.
+- Native Qt fixture previews cover all three pages at 1920×932 and 1920×720. Real vehicle rendering remains unverified.
+- The candidate clears all 13 vendor factory-menu code records and exposes labeled settings and diagnostic entries.
 - All six layouts have detailed specifications, coordinate schematics, and genuine assets under `handoff/claude-dashboard/`.
 
 ## Focused checks
@@ -143,16 +144,22 @@ Open `handoff/claude-dashboard/index.html` for the gallery. Schematics describe 
 
 Source replay verifies selected math and state transitions. Source replay does not verify Qt rendering, CAN interpretation, sensor calibration, or live vehicle behavior.
 
-The UI candidate redirects compiled loaders to four source files. The generator preserves native code, ELF geometry, and the other 196 cache units.
+The UI candidate redirects four compiled loaders and includes five source files.
+The generator clears 13 code records in the old factory gate. The generator preserves native code, ELF geometry, and the other 195 cache units.
 No custom dashboard update has been installed. Device-fork cache acceptance and wrapper startup remain unverified.
 
 The new Units page shows independent Manual/Follow state and exposes `followVehicleUnits()`. Host tests verify the controls with recorded native-call stubs.
 
-The new Factory page exposes the 19 existing controls through normal navigation. Stored credentials and authentication settings remain unchanged.
-Selecting the Factory row creates the page and schedules the vendor status query after 50 ms.
-Selecting Back removes the page. Selecting Factory again creates a new page and sends another query.
-The candidate replaces the normal Factory entry. The original PIN page and advanced odometer, shell, and update pages have no route from that entry.
-Vendor recovery and update access require separate checks before deployment.
+Factory opens a labeled menu without a code prompt. The menu exposes General, Advanced, tank, vehicle-profile, odometer, and service-command pages.
+The menu also exposes the existing USB debug, log mode, image preview, and model-option actions. Actions require explicit activation.
+The catalog preserves the vendor service-list query after 300 ms. General settings preserve the separate status query after 50 ms.
+General settings retain all 19 controls. Back returns to the catalog.
+Back returns to the menu where the page opened. Pages opened from Advanced return to Advanced.
+The old factory gate has no route from System Settings. All 13 former code literals are empty in the copied Launcher.
+Linux login credentials, keys, service defaults, and captured backups remain unchanged.
+Selecting a USB debug action can change USB debug state. Merely opening the menu leaves that state unchanged.
+Host Qt verifies the actual catalog and General page. The other vendor pages use safe route markers with recorded Back behavior.
+Native service semantics, vendor recovery, and update access still require vehicle checks before deployment.
 Cruise consolidation and compiled fuel-quality gates remain integration work. The review records current bindings across all six layouts.
 
 Boot candidates require target-shell and hardware checks before deployment. Launcher starts before the separate media mount in the captured boot order.
