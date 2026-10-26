@@ -16,8 +16,10 @@
   /* Trailer brake: gain is always visible; while the brake pedal is pressed, output segments light up to the live level. */
   .brake .top { display: flex; align-items: baseline; gap: 18px; margin-bottom: 14px; }
   .brake .top .rv { margin-left: auto; }
-  .brake .state { font: 600 var(--small) "BMW Type Global"; letter-spacing: 4px; color: var(--accent); visibility: hidden; }
-  .brake.on .state { visibility: visible; }
+  .brake .top > * { white-space: nowrap; }
+  .brake .state { font: 600 var(--small) "BMW Type Global"; letter-spacing: 4px; color: var(--accent); display: none; }
+  .brake.on .state { display: inline; }
+  .brake.on .top > .k { display: none; }
   .brake.on .top .rv { color: var(--accent); }
   .brake .segs { position: relative; display: flex; gap: 6px; height: 24px; }
   .brake .segs i { flex: 1; border-radius: 3px; background: rgba(255, 255, 255, .05); }
@@ -41,8 +43,8 @@
 <script src="../round-02/kit.js"></script>
 <script src="../round-04/kit4.js"></script>
 <script>
-// Left half from towing A: speed, gear, fuel, trailer brake. Right half from towing B: temperature columns
-// over tire pressures and the paged card.
+// Left half from towing A: speed, gear, and the paged card. Right half from towing B: temperature columns
+// over tire pressures, fuel, and trailer brake.
 const s = state("tow");
 s.pages = ["trip", "economy", "vehicle"];
 s.page = +(params.get("page") || 0) % s.pages.length;
@@ -56,8 +58,8 @@ place(`
   <div class="abs sunit" data-field="vehicleSpeedUnit">MPH</div>
   <div class="abs gdiv"></div>
   <div class="abs gblk">${gear(s, 120)}${chip(s)}</div>
-  ${fuel4(s, "left:200px;top:530px;width:660px")}
-  <div class="abs brake${s.braking ? " on" : ""}" style="left:200px;top:670px;width:660px"
+  ${card(s, "left:200px;top:584px;width:660px;height:176px")}
+  <div class="abs brake${s.braking ? " on" : ""}" style="left:1390px;top:704px;width:450px"
     data-field="trucksTrailerGain (setting); live output: no firmware field yet (brake pedal + controller output needed)">
     <div class="top"><span class="k">TRAILER BRAKE</span><span class="state">BRAKING</span>
       <span class="rv">${s.braking ? s.output.toFixed(1) : s.gain.toFixed(1)}<span class="u">${s.braking ? `of ${s.gain.toFixed(1)}` : "gain"}</span></span></div>
@@ -70,7 +72,7 @@ place(`
   <div class="abs cols">${["trans", "coolant", "oil", "diff"].map(k => { const T = s.T[k];
     return `<div class="tc temp ${T.state}" data-field="${T.field}">${tempText(T)}${tempCol(T, 180)}<div class="lab">${T.icon ? `${tIcon(T, 30)}<span class="k">${T.label}</span>` : tIcon(T)}</div></div>`; }).join("")}</div>
   ${tires4(s, 230, "left:990px;top:584px;width:360px")}
-  ${card(s, "left:1390px;top:600px;width:450px;height:200px")}`);
+  ${fuel4(s, "left:1390px;top:584px;width:450px")}`);
 finish(s);
 </script>
 </body>
