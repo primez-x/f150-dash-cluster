@@ -172,7 +172,7 @@ const fuel4 = (s, at) => fuel({ pct: s.fuel, range: s.range, at, light: fuelLigh
 const digits = n => String(n).split("").map(d => `<i>${d}</i>`).join("");
 
 // Daily A crescents: speed left, tachometer right, coolant and oil arcs inside. a0 is the speed zero angle; the tachometer mirrors.
-// With cruise set, a marker on the speed scale shows the set speed.
+// With cruise set, a marker on the speed scale shows the set speed in the cruise readout colour.
 function crescents(s, a0 = 238) {
   const sp = { cx: 800, cy: 470, r: 560, a0, a1: 305, max: 120 };
   let g = crescent({ ...sp, major: 10, labelStep: 20, value: s.speed, field: "speed", labelSide: 1 }) +
@@ -181,7 +181,7 @@ function crescents(s, a0 = 238) {
     tempArc({ cx: 1120, cy: 470, r: 470, from: 122, to: 70, T: s.T.oil });
   if (s.cruise === "set") {
     const a = sp.a0 + (sp.a1 - sp.a0) * s.cruiseSet / sp.max, p = (r, da = 0) => polar(sp.cx, sp.cy, r, a + da).map(v => v.toFixed(1)).join(" ");
-    g += `<path data-field="cruiseSpeedSet" d="M${p(sp.r + 30)} L${p(sp.r + 46, -1.4)} L${p(sp.r + 46, 1.4)} Z" fill="var(--accent)"/>`;
+    g += `<path data-field="cruiseSpeedSet" d="M${p(sp.r + 30)} L${p(sp.r + 46, -1.4)} L${p(sp.r + 46, 1.4)} Z" fill="var(--ok)"/>`;
   }
   return g;
 }

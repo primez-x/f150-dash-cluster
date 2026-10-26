@@ -6,12 +6,12 @@ async (page) => {
   const base = "http://127.0.0.1:8731/design/round-06/";
   const out = "design/round-06/shots/";
   const shots = [
-    ["daily-a-a", ["normal", "turn", "lowfuel", "lowtire"]],
-    ["daily-a-b", ["normal", "turn", "lowfuel", "lowtire"]],
-    ["daily-b-a", ["normal", "turn", "reserve"]],
-    ["daily-b-b", ["normal", "turn", "reserve"]],
-    ["tow-a", ["normal", "turn", "braking", "hottrans"]],
-    ["tow-b", ["normal", "turn", "braking", "hottrans"]],
+    ["daily-a-a", ["normal", "turn", "lowfuel", "lowtire", "stale"]],
+    ["daily-a-b", ["normal", "turn", "lowfuel", "lowtire", "stale"]],
+    ["daily-b-a", ["normal", "turn", "reserve", "stale"]],
+    ["daily-b-b", ["normal", "turn", "reserve", "stale"]],
+    ["tow-a", ["normal", "turn", "braking", "hottrans", "stale"]],
+    ["tow-b", ["normal", "turn", "braking", "hottrans", "stale"]],
   ];
   const errors = [];
   page.on("pageerror", e => errors.push(page.url() + ": " + e.message));
