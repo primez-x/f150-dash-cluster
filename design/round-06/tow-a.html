@@ -55,6 +55,7 @@ place(`
   <div class="abs grade" style="left:1390px;top:618px" data-field="mPitch (grade = tan pitch)"><span class="k">GRADE</span>
     <svg width="56" height="26"><path d="M2 24 L54 ${24 - 22 * Math.min(1, s.grade / 10)} L54 24 Z" fill="var(--accent-dim)" stroke="var(--accent)" stroke-width="2"/></svg>
     <span class="rv">+${s.grade}<span class="u">%</span></span></div>
+  ${boost(s, "left:660px;top:656px;width:240px")}
   ${cornerRead({ at: "left:64px;top:672px", label: "RPM", value: s.rpm.toLocaleString("en-US"), unit: "rpm", field: "tacho rpm" })}
   ${cornerRead({ side: "r", at: "right:64px;top:672px", label: s.braking ? `<span class="state">BRAKING</span>` : "TRAILER BRAKE",
     value: (s.braking ? s.output : s.gain).toFixed(1), unit: s.braking ? `of ${s.gain.toFixed(1)}` : "gain", cls: s.braking ? "on" : "", after: `<div class="segs">${segs}<b style="left:${s.gain * 10}%"></b></div>`,

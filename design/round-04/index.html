@@ -31,7 +31,8 @@
   <li>Speed digits sit in fixed-width cells, so the number never shifts sideways as the value changes.</li>
   <li>Cruise: on Daily A, a marker on the speed crescent shows the set speed. Daily B and Towing have no speed gauge and keep the top-center cruise readout.</li>
   <li>Night: add <code>?night=1</code>. Whites drop to about 75 % and the floor glow halves when the headlights are on (firmware <code>ill</code>). Warning colours stay full.</li>
-  <li>RPM: every RPM gauge reads one redline value (<code>REDLINE</code> in kit4.js, 6000 until confirmed for this engine) and the firmware scale <code>tachoSpeedMax</code> (6000 or 7000).</li>
+  <li>RPM: every RPM gauge reads one redline value (<code>REDLINE</code> in kit4.js: 6000 for the 3.5 EcoBoost. Ford publishes no tach redline; owner reports put the stock
+    tach marking at 5,800 to 6,200 and the rev limiter near 6,500. Check against the original Ford cluster face.) and the firmware scale <code>tachoSpeedMax</code> (6000 or 7000).</li>
   <li>Temperatures show real °F from <code>waterTemp</code>, <code>gearBoxTemp</code>, <code>oilTemp</code>, and <code>diffOilTemp</code>. Colour: blue cold, white normal, amber warm, red hot. A reading the truck does not send stays hidden.</li>
   <li>Background glow: the floor glow turns amber when any temperature is warm or the range drops to 50 miles. The glow turns red when any temperature is hot or the truck low-fuel light (alarm 151) comes on. Other alerts leave the glow alone.</li>
   <li>Fuel warning by range: the fuel gauge turns amber at 50 miles to empty, and the gauge marker shows where that point falls at the current economy. 50 miles is a design value.</li>

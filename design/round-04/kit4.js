@@ -24,9 +24,28 @@ function temp(kind, c) {
 const TCOL = { cold: "var(--cold)", normal: "var(--accent)", warm: "var(--warm)", hot: "var(--hot)" };
 const tempText = (T, deg = true) => `<span class="rv">${T.f}${deg && T.state !== "nodata" ? `<span class="deg">°F</span>` : ""}</span>`;
 
-// Engine redline: a design value until confirmed for this truck's engine. TACHO_MAX follows the firmware scale
-// setting tachoSpeedMax (6000 or 7000 RPM). Every RPM gauge reads both values from here.
+// Engine redline for the 3.5 EcoBoost. Ford publishes no tach redline; owner reports put the stock tach marking at
+// 5,800 to 6,200 RPM and the rev limiter near 6,500. Check against the original Ford cluster face or the owner's manual.
+// TACHO_MAX follows the firmware scale setting tachoSpeedMax (6000 or 7000 RPM). Every RPM gauge reads both values from here.
 const REDLINE = 6000, TACHO_MAX = 7000;
+
+// Boost (towing): manifold pressure above atmospheric, in psi on both sides of zero. The 2017+ 3.5 EcoBoost peaks near 16 psi.
+// Vacuum (closed throttle) fills left of the zero mark in quiet grey; boost fills right in the accent colour.
+// No firmware field reports boost yet: the gauge needs a new vehicle signal (protocol work).
+const BOOST_MIN = -10, BOOST_MAX = 20;
+function boost(s, at) {
+  const n = 15, step = (BOOST_MAX - BOOST_MIN) / n, b = s.boost;
+  const segs = Array.from({ length: n }, (_, i) => {
+    const c = BOOST_MIN + (i + .5) * step;
+    if (b == null) return "<i></i>";
+    if (b > 0 && c > 0 && c <= b) return `<i class="lit${c + step > b ? " head" : ""}"></i>`;
+    if (b < 0 && c < 0 && c >= b) return `<i class="vac"></i>`;
+    return "<i></i>";
+  }).join("");
+  return `<div class="abs boost${b == null ? " nodata" : ""}" style="${at}" data-field="boost: no firmware field yet (new vehicle signal needed)">
+    <div class="top"><span class="k">BOOST</span><span class="rv">${b == null ? "--" : b < 0 ? `−${-b}` : b}<span class="u">psi</span></span></div>
+    <div class="bseg">${segs}<b style="left:${-BOOST_MIN / (BOOST_MAX - BOOST_MIN) * 100}%"></b></div></div>`;
+}
 
 // Fuel warning by range: amber at LOW_RANGE miles to empty, red when the truck low-fuel light (alarm 151) comes on.
 // lowPct is the tank fraction where the amber band starts at the current economy.
@@ -46,14 +65,14 @@ const BASE = {
   tow: {
     mode: "tow", speed: 58, gear: "D", gearNum: 4, drive: "2H", rpm: 2600, fuel: 46, range: 188, cruise: "off", cruiseSet: 65, telltales: [90],
     temps: { trans: 93, coolant: 99, oil: 110, diff: 85 }, tires: [38, 38, 41, 41], low: -1, trip: "86.2", avg: "9.6", mpgNow: 8.9,
-    gain: 5.5, grade: 6, trailerMi: 342, brakeType: "Heavy", pages: ["trailer", "trip", "economy", "vehicle"],
+    boost: 9, gain: 5.5, grade: 6, trailerMi: 342, brakeType: "Heavy", pages: ["trailer", "trip", "economy", "vehicle"],
   },
 };
 const COLD = { coolant: 38, oil: 31, trans: 24, diff: 20 };
 const SCENES = {
   normal: s => s,
   turn: s => Object.assign(s, { turn: "l", cruise: "set" }),
-  cruise: s => Object.assign(s, { cruise: "set", speed: 64, rpm: 1900 }),
+  cruise: s => Object.assign(s, { cruise: "set", speed: 64, rpm: 1900, boost: 4 }),
   cold: s => Object.assign(s, { speed: 28, gearNum: 3, rpm: 1350, temps: Object.fromEntries(Object.keys(s.temps).map(k => [k, COLD[k]])) }),
   lowfuel: s => Object.assign(s, { fuel: Math.round(s.fuel * 45 / s.range), range: 45,
     alert: ["caution", ICON("fuel"), "FUEL LOW", "45 mi to empty", true] }),
@@ -62,9 +81,9 @@ const SCENES = {
   lowtire: s => Object.assign(s, { tires: [s.tires[0], s.tires[1], s.tires[2], 24], low: 3, telltales: [...s.telltales, 24],
     alert: ["caution", ALARM(24), "RIGHT REAR TIRE LOW", "24 psi"] }),
   // Live trailer braking. No firmware field reports pedal or controller output yet; see round 5 notes.
-  braking: s => Object.assign(s, { braking: true, output: 4, speed: 46, rpm: 1500 }),
+  braking: s => Object.assign(s, { braking: true, output: 4, speed: 46, rpm: 1500, boost: -9 }),
   warmcoolant: s => Object.assign(s, { temps: { ...s.temps, coolant: 110 } }),
-  hottrans: s => Object.assign(s, { rpm: 3400, gearNum: 3, grade: 8, telltales: [...s.telltales, 8], temps: { ...s.temps, trans: 124, diff: 114 },
+  hottrans: s => Object.assign(s, { rpm: 3400, gearNum: 3, grade: 8, boost: 15, telltales: [...s.telltales, 8], temps: { ...s.temps, trans: 124, diff: 114 },
     alert: ["warn", ICON("gearBoxTemp"), "TRANSMISSION HOT", `${c2f(124)} °F · reduce load or speed`] }),
   // Signal timeout: the truck stopped sending fuel and oil temperature. Readings show "--" instead of the last value.
   stale: s => Object.assign(s, { fuel: null, range: null, temps: { ...s.temps, oil: null } }),

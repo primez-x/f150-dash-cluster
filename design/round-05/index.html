@@ -16,12 +16,15 @@
 </head>
 <body>
 <h1>F150 cluster · Design round 5 · Towing hybrid</h1>
-<p>Left half from towing A: speed, gear, RPM, and the paged card (alerts take the card position). Right half from towing B: temperature columns over tire pressures, fuel, and trailer brake.
+<p>Left half from towing A: speed, gear, RPM beside boost, and the paged card. Right half from towing B: temperature columns over tire pressures, fuel, and trailer brake.
   Builds on the <a href="../round-04/">round 4</a> kit. Daily A and Daily B both stay as separate layouts.</p>
 <ul>
   <li>Trailer brake: the gain setting is always visible, with a marker on the output scale. While the brake pedal is pressed, the segments light up to the live output and the panel shows BRAKING.</li>
   <li>Data gap: the firmware has the gain setting (<code>trucksTrailerGain</code>) but no field for the brake pedal or the live controller output.
     The live display needs a new vehicle signal. That work belongs to the vehicle protocol side, not the design.</li>
+  <li>Boost: manifold pressure in psi on one scale from 10 psi vacuum to 20 psi boost. The 2017+ 3.5 EcoBoost peaks near 16 psi.
+    Boost fills right of the zero mark in the accent colour. Vacuum (closed throttle, as in the braking scene) fills left in quiet grey and reads as a negative value.</li>
+  <li>Data gap: the firmware has no boost or manifold pressure field. The gauge needs a new vehicle signal (vehicle protocol work).</li>
   <li>Background glow: amber when any temperature is warm or the range drops to 50 miles. Red when any temperature is hot or the truck low-fuel light comes on.</li>
   <li>Paged card: trailer (trailer miles, brake type), trip, fuel economy, and vehicle (oil pressure, oil life, battery). The trailer page shows first. Gain shows only on the trailer brake readout.</li>
   <li>Alerts, quiet normal temperatures, no-data readings, fixed-width speed digits, night mode, and the shared redline: see the <a href="../round-04/">round 4</a> notes.</li>
@@ -31,7 +34,7 @@
 <div class="grid">
   <div><h3>Normal</h3><a href="tow.html"><img src="shots/tow-normal.png" alt=""></a></div>
   <div><h3>Cruise set 65: shared cruise region, top center</h3><a href="tow.html?scene=cruise"><img src="shots/tow-cruise.png" alt=""></a></div>
-  <div><h3>Braking: output 4.0 of gain 5.5</h3><a href="tow.html?scene=braking"><img src="shots/tow-braking.png" alt=""></a></div>
+  <div><h3>Braking: output 4.0 of gain 5.5, boost in vacuum</h3><a href="tow.html?scene=braking"><img src="shots/tow-braking.png" alt=""></a></div>
   <div><h3>Coolant warm: amber glow</h3><a href="tow.html?scene=warmcoolant"><img src="shots/tow-warmcoolant.png" alt=""></a></div>
   <div><h3>Grade, transmission hot, diff warm: red glow</h3><a href="tow.html?scene=hottrans"><img src="shots/tow-hottrans.png" alt=""></a></div>
   <div><h3>45 miles to empty: amber glow</h3><a href="tow.html?scene=lowfuel"><img src="shots/tow-lowfuel.png" alt=""></a></div>
