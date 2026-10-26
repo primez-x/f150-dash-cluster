@@ -1,0 +1,323 @@
+{
+  "schema": "test-evidence-provenance-v2",
+  "date": "2026-10-26",
+  "scope": "Three unchanged source files, one comment-sanitized source file, reduced menu functions and loader records, ELF layout, and empty QRC paths.",
+  "source_root": "project-relative paths",
+  "files": [
+    {
+      "path": "etc/common/Global.qml",
+      "source": "installed/capture-04/rootfs/etc/common/Global.qml",
+      "source_bytes": 132820,
+      "source_sha256": "9b10180c27800e96d423dc6dcc709db537bacc3edcf33d609d9fbe6f680e4578",
+      "export_bytes": 132820,
+      "export_sha256": "9b10180c27800e96d423dc6dcc709db537bacc3edcf33d609d9fbe6f680e4578",
+      "recipe": "Byte-for-byte copy; no substitutions or normalization.",
+      "vendor_path": "extracted/latest/dashboard/etc/common/Global.qml",
+      "vendor_match": true,
+      "screening": {
+        "root_review": "Selected static code and reduced metadata reviewed for public Git selection.",
+        "reviewed_date": "2026-10-26",
+        "boundary": "No account files, network configurations, runtime settings, or binary payloads selected. Vendor rights remain unchanged.",
+        "categories": [
+          "private_key_header",
+          "email",
+          "credential_literal",
+          "token_shape"
+        ],
+        "matches": 0
+      }
+    },
+    {
+      "path": "etc/common/VehicleEvent.qml",
+      "source": "installed/capture-04/rootfs/etc/common/VehicleEvent.qml",
+      "source_bytes": 100138,
+      "source_sha256": "29678894ca9c384a519c4532fa259838c7c50646fbf927f016616cdc95d2529a",
+      "export_bytes": 100108,
+      "export_sha256": "81c905e26cf9564a6ba010727939c9c8b94535b96a62eb812985e1fefd2666ea",
+      "recipe": "Copy source bytes, then replace one vendor menu-code comment with a credential-free USB preview comment. No executable statements change.",
+      "vendor_path": "extracted/latest/dashboard/etc/common/VehicleEvent.qml",
+      "vendor_match": false,
+      "screening": {
+        "root_review": "Selected static code and reduced metadata reviewed for public Git selection.",
+        "reviewed_date": "2026-10-26",
+        "boundary": "No account files, network configurations, runtime settings, or binary payloads selected. Vendor rights remain unchanged.",
+        "categories": [
+          "private_key_header",
+          "email",
+          "credential_literal",
+          "token_shape"
+        ],
+        "matches": 0
+      },
+      "sanitization": {
+        "category": "factory_menu_code_in_comment",
+        "comments_replaced": 1,
+        "executable_changes": 0
+      },
+      "original_source_matches_vendor": true
+    },
+    {
+      "path": "etc/init.d/S01private",
+      "source": "installed/capture-04/rootfs/etc/init.d/S01private",
+      "source_bytes": 1048,
+      "source_sha256": "4de41b347cf8d0fa12ddff14d7c1d3fe09df5a420000a42c271f9885fedc94b8",
+      "export_bytes": 1048,
+      "export_sha256": "4de41b347cf8d0fa12ddff14d7c1d3fe09df5a420000a42c271f9885fedc94b8",
+      "recipe": "Byte-for-byte copy; no substitutions or normalization.",
+      "vendor_path": "extracted/latest/dashboard/etc/init.d/S01private",
+      "vendor_match": true,
+      "screening": {
+        "root_review": "Selected static code and reduced metadata reviewed for public Git selection.",
+        "reviewed_date": "2026-10-26",
+        "boundary": "No account files, network configurations, runtime settings, or binary payloads selected. Vendor rights remain unchanged.",
+        "categories": [
+          "private_key_header",
+          "email",
+          "credential_literal",
+          "token_shape"
+        ],
+        "matches": 0
+      }
+    },
+    {
+      "path": "etc/init.d/S90mount",
+      "source": "installed/capture-04/rootfs/etc/init.d/S90mount",
+      "source_bytes": 673,
+      "source_sha256": "f8c8c8d313d0d65fc85e6419503dceac000ab8589e0ef67a821406857d188297",
+      "export_bytes": 673,
+      "export_sha256": "f8c8c8d313d0d65fc85e6419503dceac000ab8589e0ef67a821406857d188297",
+      "recipe": "Byte-for-byte copy; no substitutions or normalization.",
+      "vendor_path": "extracted/latest/dashboard/etc/init.d/S90mount",
+      "vendor_match": true,
+      "screening": {
+        "root_review": "Selected static code and reduced metadata reviewed for public Git selection.",
+        "reviewed_date": "2026-10-26",
+        "boundary": "No account files, network configurations, runtime settings, or binary payloads selected. Vendor rights remain unchanged.",
+        "categories": [
+          "private_key_header",
+          "email",
+          "credential_literal",
+          "token_shape"
+        ],
+        "matches": 0
+      }
+    },
+    {
+      "path": "menu-system-units-key-enter.json",
+      "source": "analysis/capture-04/qml-cache/073-Trucks_menu_system_MenuSystemUnits.qml.json",
+      "source_bytes": 234588,
+      "source_sha256": "f6efb07133345d7aa9b4bc9bfe3a51db345719d9c3d0742debd5f1994e71ea33",
+      "export_bytes": 38759,
+      "export_sha256": "eb72edffff619067bfaae4250a4ea27782c22da4ff4dc2bdb022637cb6e2f887",
+      "compiled_unit_sha256": "576a56deb0b8266c09373253a408ab5341dc34f061fb9feb450897d507c82e42",
+      "recipe": "Retain only key_enter. Preserve index, name, source location, native code offset, code hash, and resolved bytecode. Omit other functions and the unit string table.",
+      "schema": "decoded-qml-function-fixture-v1",
+      "function_fields": [
+        "index",
+        "name",
+        "location",
+        "code_file_offset",
+        "code_sha256",
+        "bytecode"
+      ],
+      "function_index": 5,
+      "instructions": 177,
+      "runtime_data": "Compiled function metadata only. No captured runtime values.",
+      "screening": {
+        "root_review": "Selected static code and reduced metadata reviewed for public Git selection.",
+        "reviewed_date": "2026-10-26",
+        "boundary": "No account files, network configurations, runtime settings, or binary payloads selected. Vendor rights remain unchanged.",
+        "categories": [
+          "private_key_header",
+          "email",
+          "credential_literal",
+          "token_shape"
+        ],
+        "matches": 0
+      }
+    },
+    {
+      "path": "factory-generic-key-enter.json",
+      "source": "analysis/capture-04/qml-cache/085-Trucks_menu_system_factory_FactoryGenericSetup.qml.json",
+      "source_bytes": 437808,
+      "source_sha256": "6b19ec3407da3cfa8c33c17d03df401ca851ce81ada40a79d3d137ef9195560c",
+      "export_bytes": 18470,
+      "export_sha256": "1cf40b0791ca270ae57e169cd180524a59cccfce1c8662122d205edbfb4a19c4",
+      "compiled_unit_sha256": "4f23890baaa8453c85bd51e09d133afd1dde25396b0931f440910ddd0aad63ca",
+      "recipe": "Select key_enter and the 19 row-state bindings. Preserve row source locations, function/code hashes, and resolved expressions. Include the decoded Translation state-array expression with source and unit hashes. Omit other functions and string tables.",
+      "schema": "decoded-qml-function-fixture-v1",
+      "function_fields": [
+        "index",
+        "name",
+        "location",
+        "code_file_offset",
+        "code_sha256",
+        "bytecode"
+      ],
+      "function_index": 5,
+      "instructions": 53,
+      "runtime_data": "Compiled metadata only. No captured runtime values.",
+      "screening": {
+        "factory_gate_exported": false,
+        "full_unit_string_table_exported": false,
+        "root_review": "Selected static code and reduced metadata reviewed for public Git selection.",
+        "reviewed_date": "2026-10-26",
+        "boundary": "No account files, network configurations, runtime settings, or binary payloads selected. Vendor rights remain unchanged.",
+        "categories": [
+          "private_key_header",
+          "email",
+          "credential_literal",
+          "token_shape"
+        ],
+        "matches": 0
+      }
+    },
+    {
+      "path": "system-settings-loaders.json",
+      "source": "analysis/capture-04/qml-cache/074-Trucks_menu_system_MenuSystemSettings.qml.json",
+      "source_bytes": 345801,
+      "source_sha256": "aa7f79766599899f594c9fb577f1acc5536cb91771df7350e32f29c5562e8532",
+      "export_bytes": 526,
+      "export_sha256": "7d0f7b4818399c4f54a8dea583cbbd82870406aac50b83cdfdbbdd9e63477008",
+      "compiled_unit_sha256": "a3e8cb96d9a00fa33178218ac0bdaee0fbe9710a77e4d4dfeba3534870f807a1",
+      "recipe": "Retain MenuSystemSettings qrc path and compiled-unit SHA-256. Select only the Factory and Units loader string records. Preserve index, unit offset, file offset, and value. Omit all functions and other strings.",
+      "schema": "decoded-qml-loader-fixture-v1",
+      "string_fields": [
+        "index",
+        "unit_offset",
+        "file_offset",
+        "value"
+      ],
+      "string_count": 2,
+      "verification_boundary": "Decoded metadata only. No Launcher bytes enter this fixture.",
+      "runtime_data": "Compiled metadata only. No captured runtime values.",
+      "screening": {
+        "factory_gate_exported": false,
+        "full_unit_string_table_exported": false,
+        "root_review": "Selected static code and reduced metadata reviewed for public Git selection.",
+        "reviewed_date": "2026-10-26",
+        "boundary": "No account files, network configurations, runtime settings, or binary payloads selected. Vendor rights remain unchanged.",
+        "categories": [
+          "private_key_header",
+          "email",
+          "credential_literal",
+          "token_shape"
+        ],
+        "matches": 0
+      }
+    },
+    {
+      "path": "launcher-layout.json",
+      "source": "launcher-static.json",
+      "source_bytes": 19999,
+      "source_sha256": "1a78d5773980ba875b2f42fd94586c8e17b47c055eb7abdcac60b75857b3cbf7",
+      "recipe": "Retain only ELF section name, virtual address, file offset, and size. Omit symbols, strings, disassembly, and historical machine paths.",
+      "source_launcher_sha256": "2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b",
+      "runtime_data": "Static binary metadata only.",
+      "export_bytes": 3803,
+      "export_sha256": "c8e0ef53d6f8317b444a58254c093642e34c7a5f89084420117fe4817cc32bab",
+      "screening": {
+        "categories": [
+          "private_key_header",
+          "email",
+          "credential_literal",
+          "token_shape"
+        ],
+        "matches": 0,
+        "root_review": "Selected static code and reduced metadata reviewed for public Git selection.",
+        "reviewed_date": "2026-10-26",
+        "boundary": "No account files, network configurations, runtime settings, or binary payloads selected. Vendor rights remain unchanged."
+      }
+    },
+    {
+      "path": "qml-placeholders.json",
+      "source": "launcher-cache-resource-inventory.json",
+      "source_bytes": 28071,
+      "source_sha256": "12aa67cbe5f2c8a920a878e8efd128232c477f12d9c8c1a19893cccf31939d2d",
+      "recipe": "Retain only the 198 empty QRC placeholder paths and stored_size values. Omit registration addresses, flags, file offsets, and historical machine paths.",
+      "source_launcher_sha256": "2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b",
+      "runtime_data": "Static binary metadata only.",
+      "export_bytes": 17557,
+      "export_sha256": "3902551cf01897a91e8d223d10fdc0e1b8d1a267977a724c233dabe4d9cc2975",
+      "screening": {
+        "categories": [
+          "private_key_header",
+          "email",
+          "credential_literal",
+          "token_shape"
+        ],
+        "matches": 0,
+        "root_review": "Selected static code and reduced metadata reviewed for public Git selection.",
+        "reviewed_date": "2026-10-26",
+        "boundary": "No account files, network configurations, runtime settings, or binary payloads selected. Vendor rights remain unchanged."
+      }
+    },
+    {
+      "path": "mode-key-functions.json",
+      "sources": [
+        {
+          "source": "analysis/capture-04/qml-cache/085-Trucks_menu_system_factory_FactoryGenericSetup.qml.json",
+          "source_sha256": "6b19ec3407da3cfa8c33c17d03df401ca851ce81ada40a79d3d137ef9195560c"
+        },
+        {
+          "source": "analysis/capture-04/qml-cache/073-Trucks_menu_system_MenuSystemUnits.qml.json",
+          "source_sha256": "f6efb07133345d7aa9b4bc9bfe3a51db345719d9c3d0742debd5f1994e71ea33"
+        }
+      ],
+      "recipe": "Select key_modes from FactoryGenericSetup and MenuSystemUnits. Retain unit path and hash, function index, name, source location, code offset, code hash, and resolved bytecode. Omit other functions and string tables.",
+      "runtime_data": "Compiled function metadata only. No captured runtime values.",
+      "export_bytes": 10555,
+      "export_sha256": "f143b3ecbf011dd3427f1444b11383fe00ba8ec2cb3b6a2f68f425cacce68d3c",
+      "screening": {
+        "categories": [
+          "private_key_header",
+          "email",
+          "credential_literal",
+          "token_shape"
+        ],
+        "matches": 0,
+        "root_review": "Selected static code and reduced metadata reviewed for public Git selection.",
+        "reviewed_date": "2026-10-26",
+        "boundary": "No account files, network configurations, runtime settings, or binary payloads selected. Vendor rights remain unchanged."
+      }
+    },
+    {
+      "path": "settings-page-lifecycle.json",
+      "sources": [
+        {
+          "source": "analysis/capture-04/qml-cache/085-Trucks_menu_system_factory_FactoryGenericSetup.qml.json",
+          "source_sha256": "6b19ec3407da3cfa8c33c17d03df401ca851ce81ada40a79d3d137ef9195560c"
+        },
+        {
+          "source": "analysis/capture-04/qml-cache/073-Trucks_menu_system_MenuSystemUnits.qml.json",
+          "source_sha256": "f6efb07133345d7aa9b4bc9bfe3a51db345719d9c3d0742debd5f1994e71ea33"
+        }
+      ],
+      "recipe": "Select Factory and Units root/view completion functions and the Factory initial-query timer. Preserve resolved instructions, code hashes, timer bindings, unit identity, and source locations. Omit other functions and unit string tables.",
+      "runtime_data": "Compiled function and timer metadata only. No captured runtime values.",
+      "export_bytes": 19991,
+      "export_sha256": "624ca9646190d349c685a6244bd237894cbfbe31c4dd26835c6a762f10c0bba6",
+      "screening": {
+        "categories": [
+          "private_key_header",
+          "email",
+          "credential_literal",
+          "token_shape"
+        ],
+        "matches": 0,
+        "root_review": "Selected static code and reduced metadata reviewed for public Git selection.",
+        "reviewed_date": "2026-10-26",
+        "boundary": "No account files, network configurations, runtime settings, or binary payloads selected. Vendor rights remain unchanged."
+      }
+    }
+  ],
+  "screening_limit": "Pattern checks and root content review cover selected static files. Neither method proves complete absence of unknown secrets.",
+  "sensitive_reference_note": "Global.qml contains an mSSID identifier without a credential literal. Shared QML bytes match the vendor baseline.",
+  "export_count": 11,
+  "export_bytes": 344310,
+  "qt_source_provenance": {
+    "path": "evidence/qt-5.14.2/PROVENANCE.json",
+    "sha256": "e3206d3bcc37615364a13d98dde7311a4204de442978f66f30da027f133310e2",
+    "scope": "Official opcode header and three unchanged upstream license texts. Each upstream file has a hash and URL in PROVENANCE.json."
+  }
+}

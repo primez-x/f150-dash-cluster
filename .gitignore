@@ -7,17 +7,39 @@
 !/CLAUDE.md
 !/tools/decode_qml_units.py
 !/tools/export_layouts.py
+!/tools/prepare_ui_candidate.py
 !/tests/*.cjs
 !/tests/*.py
+!/tests/qt-host-requirements.txt
+!/evidence/fixtures/capture-04/manifest.json
+!/evidence/fixtures/capture-04/etc/common/Global.qml
+!/evidence/fixtures/capture-04/etc/common/VehicleEvent.qml
+!/evidence/fixtures/capture-04/etc/init.d/S01private
+!/evidence/fixtures/capture-04/etc/init.d/S90mount
+!/evidence/fixtures/capture-04/menu-system-units-key-enter.json
+!/evidence/fixtures/capture-04/factory-generic-key-enter.json
+!/evidence/fixtures/capture-04/system-settings-loaders.json
+!/evidence/fixtures/capture-04/mode-key-functions.json
+!/evidence/fixtures/capture-04/settings-page-lifecycle.json
+!/evidence/fixtures/capture-04/launcher-layout.json
+!/evidence/fixtures/capture-04/qml-placeholders.json
+!/evidence/qt-5.14.2/PROVENANCE.json
+!/evidence/qt-5.14.2/qv4instr_moth_p.h
+!/evidence/qt-5.14.2/LICENSE.LGPL3
+!/evidence/qt-5.14.2/LICENSE.GPL2
+!/evidence/qt-5.14.2/LICENSE.GPL3
 !/patches/capture-04/etc/common/Global.qml
 !/patches/capture-04/etc/common/VehicleEvent.qml
 !/patches/capture-04/etc/init.d/S01private
 !/patches/capture-04/etc/init.d/S90mount
 !/patches/capture-04/etc/init.d/rcS
+!/patches/capture-04/etc/vnF.qml
+!/patches/capture-04/etc/vnU.qml
 !/handoff/claude-dashboard/**
 !/design/**
 
-# Firmware, captures, private settings, decoded credentials, and local tools stay local.
+# Raw captures, private settings, credentials, and local runtimes remain local.
+/tools/qt-host/
 *.env
 .env*
 *.sqlite

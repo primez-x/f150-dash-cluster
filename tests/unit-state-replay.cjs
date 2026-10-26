@@ -7,9 +7,9 @@ const crypto = require('node:crypto');
 const base = path.resolve(__dirname, '..');
 const phase = process.argv[2];
 if (!['original', 'patched'].includes(phase)) throw new Error('Use original or patched');
-const folder = path.join(base, phase === 'original' ? 'installed/capture-04/rootfs/etc/common' : 'patches/capture-04/etc/common');
+const folder = path.join(base, phase === 'original' ? 'evidence/fixtures/capture-04/etc/common' : 'patches/capture-04/etc/common');
 const texts = Object.fromEntries(['Global.qml', 'VehicleEvent.qml'].map(name => [name, fs.readFileSync(path.join(folder, name), 'utf8')]));
-const menu = JSON.parse(fs.readFileSync(path.join(base, 'analysis/capture-04/qml-cache/073-Trucks_menu_system_MenuSystemUnits.qml.json'))).functions.find(fn => fn.name === 'key_enter');
+const menu = JSON.parse(fs.readFileSync(path.join(base, 'evidence/fixtures/capture-04/menu-system-units-key-enter.json'))).functions.find(fn => fn.name === 'key_enter');
 function extract(text, marker) {
   const start = text.indexOf(marker);
   if (start < 0 || text.indexOf(marker, start + marker.length) >= 0) throw new Error('Expected one source marker: ' + marker);
@@ -224,6 +224,7 @@ results.failureModes = ['A native unit snapshot overwrites an independent manual
 results.scope = 'Actual QML source functions and handlers in Node VM. Decoded runtime menu instructions drive selections. Mock native unit snapshots reproduce overwrite conditions. No Qt lifecycle, MCU response, or device proof.';
 results.menu = {code_file_offset: menu.code_file_offset, code_sha256: menu.code_sha256, speedBranch: [229, 275], temperatureBranch: [277, 323]};
 results[phase] = {source: folder, hashes: Object.fromEntries(Object.entries(texts).map(([name, text]) => [name, crypto.createHash('sha256').update(text).digest('hex')])), count: rows.length, passed: rows.filter(row => row.pass).length, failed: rows.filter(row => !row.pass).length, sequences, rows};
+fs.mkdirSync(path.dirname(resultPath), {recursive: true});
 fs.writeFileSync(resultPath, JSON.stringify(results, null, 2) + '\n');
 console.log(JSON.stringify({phase, count: rows.length, passed: results[phase].passed, failed: results[phase].failed, resultPath}));
 if (phase === 'patched' && results[phase].failed) process.exitCode = 1;

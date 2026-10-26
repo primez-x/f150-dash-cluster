@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-INSTALLED = ROOT / "installed" / "capture-04" / "rootfs" / "etc" / "init.d"
+INSTALLED = ROOT / "evidence" / "fixtures" / "capture-04" / "etc" / "init.d"
 CANDIDATE = ROOT / "patches" / "capture-04" / "etc" / "init.d"
 RESULT = ROOT / "analysis" / "capture-04" / "mount-safeguard-results.json"
 COMMANDS = ("mount", "e2fsck", "mkfs.ext4", "mkdir", "rmdir", "rm", "mv", "cp", "ln", "sync")

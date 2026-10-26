@@ -93,7 +93,7 @@ Item {
         //=============================
         nologo: Number(mNoLogo)
         //=============================
-        // 美工透過U盤預覽圖片 (工廠密碼 8001)
+        // USB image preview.
         //=============================
         showImage: mGlobalId.item.mediaImageEnabled
         // mcu simulation

@@ -468,7 +468,7 @@ def cache_registry(binary):
     registers = {"x29": 0x10000000000000, "sp": 0x10000000000060}
     memory = {}
     pairs = []
-    sections = json.loads((BASE / "launcher-static.json").read_text(encoding="utf-8"))["sections"]
+    sections = json.loads((BASE / "evidence/fixtures/capture-04/launcher-layout.json").read_text(encoding="utf-8"))["sections"]
 
     def file_offset(address):
         for section in sections:
@@ -637,11 +637,11 @@ def main():
     original = args.source.read_bytes()
     verify_identity(original)
     args.output.mkdir(parents=True, exist_ok=True)
-    schema = opcode_schema(args.output / "qv4instr_moth_p.h")
+    schema = opcode_schema(BASE / "evidence/qt-5.14.2/qv4instr_moth_p.h")
     registry = cache_registry(original)
     write_json(args.output / "registry.json", registry)
     path_by_offset = {row["unit_file_offset"]: row["qrc_path"] for row in registry}
-    inventory = json.loads((BASE / "launcher-cache-resource-inventory.json").read_text(encoding="utf-8"))
+    inventory = json.loads((BASE / "evidence/fixtures/capture-04/qml-placeholders.json").read_text(encoding="utf-8"))
     expected = {row["path"] for row in inventory["files"]}
     require(len(expected) == len(inventory["files"]) and all(row["stored_size"] == 0 for row in inventory["files"]), "invalid placeholder inventory")
     starts = [m.start() for m in re.finditer(b"qv4cdata", original)]

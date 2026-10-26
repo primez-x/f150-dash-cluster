@@ -1,0 +1,425 @@
+{
+  "schema": "decoded-qml-mode-functions-fixture-v1",
+  "units": [
+    {
+      "qrc_path": "Trucks/menu/system/factory/FactoryGenericSetup.qml",
+      "compiled_unit_sha256": "4f23890baaa8453c85bd51e09d133afd1dde25396b0931f440910ddd0aad63ca",
+      "functions": [
+        {
+          "index": 6,
+          "name": "key_modes",
+          "location": {
+            "line": 113,
+            "column": 4
+          },
+          "code_file_offset": 4774840,
+          "code_sha256": "b57f66e18855fd947d293606d5b1a00dc8ff0c62b86083ec3d742e4f2e3927a6",
+          "bytecode": [
+            {
+              "offset": 0,
+              "size": 1,
+              "opcode": 6,
+              "name": "LoadZero",
+              "args": {}
+            },
+            {
+              "offset": 1,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 6
+              }
+            },
+            {
+              "offset": 3,
+              "size": 2,
+              "opcode": 74,
+              "name": "JumpTrue",
+              "args": {
+                "offset": 14
+              },
+              "target_offset": 19
+            },
+            {
+              "offset": 5,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 1
+              }
+            },
+            {
+              "offset": 7,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 6
+              }
+            },
+            {
+              "offset": 9,
+              "size": 2,
+              "opcode": 74,
+              "name": "JumpTrue",
+              "args": {
+                "offset": 13
+              },
+              "target_offset": 24
+            },
+            {
+              "offset": 11,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 2
+              }
+            },
+            {
+              "offset": 13,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 6
+              }
+            },
+            {
+              "offset": 15,
+              "size": 2,
+              "opcode": 74,
+              "name": "JumpTrue",
+              "args": {
+                "offset": 9
+              },
+              "target_offset": 26
+            },
+            {
+              "offset": 17,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 15
+              },
+              "target_offset": 34
+            },
+            {
+              "offset": 19,
+              "size": 4,
+              "opcode": 176,
+              "name": "CallQmlContextPropertyLookup",
+              "args": {
+                "index": 37,
+                "argc": 1,
+                "argv": 6
+              },
+              "references": {
+                "index": "key_down"
+              }
+            },
+            {
+              "offset": 23,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            },
+            {
+              "offset": 24,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 8
+              },
+              "target_offset": 34
+            },
+            {
+              "offset": 26,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 9,
+                "destTemp": 10
+              },
+              "references": {
+                "constIndex": {
+                  "index": 9,
+                  "unit_offset": 2136,
+                  "kind": "int32",
+                  "value": 0
+                }
+              }
+            },
+            {
+              "offset": 29,
+              "size": 4,
+              "opcode": 176,
+              "name": "CallQmlContextPropertyLookup",
+              "args": {
+                "index": 38,
+                "argc": 1,
+                "argv": 10
+              },
+              "references": {
+                "index": "key_enter"
+              }
+            },
+            {
+              "offset": 33,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            },
+            {
+              "offset": 34,
+              "size": 1,
+              "opcode": 6,
+              "name": "LoadZero",
+              "args": {}
+            },
+            {
+              "offset": 35,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            },
+            {
+              "offset": 36,
+              "size": 2,
+              "opcode": 22,
+              "name": "LoadReg",
+              "args": {
+                "reg": 7
+              }
+            },
+            {
+              "offset": 38,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "qrc_path": "Trucks/menu/system/MenuSystemUnits.qml",
+      "compiled_unit_sha256": "576a56deb0b8266c09373253a408ab5341dc34f061fb9feb450897d507c82e42",
+      "functions": [
+        {
+          "index": 6,
+          "name": "key_modes",
+          "location": {
+            "line": 174,
+            "column": 5
+          },
+          "code_file_offset": 4631576,
+          "code_sha256": "63305b858b6f715474177214d6b0a23a925a8dc51eef99d3ba7401a04d1f9ef3",
+          "bytecode": [
+            {
+              "offset": 0,
+              "size": 1,
+              "opcode": 6,
+              "name": "LoadZero",
+              "args": {}
+            },
+            {
+              "offset": 1,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 6
+              }
+            },
+            {
+              "offset": 3,
+              "size": 2,
+              "opcode": 74,
+              "name": "JumpTrue",
+              "args": {
+                "offset": 14
+              },
+              "target_offset": 19
+            },
+            {
+              "offset": 5,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 1
+              }
+            },
+            {
+              "offset": 7,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 6
+              }
+            },
+            {
+              "offset": 9,
+              "size": 2,
+              "opcode": 74,
+              "name": "JumpTrue",
+              "args": {
+                "offset": 13
+              },
+              "target_offset": 24
+            },
+            {
+              "offset": 11,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 2
+              }
+            },
+            {
+              "offset": 13,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 6
+              }
+            },
+            {
+              "offset": 15,
+              "size": 2,
+              "opcode": 74,
+              "name": "JumpTrue",
+              "args": {
+                "offset": 9
+              },
+              "target_offset": 26
+            },
+            {
+              "offset": 17,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 15
+              },
+              "target_offset": 34
+            },
+            {
+              "offset": 19,
+              "size": 4,
+              "opcode": 176,
+              "name": "CallQmlContextPropertyLookup",
+              "args": {
+                "index": 86,
+                "argc": 1,
+                "argv": 6
+              },
+              "references": {
+                "index": "key_down"
+              }
+            },
+            {
+              "offset": 23,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            },
+            {
+              "offset": 24,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 8
+              },
+              "target_offset": 34
+            },
+            {
+              "offset": 26,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 8,
+                "destTemp": 10
+              },
+              "references": {
+                "constIndex": {
+                  "index": 8,
+                  "unit_offset": 1072,
+                  "kind": "int32",
+                  "value": 0
+                }
+              }
+            },
+            {
+              "offset": 29,
+              "size": 4,
+              "opcode": 176,
+              "name": "CallQmlContextPropertyLookup",
+              "args": {
+                "index": 87,
+                "argc": 1,
+                "argv": 10
+              },
+              "references": {
+                "index": "key_enter"
+              }
+            },
+            {
+              "offset": 33,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            },
+            {
+              "offset": 34,
+              "size": 1,
+              "opcode": 6,
+              "name": "LoadZero",
+              "args": {}
+            },
+            {
+              "offset": 35,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            },
+            {
+              "offset": 36,
+              "size": 2,
+              "opcode": 22,
+              "name": "LoadReg",
+              "args": {
+                "reg": 7
+              }
+            },
+            {
+              "offset": 38,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

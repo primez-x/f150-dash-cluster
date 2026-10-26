@@ -1,0 +1,44 @@
+{
+  "schema": "qt-source-provenance-v1",
+  "upstream": "Qt Project qtdeclarative",
+  "tag": "v5.14.2",
+  "copyright": "Copyright (C) 2016 The Qt Company Ltd.",
+  "purpose": "The decoder reads the opcode declarations. No Qt library binary is included.",
+  "notice": "The header retains original copyright and license notices without modification.",
+  "license_alternatives": "The original header offers commercial, LGPLv3, and GPLv2/GPLv3 alternatives. No vendor firmware license changes result from this source copy.",
+  "license_texts": "Original header names LICENSE.LGPL3, LICENSE.GPL2, and LICENSE.GPL3. These files preserve the official Qt tag bytes.",
+  "local_header_source": "analysis/capture-04/qml-cache/qv4instr_moth_p.h",
+  "local_header_sha256": "8bebbf3d469b5b5ce56f9f11e14b0af8d48418edd6296b9bc974d381f7d1391c",
+  "official_header_byte_match": true,
+  "retrieved_utc_date": "2026-10-26",
+  "files": [
+    {
+      "path": "qv4instr_moth_p.h",
+      "bytes": 24284,
+      "sha256": "8bebbf3d469b5b5ce56f9f11e14b0af8d48418edd6296b9bc974d381f7d1391c",
+      "source_url": "https://raw.githubusercontent.com/qt/qtdeclarative/v5.14.2/src/qml/compiler/qv4instr_moth_p.h",
+      "modifications": "None"
+    },
+    {
+      "path": "LICENSE.LGPL3",
+      "bytes": 7651,
+      "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768",
+      "source_url": "https://raw.githubusercontent.com/qt/qtdeclarative/v5.14.2/LICENSE.LGPL3",
+      "modifications": "None"
+    },
+    {
+      "path": "LICENSE.GPL2",
+      "bytes": 18092,
+      "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+      "source_url": "https://raw.githubusercontent.com/qt/qtdeclarative/v5.14.2/LICENSE.GPL2",
+      "modifications": "None"
+    },
+    {
+      "path": "LICENSE.GPL3",
+      "bytes": 35147,
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "source_url": "https://raw.githubusercontent.com/qt/qtdeclarative/v5.14.2/LICENSE.GPL3",
+      "modifications": "None"
+    }
+  ]
+}

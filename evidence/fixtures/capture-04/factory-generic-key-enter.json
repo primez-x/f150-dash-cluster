@@ -1,0 +1,772 @@
+{
+  "schema": "decoded-qml-function-fixture-v1",
+  "qrc_path": "Trucks/menu/system/factory/FactoryGenericSetup.qml",
+  "compiled_unit_sha256": "4f23890baaa8453c85bd51e09d133afd1dde25396b0931f440910ddd0aad63ca",
+  "functions": [
+    {
+      "index": 5,
+      "name": "key_enter",
+      "location": {
+        "line": 89,
+        "column": 4
+      },
+      "code_file_offset": 4774608,
+      "code_sha256": "368bbb0d7e697c6a6fa853421cbcff92e7fc75792fa7a4af369b1c353a05d501",
+      "bytecode": [
+        {
+          "offset": 0,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 23
+          },
+          "references": {
+            "index": "mMenuFuncId"
+          }
+        },
+        {
+          "offset": 2,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 14
+          }
+        },
+        {
+          "offset": 4,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 24
+          },
+          "references": {
+            "index": "mMenuFuncId"
+          }
+        },
+        {
+          "offset": 6,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 25
+          },
+          "references": {
+            "index": "currentIndex"
+          }
+        },
+        {
+          "offset": 8,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 17
+          }
+        },
+        {
+          "offset": 10,
+          "size": 5,
+          "opcode": 166,
+          "name": "CallPropertyLookup",
+          "args": {
+            "lookupIndex": 26,
+            "base": 14,
+            "argc": 1,
+            "argv": 17
+          },
+          "references": {
+            "lookupIndex": "itemAt"
+          }
+        },
+        {
+          "offset": 15,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 27
+          },
+          "references": {
+            "index": "mIndex"
+          }
+        },
+        {
+          "offset": 17,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 13
+          }
+        },
+        {
+          "offset": 19,
+          "size": 4,
+          "opcode": 176,
+          "name": "CallQmlContextPropertyLookup",
+          "args": {
+            "index": 28,
+            "argc": 1,
+            "argv": 13
+          },
+          "references": {
+            "index": "Number"
+          }
+        },
+        {
+          "offset": 23,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 10
+          }
+        },
+        {
+          "offset": 25,
+          "size": 3,
+          "opcode": 26,
+          "name": "MoveReg",
+          "args": {
+            "srcReg": 6,
+            "destReg": 11
+          }
+        },
+        {
+          "offset": 28,
+          "size": 1,
+          "opcode": 6,
+          "name": "LoadZero",
+          "args": {}
+        },
+        {
+          "offset": 29,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 11
+          }
+        },
+        {
+          "offset": 31,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 14
+          },
+          "target_offset": 47
+        },
+        {
+          "offset": 33,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 1
+          }
+        },
+        {
+          "offset": 35,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 11
+          }
+        },
+        {
+          "offset": 37,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 53
+          },
+          "target_offset": 92
+        },
+        {
+          "offset": 39,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 2
+          }
+        },
+        {
+          "offset": 41,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 11
+          }
+        },
+        {
+          "offset": 43,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 53
+          },
+          "target_offset": 98
+        },
+        {
+          "offset": 45,
+          "size": 2,
+          "opcode": 72,
+          "name": "Jump",
+          "args": {
+            "offset": 56
+          },
+          "target_offset": 103
+        },
+        {
+          "offset": 47,
+          "size": 1,
+          "opcode": 6,
+          "name": "LoadZero",
+          "args": {}
+        },
+        {
+          "offset": 48,
+          "size": 2,
+          "opcode": 48,
+          "name": "StoreNameSloppy",
+          "args": {
+            "name": 74
+          },
+          "references": {
+            "name": "mPressed"
+          }
+        },
+        {
+          "offset": 50,
+          "size": 3,
+          "opcode": 26,
+          "name": "MoveReg",
+          "args": {
+            "srcReg": 10,
+            "destReg": 12
+          }
+        },
+        {
+          "offset": 53,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 29
+          },
+          "references": {
+            "index": "mMenuBackId"
+          }
+        },
+        {
+          "offset": 55,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 30
+          },
+          "references": {
+            "index": "mIndex"
+          }
+        },
+        {
+          "offset": 57,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 12
+          }
+        },
+        {
+          "offset": 59,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 2
+          },
+          "target_offset": 63
+        },
+        {
+          "offset": 61,
+          "size": 2,
+          "opcode": 72,
+          "name": "Jump",
+          "args": {
+            "offset": 13
+          },
+          "target_offset": 76
+        },
+        {
+          "offset": 63,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 31
+          },
+          "references": {
+            "index": "mGlobalId"
+          }
+        },
+        {
+          "offset": 65,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 32
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 67,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 13
+          }
+        },
+        {
+          "offset": 69,
+          "size": 1,
+          "opcode": 6,
+          "name": "LoadZero",
+          "args": {}
+        },
+        {
+          "offset": 70,
+          "size": 3,
+          "opcode": 62,
+          "name": "SetLookup",
+          "args": {
+            "index": 33,
+            "base": 13
+          },
+          "references": {
+            "index": "menuSettingsSubPageItemSetup"
+          }
+        },
+        {
+          "offset": 73,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 1
+          }
+        },
+        {
+          "offset": 75,
+          "size": 1,
+          "opcode": 2,
+          "name": "Ret",
+          "args": {}
+        },
+        {
+          "offset": 76,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 34
+          },
+          "references": {
+            "index": "mGlobalId"
+          }
+        },
+        {
+          "offset": 78,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 35
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 80,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 13
+          }
+        },
+        {
+          "offset": 82,
+          "size": 5,
+          "opcode": 166,
+          "name": "CallPropertyLookup",
+          "args": {
+            "lookupIndex": 36,
+            "base": 13,
+            "argc": 1,
+            "argv": 10
+          },
+          "references": {
+            "lookupIndex": "setFactory"
+          }
+        },
+        {
+          "offset": 87,
+          "size": 2,
+          "opcode": 72,
+          "name": "Jump",
+          "args": {
+            "offset": 0
+          },
+          "target_offset": 89
+        },
+        {
+          "offset": 89,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 1
+          }
+        },
+        {
+          "offset": 91,
+          "size": 1,
+          "opcode": 2,
+          "name": "Ret",
+          "args": {}
+        },
+        {
+          "offset": 92,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 1
+          }
+        },
+        {
+          "offset": 94,
+          "size": 2,
+          "opcode": 48,
+          "name": "StoreNameSloppy",
+          "args": {
+            "name": 74
+          },
+          "references": {
+            "name": "mPressed"
+          }
+        },
+        {
+          "offset": 96,
+          "size": 2,
+          "opcode": 72,
+          "name": "Jump",
+          "args": {
+            "offset": 5
+          },
+          "target_offset": 103
+        },
+        {
+          "offset": 98,
+          "size": 1,
+          "opcode": 6,
+          "name": "LoadZero",
+          "args": {}
+        },
+        {
+          "offset": 99,
+          "size": 2,
+          "opcode": 48,
+          "name": "StoreNameSloppy",
+          "args": {
+            "name": 74
+          },
+          "references": {
+            "name": "mPressed"
+          }
+        },
+        {
+          "offset": 101,
+          "size": 2,
+          "opcode": 72,
+          "name": "Jump",
+          "args": {
+            "offset": 0
+          },
+          "target_offset": 103
+        },
+        {
+          "offset": 103,
+          "size": 1,
+          "opcode": 6,
+          "name": "LoadZero",
+          "args": {}
+        },
+        {
+          "offset": 104,
+          "size": 1,
+          "opcode": 2,
+          "name": "Ret",
+          "args": {}
+        },
+        {
+          "offset": 105,
+          "size": 2,
+          "opcode": 22,
+          "name": "LoadReg",
+          "args": {
+            "reg": 7
+          }
+        },
+        {
+          "offset": 107,
+          "size": 1,
+          "opcode": 2,
+          "name": "Ret",
+          "args": {}
+        }
+      ]
+    }
+  ],
+  "state_bindings": [
+    {
+      "row": 0,
+      "property": "mOn",
+      "location": {
+        "line": 151,
+        "column": 12
+      },
+      "function_index": 13,
+      "code_sha256": "5b52a77b354d648f7d81ca8a166fff79943961c5688f6903b1c0afa13cd97299",
+      "expression": "mTranslationId.item.mFactoryItemsState[0]"
+    },
+    {
+      "row": 1,
+      "property": "mOn",
+      "location": {
+        "line": 159,
+        "column": 12
+      },
+      "function_index": 18,
+      "code_sha256": "d351db2a27fee56a9397074c03932fa695ce1f548cae36ac6be2d3aca0b4411b",
+      "expression": "mTranslationId.item.mFactoryItemsState[1]"
+    },
+    {
+      "row": 2,
+      "property": "mOn",
+      "location": {
+        "line": 167,
+        "column": 12
+      },
+      "function_index": 23,
+      "code_sha256": "ba82c4e983bc0fcc3db76d8e1acb05a10735c6570f42243fb7ed1dc3a2efe35b",
+      "expression": "mTranslationId.item.mFactoryItemsState[2]"
+    },
+    {
+      "row": 3,
+      "property": "mOn",
+      "location": {
+        "line": 175,
+        "column": 12
+      },
+      "function_index": 28,
+      "code_sha256": "d696fec43044ec1245d4e8475a94dc4d1c128b5d2f12d577823a9378ee34796c",
+      "expression": "mTranslationId.item.mFactoryItemsState[3]"
+    },
+    {
+      "row": 4,
+      "property": "mOn",
+      "location": {
+        "line": 183,
+        "column": 12
+      },
+      "function_index": 33,
+      "code_sha256": "2fd63aa62a186de7ad2290f981249afa357fa2d466fee14b7089514534bf672d",
+      "expression": "mTranslationId.item.mFactoryItemsState[4]"
+    },
+    {
+      "row": 5,
+      "property": "mOn",
+      "location": {
+        "line": 191,
+        "column": 12
+      },
+      "function_index": 38,
+      "code_sha256": "f75fadc01debae071ad65d8f2eaf3cd36fbfd2c29634cd8ddf53444afb3340fe",
+      "expression": "mTranslationId.item.mFactoryItemsState[5]"
+    },
+    {
+      "row": 6,
+      "property": "mOn",
+      "location": {
+        "line": 199,
+        "column": 12
+      },
+      "function_index": 43,
+      "code_sha256": "82b43e8e7854b183430a7a8151705f9107fb29a0307d27a2f46ab0d1ba851024",
+      "expression": "mTranslationId.item.mFactoryItemsState[6]"
+    },
+    {
+      "row": 7,
+      "property": "mData",
+      "location": {
+        "line": 207,
+        "column": 12
+      },
+      "function_index": 48,
+      "code_sha256": "d186661cdb29cac0f4ae12652bbc1c0808f6787c9a5f680a9befdcef719099bc",
+      "expression": "mSpeedMaxIndex[mGlobalId.item.mLc76VehicleSpeedMaxIndex]"
+    },
+    {
+      "row": 8,
+      "property": "mOn",
+      "location": {
+        "line": 215,
+        "column": 12
+      },
+      "function_index": 53,
+      "code_sha256": "a5e0773ca5211eaa15e9c4d94109081388a2665290a86382d696d133401feb1d",
+      "expression": "mTranslationId.item.mFactoryItemsState[8]"
+    },
+    {
+      "row": 9,
+      "property": "mOn",
+      "location": {
+        "line": 223,
+        "column": 12
+      },
+      "function_index": 58,
+      "code_sha256": "64c403eec6ba64fcb78ba795c991e7574be5256832c821a3bc45aa58239a3ea6",
+      "expression": "mTranslationId.item.mFactoryItemsState[9]"
+    },
+    {
+      "row": 10,
+      "property": "mOn",
+      "location": {
+        "line": 231,
+        "column": 12
+      },
+      "function_index": 63,
+      "code_sha256": "b5f2c5eca2cba6486fd73011c7146518ae91293f8c55007edf18c86394ae9362",
+      "expression": "mTranslationId.item.mFactoryItemsState[10]"
+    },
+    {
+      "row": 11,
+      "property": "mOn",
+      "location": {
+        "line": 239,
+        "column": 12
+      },
+      "function_index": 68,
+      "code_sha256": "9f02b01109aaeace441c434f2482a144984cd532719cdb92215d530e71888e6c",
+      "expression": "mTranslationId.item.mFactoryItemsState[11]"
+    },
+    {
+      "row": 12,
+      "property": "mOn",
+      "location": {
+        "line": 247,
+        "column": 12
+      },
+      "function_index": 73,
+      "code_sha256": "001a3f6df6032c3a4ddf0134049e49dcc24c79c636453fd76f709c9ffb4ce8a4",
+      "expression": "mTranslationId.item.mFactoryItemsState[12]"
+    },
+    {
+      "row": 13,
+      "property": "mOn",
+      "location": {
+        "line": 255,
+        "column": 12
+      },
+      "function_index": 78,
+      "code_sha256": "6124816c6f6bbaea1ba3146ed7256707e1a262826ad5edb41bc7f2b506e33f56",
+      "expression": "mTranslationId.item.mFactoryItemsState[13]"
+    },
+    {
+      "row": 14,
+      "property": "mOn",
+      "location": {
+        "line": 263,
+        "column": 12
+      },
+      "function_index": 83,
+      "code_sha256": "d50aac1c7b7c5472b8c98de3661f318ea009d5907f5408e8c71d726d775171d9",
+      "expression": "mTranslationId.item.mFactoryItemsState[14]"
+    },
+    {
+      "row": 15,
+      "property": "mOn",
+      "location": {
+        "line": 271,
+        "column": 12
+      },
+      "function_index": 88,
+      "code_sha256": "875243c5d00dad6077c481ceca399db45e25bd5e64e7bcbf86ff4c4dd045a5e9",
+      "expression": "mTranslationId.item.mFactoryItemsState[15]"
+    },
+    {
+      "row": 16,
+      "property": "mOn",
+      "location": {
+        "line": 279,
+        "column": 12
+      },
+      "function_index": 93,
+      "code_sha256": "bbed3c2e332d8039dac2283b2d978f001d91c4c299f3a16c9307d39a29201188",
+      "expression": "mTranslationId.item.mFactoryItemsState[16]"
+    },
+    {
+      "row": 17,
+      "property": "mOn",
+      "location": {
+        "line": 287,
+        "column": 12
+      },
+      "function_index": 98,
+      "code_sha256": "2a0dcb8d446ecceef592c94b11ad5e1eae2d5ca8d64fea4c50068a35b17819f9",
+      "expression": "mTranslationId.item.mFactoryItemsState[17]"
+    },
+    {
+      "row": 18,
+      "property": "mOn",
+      "location": {
+        "line": 295,
+        "column": 12
+      },
+      "function_index": 103,
+      "code_sha256": "f5f63505b494f7e54268df5cd1dd4de146545209509b236978fed16f8d8b2c20",
+      "expression": "mTranslationId.item.mFactoryItemsState[18]"
+    }
+  ],
+  "translation_state_array": {
+    "source": "analysis/capture-04/qml-cache/012-common_Translation.qml.json",
+    "source_sha256": "1de572a633b7838c4427f2c657ba78afb6ec8c9775ec886ff60aae6b5d17dc09",
+    "compiled_unit_sha256": "e13e97a03dabb737e8b914f2dff9d52b0f34c3c2c9fae5dac55c054363b2bb5b",
+    "function_index": 146,
+    "location": {
+      "line": 1163,
+      "column": 5
+    },
+    "code_sha256": "47656a036cdff437a41a927dcfe10833a76548f32960cf4743ee0ea7ae41af7c",
+    "expression": "[mGlobalId.item.frontTpmsDoorExchange, mGlobalId.item.rearTpmsDoorExchange, mGlobalId.item.fuelRefuelingPortPositon, mGlobalId.item.tpmsInfoEnabled, mGlobalId.item.reverseAlarmEnabled, mGlobalId.item.tachoSpeedMax6000, mGlobalId.item.subTankEnabled, mGlobalId.item.mLc76VehicleSpeedMaxIndex, mGlobalId.item.angleInfoEnabled, mGlobalId.item.outSideTempInfoEnabled, mGlobalId.item.ecoInfoEnabled, mGlobalId.item.gearInfoEnabled, mGlobalId.item.oilTempEnabled, mGlobalId.item.dteEnabled, mGlobalId.item.clockInfoEnabled, mGlobalId.item.doorInfoEnabled, mGlobalId.item.oilPressureInfoEnabled, mGlobalId.item.chassisStateEnabled, mGlobalId.item.screenFlipEnabled]"
+  }
+}

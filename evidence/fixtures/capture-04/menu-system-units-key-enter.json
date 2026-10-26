@@ -1,0 +1,1859 @@
+{
+  "schema": "decoded-qml-function-fixture-v1",
+  "qrc_path": "Trucks/menu/system/MenuSystemUnits.qml",
+  "compiled_unit_sha256": "576a56deb0b8266c09373253a408ab5341dc34f061fb9feb450897d507c82e42",
+  "functions": [
+    {
+      "index": 5,
+      "name": "key_enter",
+      "location": {
+        "line": 88,
+        "column": 5
+      },
+      "code_file_offset": 4631064,
+      "code_sha256": "5bed9f6dc85b78a99612804c7bd2fd6babb652f2ce9d7cc18c2705568e881b1f",
+      "bytecode": [
+        {
+          "offset": 0,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 23
+          },
+          "references": {
+            "index": "mSystemUnitId"
+          }
+        },
+        {
+          "offset": 2,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 14
+          }
+        },
+        {
+          "offset": 4,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 24
+          },
+          "references": {
+            "index": "mSystemUnitId"
+          }
+        },
+        {
+          "offset": 6,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 25
+          },
+          "references": {
+            "index": "currentIndex"
+          }
+        },
+        {
+          "offset": 8,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 17
+          }
+        },
+        {
+          "offset": 10,
+          "size": 5,
+          "opcode": 166,
+          "name": "CallPropertyLookup",
+          "args": {
+            "lookupIndex": 26,
+            "base": 14,
+            "argc": 1,
+            "argv": 17
+          },
+          "references": {
+            "lookupIndex": "itemAt"
+          }
+        },
+        {
+          "offset": 15,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 27
+          },
+          "references": {
+            "index": "mIndex"
+          }
+        },
+        {
+          "offset": 17,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 13
+          }
+        },
+        {
+          "offset": 19,
+          "size": 4,
+          "opcode": 176,
+          "name": "CallQmlContextPropertyLookup",
+          "args": {
+            "index": 28,
+            "argc": 1,
+            "argv": 13
+          },
+          "references": {
+            "index": "Number"
+          }
+        },
+        {
+          "offset": 23,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 10
+          }
+        },
+        {
+          "offset": 25,
+          "size": 3,
+          "opcode": 26,
+          "name": "MoveReg",
+          "args": {
+            "srcReg": 6,
+            "destReg": 11
+          }
+        },
+        {
+          "offset": 28,
+          "size": 1,
+          "opcode": 6,
+          "name": "LoadZero",
+          "args": {}
+        },
+        {
+          "offset": 29,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 11
+          }
+        },
+        {
+          "offset": 31,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 23
+          },
+          "target_offset": 56
+        },
+        {
+          "offset": 33,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 1
+          }
+        },
+        {
+          "offset": 35,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 11
+          }
+        },
+        {
+          "offset": 37,
+          "size": 5,
+          "opcode": 75,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 330
+          },
+          "target_offset": 372
+        },
+        {
+          "offset": 42,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 2
+          }
+        },
+        {
+          "offset": 44,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 11
+          }
+        },
+        {
+          "offset": 46,
+          "size": 5,
+          "opcode": 75,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 327
+          },
+          "target_offset": 378
+        },
+        {
+          "offset": 51,
+          "size": 5,
+          "opcode": 73,
+          "name": "Jump",
+          "args": {
+            "offset": 327
+          },
+          "target_offset": 383
+        },
+        {
+          "offset": 56,
+          "size": 1,
+          "opcode": 6,
+          "name": "LoadZero",
+          "args": {}
+        },
+        {
+          "offset": 57,
+          "size": 2,
+          "opcode": 48,
+          "name": "StoreNameSloppy",
+          "args": {
+            "name": 27
+          },
+          "references": {
+            "name": "mPressed"
+          }
+        },
+        {
+          "offset": 59,
+          "size": 3,
+          "opcode": 26,
+          "name": "MoveReg",
+          "args": {
+            "srcReg": 10,
+            "destReg": 12
+          }
+        },
+        {
+          "offset": 62,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 29
+          },
+          "references": {
+            "index": "mMenuBackId"
+          }
+        },
+        {
+          "offset": 64,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 30
+          },
+          "references": {
+            "index": "mIndex"
+          }
+        },
+        {
+          "offset": 66,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 12
+          }
+        },
+        {
+          "offset": 68,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 2
+          },
+          "target_offset": 72
+        },
+        {
+          "offset": 70,
+          "size": 2,
+          "opcode": 72,
+          "name": "Jump",
+          "args": {
+            "offset": 9
+          },
+          "target_offset": 81
+        },
+        {
+          "offset": 72,
+          "size": 4,
+          "opcode": 176,
+          "name": "CallQmlContextPropertyLookup",
+          "args": {
+            "index": 31,
+            "argc": 1,
+            "argv": 6
+          },
+          "references": {
+            "index": "key_back"
+          }
+        },
+        {
+          "offset": 76,
+          "size": 5,
+          "opcode": 73,
+          "name": "Jump",
+          "args": {
+            "offset": 288
+          },
+          "target_offset": 369
+        },
+        {
+          "offset": 81,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 32
+          },
+          "references": {
+            "index": "mTrucksModel"
+          }
+        },
+        {
+          "offset": 83,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 15
+          }
+        },
+        {
+          "offset": 85,
+          "size": 4,
+          "opcode": 176,
+          "name": "CallQmlContextPropertyLookup",
+          "args": {
+            "index": 33,
+            "argc": 1,
+            "argv": 15
+          },
+          "references": {
+            "index": "Number"
+          }
+        },
+        {
+          "offset": 89,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 13
+          }
+        },
+        {
+          "offset": 91,
+          "size": 1,
+          "opcode": 6,
+          "name": "LoadZero",
+          "args": {}
+        },
+        {
+          "offset": 92,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 13
+          }
+        },
+        {
+          "offset": 94,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 53
+          },
+          "target_offset": 149
+        },
+        {
+          "offset": 96,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 1
+          }
+        },
+        {
+          "offset": 98,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 13
+          }
+        },
+        {
+          "offset": 100,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 47
+          },
+          "target_offset": 149
+        },
+        {
+          "offset": 102,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 2
+          }
+        },
+        {
+          "offset": 104,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 13
+          }
+        },
+        {
+          "offset": 106,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 41
+          },
+          "target_offset": 149
+        },
+        {
+          "offset": 108,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 3
+          }
+        },
+        {
+          "offset": 110,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 13
+          }
+        },
+        {
+          "offset": 112,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 35
+          },
+          "target_offset": 149
+        },
+        {
+          "offset": 114,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 4
+          }
+        },
+        {
+          "offset": 116,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 13
+          }
+        },
+        {
+          "offset": 118,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 29
+          },
+          "target_offset": 149
+        },
+        {
+          "offset": 120,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 5
+          }
+        },
+        {
+          "offset": 122,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 13
+          }
+        },
+        {
+          "offset": 124,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 23
+          },
+          "target_offset": 149
+        },
+        {
+          "offset": 126,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 6
+          }
+        },
+        {
+          "offset": 128,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 13
+          }
+        },
+        {
+          "offset": 130,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 17
+          },
+          "target_offset": 149
+        },
+        {
+          "offset": 132,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 7
+          }
+        },
+        {
+          "offset": 134,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 13
+          }
+        },
+        {
+          "offset": 136,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 11
+          },
+          "target_offset": 149
+        },
+        {
+          "offset": 138,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 8
+          }
+        },
+        {
+          "offset": 140,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 13
+          }
+        },
+        {
+          "offset": 142,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 5
+          },
+          "target_offset": 149
+        },
+        {
+          "offset": 144,
+          "size": 5,
+          "opcode": 73,
+          "name": "Jump",
+          "args": {
+            "offset": 218
+          },
+          "target_offset": 367
+        },
+        {
+          "offset": 149,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 34
+          },
+          "references": {
+            "index": "mSystemUnitId"
+          }
+        },
+        {
+          "offset": 151,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 35
+          },
+          "references": {
+            "index": "currentIndex"
+          }
+        },
+        {
+          "offset": 153,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 14
+          }
+        },
+        {
+          "offset": 155,
+          "size": 1,
+          "opcode": 6,
+          "name": "LoadZero",
+          "args": {}
+        },
+        {
+          "offset": 156,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 14
+          }
+        },
+        {
+          "offset": 158,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 26
+          },
+          "target_offset": 186
+        },
+        {
+          "offset": 160,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 1
+          }
+        },
+        {
+          "offset": 162,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 14
+          }
+        },
+        {
+          "offset": 164,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 63
+          },
+          "target_offset": 229
+        },
+        {
+          "offset": 166,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 2
+          }
+        },
+        {
+          "offset": 168,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 14
+          }
+        },
+        {
+          "offset": 170,
+          "size": 2,
+          "opcode": 74,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 105
+          },
+          "target_offset": 277
+        },
+        {
+          "offset": 172,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 3
+          }
+        },
+        {
+          "offset": 174,
+          "size": 2,
+          "opcode": 104,
+          "name": "CmpStrictEqual",
+          "args": {
+            "lhs": 14
+          }
+        },
+        {
+          "offset": 176,
+          "size": 5,
+          "opcode": 75,
+          "name": "JumpTrue",
+          "args": {
+            "offset": 144
+          },
+          "target_offset": 325
+        },
+        {
+          "offset": 181,
+          "size": 5,
+          "opcode": 73,
+          "name": "Jump",
+          "args": {
+            "offset": 179
+          },
+          "target_offset": 365
+        },
+        {
+          "offset": 186,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 36
+          },
+          "references": {
+            "index": "mGlobalId"
+          }
+        },
+        {
+          "offset": 188,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 37
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 190,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 38
+          },
+          "references": {
+            "index": "consumptionUnit"
+          }
+        },
+        {
+          "offset": 192,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 15
+          }
+        },
+        {
+          "offset": 194,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 2
+          }
+        },
+        {
+          "offset": 196,
+          "size": 2,
+          "opcode": 100,
+          "name": "CmpLt",
+          "args": {
+            "lhs": 15
+          }
+        },
+        {
+          "offset": 198,
+          "size": 2,
+          "opcode": 76,
+          "name": "JumpFalse",
+          "args": {
+            "offset": 14
+          },
+          "target_offset": 214
+        },
+        {
+          "offset": 200,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 39
+          },
+          "references": {
+            "index": "mGlobalId"
+          }
+        },
+        {
+          "offset": 202,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 40
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 204,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 16
+          }
+        },
+        {
+          "offset": 206,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 41
+          },
+          "references": {
+            "index": "consumptionUnit"
+          }
+        },
+        {
+          "offset": 208,
+          "size": 1,
+          "opcode": 120,
+          "name": "Increment",
+          "args": {}
+        },
+        {
+          "offset": 209,
+          "size": 3,
+          "opcode": 62,
+          "name": "SetLookup",
+          "args": {
+            "index": 42,
+            "base": 16
+          },
+          "references": {
+            "index": "consumptionUnit"
+          }
+        },
+        {
+          "offset": 212,
+          "size": 2,
+          "opcode": 72,
+          "name": "Jump",
+          "args": {
+            "offset": 10
+          },
+          "target_offset": 224
+        },
+        {
+          "offset": 214,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 43
+          },
+          "references": {
+            "index": "mGlobalId"
+          }
+        },
+        {
+          "offset": 216,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 44
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 218,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 16
+          }
+        },
+        {
+          "offset": 220,
+          "size": 1,
+          "opcode": 6,
+          "name": "LoadZero",
+          "args": {}
+        },
+        {
+          "offset": 221,
+          "size": 3,
+          "opcode": 62,
+          "name": "SetLookup",
+          "args": {
+            "index": 45,
+            "base": 16
+          },
+          "references": {
+            "index": "consumptionUnit"
+          }
+        },
+        {
+          "offset": 224,
+          "size": 5,
+          "opcode": 73,
+          "name": "Jump",
+          "args": {
+            "offset": 136
+          },
+          "target_offset": 365
+        },
+        {
+          "offset": 229,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 46
+          },
+          "references": {
+            "index": "mGlobalId"
+          }
+        },
+        {
+          "offset": 231,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 47
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 233,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 15
+          }
+        },
+        {
+          "offset": 235,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 48
+          },
+          "references": {
+            "index": "mGlobalId"
+          }
+        },
+        {
+          "offset": 237,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 49
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 239,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 50
+          },
+          "references": {
+            "index": "metricSystem"
+          }
+        },
+        {
+          "offset": 241,
+          "size": 1,
+          "opcode": 112,
+          "name": "UNot",
+          "args": {}
+        },
+        {
+          "offset": 242,
+          "size": 3,
+          "opcode": 62,
+          "name": "SetLookup",
+          "args": {
+            "index": 51,
+            "base": 15
+          },
+          "references": {
+            "index": "metricSystem"
+          }
+        },
+        {
+          "offset": 245,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 52
+          },
+          "references": {
+            "index": "mGlobalId"
+          }
+        },
+        {
+          "offset": 247,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 53
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 249,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 54
+          },
+          "references": {
+            "index": "followUnit"
+          }
+        },
+        {
+          "offset": 251,
+          "size": 2,
+          "opcode": 76,
+          "name": "JumpFalse",
+          "args": {
+            "offset": 22
+          },
+          "target_offset": 275
+        },
+        {
+          "offset": 253,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 55
+          },
+          "references": {
+            "index": "mEventHandleId"
+          }
+        },
+        {
+          "offset": 255,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 56
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 257,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 15
+          }
+        },
+        {
+          "offset": 259,
+          "size": 3,
+          "opcode": 20,
+          "name": "MoveConst",
+          "args": {
+            "constIndex": 6,
+            "destTemp": 18
+          },
+          "references": {
+            "constIndex": {
+              "index": 6,
+              "unit_offset": 1056,
+              "kind": "int32",
+              "value": 2
+            }
+          }
+        },
+        {
+          "offset": 262,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 57
+          },
+          "references": {
+            "index": "mGlobalId"
+          }
+        },
+        {
+          "offset": 264,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 58
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 266,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 59
+          },
+          "references": {
+            "index": "metricSystem"
+          }
+        },
+        {
+          "offset": 268,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 19
+          }
+        },
+        {
+          "offset": 270,
+          "size": 5,
+          "opcode": 166,
+          "name": "CallPropertyLookup",
+          "args": {
+            "lookupIndex": 60,
+            "base": 15,
+            "argc": 2,
+            "argv": 18
+          },
+          "references": {
+            "lookupIndex": "setUnit2"
+          }
+        },
+        {
+          "offset": 275,
+          "size": 2,
+          "opcode": 72,
+          "name": "Jump",
+          "args": {
+            "offset": 88
+          },
+          "target_offset": 365
+        },
+        {
+          "offset": 277,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 61
+          },
+          "references": {
+            "index": "mGlobalId"
+          }
+        },
+        {
+          "offset": 279,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 62
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 281,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 15
+          }
+        },
+        {
+          "offset": 283,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 63
+          },
+          "references": {
+            "index": "mGlobalId"
+          }
+        },
+        {
+          "offset": 285,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 64
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 287,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 65
+          },
+          "references": {
+            "index": "temperatureUnit"
+          }
+        },
+        {
+          "offset": 289,
+          "size": 1,
+          "opcode": 112,
+          "name": "UNot",
+          "args": {}
+        },
+        {
+          "offset": 290,
+          "size": 3,
+          "opcode": 62,
+          "name": "SetLookup",
+          "args": {
+            "index": 66,
+            "base": 15
+          },
+          "references": {
+            "index": "temperatureUnit"
+          }
+        },
+        {
+          "offset": 293,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 67
+          },
+          "references": {
+            "index": "mGlobalId"
+          }
+        },
+        {
+          "offset": 295,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 68
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 297,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 69
+          },
+          "references": {
+            "index": "followUnit"
+          }
+        },
+        {
+          "offset": 299,
+          "size": 2,
+          "opcode": 76,
+          "name": "JumpFalse",
+          "args": {
+            "offset": 22
+          },
+          "target_offset": 323
+        },
+        {
+          "offset": 301,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 70
+          },
+          "references": {
+            "index": "mEventHandleId"
+          }
+        },
+        {
+          "offset": 303,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 71
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 305,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 15
+          }
+        },
+        {
+          "offset": 307,
+          "size": 3,
+          "opcode": 20,
+          "name": "MoveConst",
+          "args": {
+            "constIndex": 7,
+            "destTemp": 18
+          },
+          "references": {
+            "constIndex": {
+              "index": 7,
+              "unit_offset": 1064,
+              "kind": "int32",
+              "value": 1
+            }
+          }
+        },
+        {
+          "offset": 310,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 72
+          },
+          "references": {
+            "index": "mGlobalId"
+          }
+        },
+        {
+          "offset": 312,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 73
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 314,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 74
+          },
+          "references": {
+            "index": "temperatureUnit"
+          }
+        },
+        {
+          "offset": 316,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 19
+          }
+        },
+        {
+          "offset": 318,
+          "size": 5,
+          "opcode": 166,
+          "name": "CallPropertyLookup",
+          "args": {
+            "lookupIndex": 75,
+            "base": 15,
+            "argc": 2,
+            "argv": 18
+          },
+          "references": {
+            "lookupIndex": "setUnit2"
+          }
+        },
+        {
+          "offset": 323,
+          "size": 2,
+          "opcode": 72,
+          "name": "Jump",
+          "args": {
+            "offset": 40
+          },
+          "target_offset": 365
+        },
+        {
+          "offset": 325,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 76
+          },
+          "references": {
+            "index": "mGlobalId"
+          }
+        },
+        {
+          "offset": 327,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 77
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 329,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 78
+          },
+          "references": {
+            "index": "pressureUnit"
+          }
+        },
+        {
+          "offset": 331,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 15
+          }
+        },
+        {
+          "offset": 333,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 3
+          }
+        },
+        {
+          "offset": 335,
+          "size": 2,
+          "opcode": 100,
+          "name": "CmpLt",
+          "args": {
+            "lhs": 15
+          }
+        },
+        {
+          "offset": 337,
+          "size": 2,
+          "opcode": 76,
+          "name": "JumpFalse",
+          "args": {
+            "offset": 14
+          },
+          "target_offset": 353
+        },
+        {
+          "offset": 339,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 79
+          },
+          "references": {
+            "index": "mGlobalId"
+          }
+        },
+        {
+          "offset": 341,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 80
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 343,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 16
+          }
+        },
+        {
+          "offset": 345,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 81
+          },
+          "references": {
+            "index": "pressureUnit"
+          }
+        },
+        {
+          "offset": 347,
+          "size": 1,
+          "opcode": 120,
+          "name": "Increment",
+          "args": {}
+        },
+        {
+          "offset": 348,
+          "size": 3,
+          "opcode": 62,
+          "name": "SetLookup",
+          "args": {
+            "index": 82,
+            "base": 16
+          },
+          "references": {
+            "index": "pressureUnit"
+          }
+        },
+        {
+          "offset": 351,
+          "size": 2,
+          "opcode": 72,
+          "name": "Jump",
+          "args": {
+            "offset": 10
+          },
+          "target_offset": 363
+        },
+        {
+          "offset": 353,
+          "size": 2,
+          "opcode": 46,
+          "name": "LoadQmlContextPropertyLookup",
+          "args": {
+            "index": 83
+          },
+          "references": {
+            "index": "mGlobalId"
+          }
+        },
+        {
+          "offset": 355,
+          "size": 2,
+          "opcode": 58,
+          "name": "GetLookup",
+          "args": {
+            "index": 84
+          },
+          "references": {
+            "index": "item"
+          }
+        },
+        {
+          "offset": 357,
+          "size": 2,
+          "opcode": 24,
+          "name": "StoreReg",
+          "args": {
+            "reg": 16
+          }
+        },
+        {
+          "offset": 359,
+          "size": 1,
+          "opcode": 6,
+          "name": "LoadZero",
+          "args": {}
+        },
+        {
+          "offset": 360,
+          "size": 3,
+          "opcode": 62,
+          "name": "SetLookup",
+          "args": {
+            "index": 85,
+            "base": 16
+          },
+          "references": {
+            "index": "pressureUnit"
+          }
+        },
+        {
+          "offset": 363,
+          "size": 2,
+          "opcode": 72,
+          "name": "Jump",
+          "args": {
+            "offset": 0
+          },
+          "target_offset": 365
+        },
+        {
+          "offset": 365,
+          "size": 2,
+          "opcode": 72,
+          "name": "Jump",
+          "args": {
+            "offset": 0
+          },
+          "target_offset": 367
+        },
+        {
+          "offset": 367,
+          "size": 2,
+          "opcode": 72,
+          "name": "Jump",
+          "args": {
+            "offset": 0
+          },
+          "target_offset": 369
+        },
+        {
+          "offset": 369,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 1
+          }
+        },
+        {
+          "offset": 371,
+          "size": 1,
+          "opcode": 2,
+          "name": "Ret",
+          "args": {}
+        },
+        {
+          "offset": 372,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 1
+          }
+        },
+        {
+          "offset": 374,
+          "size": 2,
+          "opcode": 48,
+          "name": "StoreNameSloppy",
+          "args": {
+            "name": 27
+          },
+          "references": {
+            "name": "mPressed"
+          }
+        },
+        {
+          "offset": 376,
+          "size": 2,
+          "opcode": 72,
+          "name": "Jump",
+          "args": {
+            "offset": 5
+          },
+          "target_offset": 383
+        },
+        {
+          "offset": 378,
+          "size": 1,
+          "opcode": 6,
+          "name": "LoadZero",
+          "args": {}
+        },
+        {
+          "offset": 379,
+          "size": 2,
+          "opcode": 48,
+          "name": "StoreNameSloppy",
+          "args": {
+            "name": 27
+          },
+          "references": {
+            "name": "mPressed"
+          }
+        },
+        {
+          "offset": 381,
+          "size": 2,
+          "opcode": 72,
+          "name": "Jump",
+          "args": {
+            "offset": 0
+          },
+          "target_offset": 383
+        },
+        {
+          "offset": 383,
+          "size": 2,
+          "opcode": 16,
+          "name": "LoadInt",
+          "args": {
+            "value": 1
+          }
+        },
+        {
+          "offset": 385,
+          "size": 1,
+          "opcode": 2,
+          "name": "Ret",
+          "args": {}
+        },
+        {
+          "offset": 386,
+          "size": 2,
+          "opcode": 22,
+          "name": "LoadReg",
+          "args": {
+            "reg": 7
+          }
+        },
+        {
+          "offset": 388,
+          "size": 1,
+          "opcode": 2,
+          "name": "Ret",
+          "args": {}
+        }
+      ]
+    }
+  ]
+}

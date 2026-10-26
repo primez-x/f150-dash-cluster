@@ -1,0 +1,803 @@
+{
+  "schema": "empty-qrc-placeholder-inventory-v1",
+  "source_launcher_sha256": "2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b",
+  "provenance": {
+    "source_file": "launcher-cache-resource-inventory.json",
+    "source_file_sha256": "12aa67cbe5f2c8a920a878e8efd128232c477f12d9c8c1a19893cccf31939d2d",
+    "recipe": "Retain only the 198 empty QRC placeholder paths and stored_size values. Omit registration addresses, flags, file offsets, and historical machine paths."
+  },
+  "files": [
+    {
+      "path": "Trucks/ui1/OilMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui1/SpeedInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui1/PressureInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui1/FuelMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui1/RightInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui1/Dock.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui1/AltitudeInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui1/TachoMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui1/AlarmPage.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui1/TachoText.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui1/WaterMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui1/GearBoxTemp.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui1/Dashboard.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui1/LeftInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui1/BatteryMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui1/OilTempMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/OilMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/SpeedInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/FuelMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/Dock.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/TachoMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/Ford.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/AlarmPage.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/SpeedMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/Ram.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/Awd.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/AwdItem.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/AltitudePressureInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/Gear.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/WaterMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/GearBoxTemp.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/Dashboard.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/StatusBar.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/BatteryMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/TripInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui2/TpmsInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui3/OilMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui3/SpeedInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui3/TachoInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui3/FuelMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui3/RightInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui3/Dock.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui3/Ford.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui3/AlarmPage.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui3/Ram.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui3/WaterMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui3/GearBoxTemp.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui3/Dashboard.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui3/LeftInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui3/BatteryMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui3/OilTempMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui4/Ford.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui4/Ram.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui4/Dashboard.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui5/Ford.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui5/Ram.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui5/Dashboard.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui6/Awd.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/ui6/Dashboard.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/trip/SinceRefuelingInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/trip/SinceResetInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/trip/SinceStartInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/trip/SinceInfoItem.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/MenuItemsList.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/AvgFuelinfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/TimeOutsideTemp.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/RunTimeInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/DraggInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/TripAB.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/MpgInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/OilLifeinfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/CustomGaugeUpInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/TpmsInfoItem.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/PitchInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/GForceInfoItem.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/FuelInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/OffroadInfoItem.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/CustomGaugeDownInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/GForceInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/BatteryMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/TripInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/RunTimeInfoItem.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/TpmsInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/OffroadInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/assist/RollInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/common/MenuItemSelectButton.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/common/MenuSetupButton.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/common/MenuVersionItem.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/common/MenuPercentSetupButton.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/common/MenuItemButton.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/common/MenuListProgressbar.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/common/MenuSwitchButton.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/unit/PressureUnit.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/unit/FuelConsumptionUnit.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/unit/TripUnit.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/unit/TemperatureUnit.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/MenuSystemFactory.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/datetime/MinNumber.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/datetime/YearTumbler.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/datetime/MinTumbler.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/datetime/DayTumbler.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/datetime/MonthNumber.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/datetime/HourNumber.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/datetime/MonthTumbler.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/datetime/HourTumbler.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/datetime/DayNumber.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/datetime/YearNumber.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/MenuSystemLanguage.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/MenuSystemDateTime.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/MenuSystemVersion.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/MenuSystemUnits.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/MenuSystemSettings.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/factory/FactoryTankSetup.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/factory/FactorySeniorSetting.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/factory/FactoryOdoSetup.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/factory/FactoryShellCmd.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/factory/FactoryGenericSetup.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/factory/PasswdNumber.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/factory/PasswdTumber.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/factory/FactoryVehicleModel.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/overspeed/OverSpeedNumber.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/overspeed/OverSpeedTumber.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/system/MenuSystemGeneric.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/maintent/MenuMaintentSettings.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/maintent/MenuMaintentSettingsItemConfig0.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/maintent/MenuMaintentSettingsItemConfig1.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/maintent/MenuMaintentSettingsItemConfig2.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/maintent/MenuMaintentSettingsItemConfig3.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/maintent/MenuMaintentSettingsItemConfig4.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/maintent/MenuMaintentSettingsItemConfig5.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/maintent/MenuMaintentItemButton.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/maintent/MenuMaintentSettingsItemCustom0.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/maintent/MenuMaintentSettingsItemCustom1.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/vehicle/MenuVehicleAssistSettings.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/vehicle/MenuVehicleSettings.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/vehicle/MenuVehicleGForce.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/vehicle/MenuVehicleDownGaugeSettings.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/vehicle/MenuVehicleRemoteStartSettings.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/vehicle/MenuVehicleKeySettings.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/vehicle/MenuVehicleLampSettings.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/vehicle/MenuVehicleResetSettings.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/vehicle/MenuVehicleUpGaugeSettings.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/menu/MenuPage.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/text/TextRoll.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/text/GlowText.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/text/GlowImage.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/PressureInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/DrivingMode.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/AngleInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/RearRadarInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/Clock.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/AltitudeInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/FrontRadarInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/update/ShellCmdList.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/update/UpdateMcu.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/AccLimitedIndicator.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/Awd.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/Trip.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/Dragging.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/AlarmIndicator.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/FuelIndicator.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/PitchInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/Gear.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/MaintentNotify.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/Dte.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/CompassInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/OverSpeedWarning.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/DoorInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/ItemInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/GearFord.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/TurnLightIndicator.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/OutsideTemp.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/Notify.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/common/RollInfo.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "Trucks/Dashboard.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "functions.js",
+      "stored_size": 0
+    },
+    {
+      "path": "common/DialogTranslation.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/Translation.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/VehicleModels.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/CommonTranslation.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/SwcEvent.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/SystemSetupTranslation.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/Verification.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/VehicleMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/VehicleSetupTranslation.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/VehicleEvent.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/NotifyTranslation.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/Global.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/KeyEmulation.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/FuelWaterMeter.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/Vehicles.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/SeniorFactoryTranslation.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/CenterInfoTranslation.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/AlarmTable.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/FactoryTranslation.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/LinkEvent.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "common/ServiceTranslation.qml",
+      "stored_size": 0
+    },
+    {
+      "path": "main.qml",
+      "stored_size": 0
+    }
+  ]
+}

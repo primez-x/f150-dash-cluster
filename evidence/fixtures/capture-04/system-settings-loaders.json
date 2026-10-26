@@ -1,0 +1,19 @@
+{
+  "schema": "decoded-qml-loader-fixture-v1",
+  "qrc_path": "Trucks/menu/system/MenuSystemSettings.qml",
+  "compiled_unit_sha256": "a3e8cb96d9a00fa33178218ac0bdaee0fbe9710a77e4d4dfeba3534870f807a1",
+  "strings": [
+    {
+      "index": 111,
+      "unit_offset": 15952,
+      "file_offset": 4660016,
+      "value": "qrc:/Trucks/menu/system/MenuSystemUnits.qml"
+    },
+    {
+      "index": 114,
+      "unit_offset": 16304,
+      "file_offset": 4660368,
+      "value": "qrc:/Trucks/menu/system/MenuSystemFactory.qml"
+    }
+  ]
+}

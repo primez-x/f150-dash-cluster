@@ -1,1 +1,5 @@
 * text=auto eol=lf
+/evidence/** -text
+# Preserve whitespace from the two original shell fixtures.
+/evidence/fixtures/capture-04/etc/init.d/S01private whitespace=-blank-at-eol
+/evidence/fixtures/capture-04/etc/init.d/S90mount whitespace=-blank-at-eol,-space-before-tab

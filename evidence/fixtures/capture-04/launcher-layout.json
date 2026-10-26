@@ -1,0 +1,185 @@
+{
+  "schema": "launcher-elf-layout-v1",
+  "source_launcher_sha256": "2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b",
+  "provenance": {
+    "source_file": "launcher-static.json",
+    "source_file_sha256": "1a78d5773980ba875b2f42fd94586c8e17b47c055eb7abdcac60b75857b3cbf7",
+    "recipe": "Retain only ELF section name, virtual address, file offset, and size. Omit symbols, strings, disassembly, and historical machine paths."
+  },
+  "sections": [
+    {
+      "name": "",
+      "address": "0x0",
+      "file_offset": 0,
+      "size": 0
+    },
+    {
+      "name": ".interp",
+      "address": "0x400238",
+      "file_offset": 568,
+      "size": 27
+    },
+    {
+      "name": ".note.ABI-tag",
+      "address": "0x400254",
+      "file_offset": 596,
+      "size": 32
+    },
+    {
+      "name": ".note.gnu.build-id",
+      "address": "0x400274",
+      "file_offset": 628,
+      "size": 36
+    },
+    {
+      "name": ".hash",
+      "address": "0x400298",
+      "file_offset": 664,
+      "size": 812
+    },
+    {
+      "name": ".dynsym",
+      "address": "0x4005c8",
+      "file_offset": 1480,
+      "size": 1680
+    },
+    {
+      "name": ".dynstr",
+      "address": "0x400c58",
+      "file_offset": 3160,
+      "size": 2355
+    },
+    {
+      "name": ".gnu.version",
+      "address": "0x40158c",
+      "file_offset": 5516,
+      "size": 140
+    },
+    {
+      "name": ".gnu.version_r",
+      "address": "0x401618",
+      "file_offset": 5656,
+      "size": 208
+    },
+    {
+      "name": ".rela.dyn",
+      "address": "0x4016e8",
+      "file_offset": 5864,
+      "size": 192
+    },
+    {
+      "name": ".rela.plt",
+      "address": "0x4017a8",
+      "file_offset": 6056,
+      "size": 1224
+    },
+    {
+      "name": ".init",
+      "address": "0x401c70",
+      "file_offset": 7280,
+      "size": 20
+    },
+    {
+      "name": ".plt",
+      "address": "0x401c90",
+      "file_offset": 7312,
+      "size": 848
+    },
+    {
+      "name": ".text",
+      "address": "0x401fe0",
+      "file_offset": 8160,
+      "size": 26268
+    },
+    {
+      "name": ".fini",
+      "address": "0x40867c",
+      "file_offset": 34428,
+      "size": 16
+    },
+    {
+      "name": ".rodata",
+      "address": "0x408690",
+      "file_offset": 34448,
+      "size": 27741170
+    },
+    {
+      "name": ".eh_frame_hdr",
+      "address": "0x1e7d284",
+      "file_offset": 27775620,
+      "size": 204
+    },
+    {
+      "name": ".eh_frame",
+      "address": "0x1e7d350",
+      "file_offset": 27775824,
+      "size": 1164
+    },
+    {
+      "name": ".gcc_except_table",
+      "address": "0x1e7d7dc",
+      "file_offset": 27776988,
+      "size": 1910
+    },
+    {
+      "name": ".init_array",
+      "address": "0x1e8ea60",
+      "file_offset": 27781728,
+      "size": 24
+    },
+    {
+      "name": ".fini_array",
+      "address": "0x1e8ea78",
+      "file_offset": 27781752,
+      "size": 8
+    },
+    {
+      "name": ".data.rel.ro",
+      "address": "0x1e8ea80",
+      "file_offset": 27781760,
+      "size": 4752
+    },
+    {
+      "name": ".dynamic",
+      "address": "0x1e8fd10",
+      "file_offset": 27786512,
+      "size": 656
+    },
+    {
+      "name": ".got",
+      "address": "0x1e8ffa0",
+      "file_offset": 27787168,
+      "size": 72
+    },
+    {
+      "name": ".got.plt",
+      "address": "0x1e8ffe8",
+      "file_offset": 27787240,
+      "size": 432
+    },
+    {
+      "name": ".data",
+      "address": "0x1e90198",
+      "file_offset": 27787672,
+      "size": 24
+    },
+    {
+      "name": ".bss",
+      "address": "0x1e901b0",
+      "file_offset": 27787696,
+      "size": 40
+    },
+    {
+      "name": ".comment",
+      "address": "0x0",
+      "file_offset": 27787696,
+      "size": 116
+    },
+    {
+      "name": ".shstrtab",
+      "address": "0x0",
+      "file_offset": 27787812,
+      "size": 270
+    }
+  ]
+}

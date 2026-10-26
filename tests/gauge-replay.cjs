@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const crypto = require('node:crypto');
 
 const base = path.resolve(__dirname, '..');
-const original = path.join(base, 'installed/capture-04/rootfs/etc/common');
+const original = path.join(base, 'evidence/fixtures/capture-04/etc/common');
 const candidate = path.join(base, 'patches/capture-04/etc/common');
 const phase = process.argv[2];
 if (!['original', 'patched'].includes(phase)) throw new Error('Use original or patched');
@@ -13,8 +13,10 @@ const source = phase === 'original' ? original : candidate;
 const resultPath = path.join(base, 'analysis/capture-04/gauge-replay-results.json');
 const texts = Object.fromEntries(['Global.qml', 'VehicleEvent.qml'].map(name => [name, fs.readFileSync(path.join(source, name), 'utf8')]));
 function extract(text, marker) {
-  const start = text.indexOf(marker);
-  if (start < 0 || text.indexOf(marker, start + marker.length) >= 0) throw new Error('Expected one source marker: ' + marker);
+  const escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const matches = [...text.matchAll(new RegExp('^[ \\t]*' + escaped, 'gm'))];
+  if (matches.length !== 1) throw new Error('Expected one source marker: ' + marker);
+  const start = matches[0].index;
   const brace = text.indexOf('{', start);
   let depth = 1;
   let end = brace + 1;
@@ -27,8 +29,8 @@ function extract(text, marker) {
   return text.slice(brace + 1, end - 1);
 }
 const context = vm.createContext({}, {codeGeneration: {strings: false, wasm: false}});
-for (const name of ['tpms_pressure', 'getTpmsPressure', 'getIdleStartSavingFuel', 'getIdleResetSavingsFuel']) {
-  const args = name === 'tpms_pressure' ? 'value' : name === 'getTpmsPressure' ? 'index' : '';
+for (const name of ['tpms_pressure', 'getTpmsPressure', 'getIdleStartSavingFuel', 'getIdleResetSavingsFuel', 'getFuelConsumption', 'getFuelPercentage', 'getLpkData', 'getLPK', 'isLpkVisible']) {
+  const args = ['tpms_pressure', 'getFuelConsumption'].includes(name) ? 'value' : name === 'getTpmsPressure' ? 'index' : name === 'getLPK' ? 'unit' : '';
   new vm.Script('function ' + name + '(' + args + '){' + extract(texts['Global.qml'], 'function ' + name + '(') + '}').runInContext(context, {timeout: 100});
 }
 const handlers = Object.fromEntries(['onSpeedInfoNotify', 'onDpcInfoNotify'].map(name => [name, new vm.Script(extract(texts['VehicleEvent.qml'], name + ':'))]));
@@ -118,14 +120,79 @@ for (let unit = 0; unit < 3; unit++) {
     check(`idle-reset/u${unit}/raw${raw}`, expected, () => call('getIdleResetSavingsFuel()'));
   }
 }
+function bind(name) {
+  const match = texts['Global.qml'].match(new RegExp('^[ \\t]*property \\w+ ' + name + ':[ \\t]*(.+)$', 'm'));
+  const expression = match ? new vm.Script('(' + match[1].split('//')[0] + ')') : null;
+  Object.defineProperty(context, name, {configurable: true, get() { return expression ? expression.runInContext(context, {timeout: 100}) : undefined; }});
+}
+for (const name of ['fuelPercentageValid', 'mainTankPercentageValid', 'subTankPercentageValid', 'lpkValid', 'lpkUnit']) bind(name);
+for (const name of ['mFuelUnit', 'mLpkUnit']) {
+  const match = texts['Global.qml'].match(new RegExp('property var ' + name + ':\\s*(\\[[\\s\\S]*?\\])'));
+  if (!match) throw new Error('Missing unit table ' + name);
+  context[name] = new vm.Script('(' + match[1] + ')').runInContext(context, {timeout: 100});
+}
+let fuelSamples = [0, 0, 0];
+const fuelNative = vm.createContext({mGlobalId: {item: context}, getDte: () => 300, getFuelPercentage: () => fuelSamples[0],
+  getFuelFillerRight: () => 1, getFuelState: () => 0, getFuelTank: index => index ? 30 : 60,
+  getTankFuelPercetage: index => fuelSamples[index + 1], getTankFuelState: () => 0}, {codeGeneration: {strings: false, wasm: false}});
+const fuelHandler = new vm.Script(extract(texts['VehicleEvent.qml'], 'onFuelInfoNotify:'));
+for (const raw of [-1, 0, 1, 50, 100, 101, 254, 255, 256]) {
+  fuelSamples = [raw, raw, raw];
+  fuelHandler.runInContext(fuelNative, {timeout: 100});
+  const valid = raw >= 0 && raw <= 100;
+  for (const name of ['fuelPercentage', 'mainTankPercentage', 'subTankPercentage']) {
+    check(`fuel/${name}/raw${raw}/raw-preserved`, raw, () => context[name]);
+    check(`fuel/${name}/raw${raw}/validity`, valid, () => context[name + 'Valid']);
+  }
+  check(`fuel/raw${raw}/formatted`, valid ? raw + '%' : '---%', () => call('getFuelPercentage()'));
+}
+fuelSamples = [50, 255, 75];
+fuelHandler.runInContext(fuelNative, {timeout: 100});
+check('fuel/independent-tank-validity', [true, false, true], () => [context.fuelPercentageValid, context.mainTankPercentageValid, context.subTankPercentageValid]);
+const lpkBehavior = /(?:^|\n)\s*Behavior on lpk\s*\{/.test(texts['Global.qml']);
+let lpkSample = 0;
+let lpkMode = 0;
+const lpkNative = vm.createContext({mGlobalId: {item: context}, getLpk: () => lpkSample, getLpkUnit: () => lpkMode}, {codeGeneration: {strings: false, wasm: false}});
+const lpkHandler = new vm.Script(extract(texts['VehicleEvent.qml'], 'onLpkInfoNotify:'));
+const lpkStates = [];
+for (let unit = 0; unit < 3; unit++) for (const mode of [0, 1]) {
+  context.consumptionUnit = unit;
+  lpkMode = mode;
+  for (const raw of [0, 5, 12.3, 100, 120, 32766, 32767]) {
+    lpkSample = raw;
+    lpkHandler.runInContext(lpkNative, {timeout: 100});
+    const valid = raw !== 32766 && raw !== 32767;
+    const converted = mode === 1 ? raw.toFixed(1) : unit === 0 ? raw.toFixed(1) : raw === 0 ? 0 : (unit === 1 ? 100 / raw : 235.2156 / raw).toFixed(1);
+    const label = mode === 1 ? 'L/h' : ['l/100km', 'km/l', 'MPG'][unit];
+    check(`lpk/u${unit}/mode${mode}/raw${raw}/validity`, valid, () => context.lpkValid);
+    check(`lpk/u${unit}/mode${mode}/raw${raw}/label`, label, () => context.lpkUnit);
+    check(`lpk/u${unit}/mode${mode}/raw${raw}/text`, (valid ? converted : '--.-') + ' ' + label, () => call('getLPK(1)'));
+    check(`lpk/u${unit}/mode${mode}/raw${raw}/data`, valid ? mode === 0 && raw > 100 ? 0 : converted : 0, () => call('getLpkData()'));
+    check(`lpk/u${unit}/mode${mode}/raw${raw}/numeric-binding`, true, () => Number.isFinite(Number(call('getLpkData()'))));
+    check(`lpk/u${unit}/mode${mode}/raw${raw}/visibility`, raw !== 32766, () => call('isLpkVisible()'));
+    lpkStates.push({unit, mode, raw, valid: context.lpkValid, label: context.lpkUnit, text: call('getLPK(1)'), data: call('getLpkData()')});
+  }
+}
+check('lpk/raw-measurement-has-no-animation', false, () => lpkBehavior);
+const transitions = [];
+for (const [from, to] of [[12.3, 32767], [32767, 5], [12.3, 32766], [32766, 5]]) {
+  context.consumptionUnit = 0;
+  context.lpkUnitIndex = 0;
+  const samples = lpkBehavior ? [0.25, 0.5, 0.75, 1].map(fraction => from + (to - from) * fraction) : [to];
+  const rendered = samples.map(raw => { context.lpk = raw; return call('getLPK(0)'); });
+  const expected = to === 32766 || to === 32767 ? '--.-' : to.toFixed(1);
+  check(`lpk/transition/${from}-to-${to}/immediate-target`, [expected], () => rendered);
+  transitions.push({from, to, samples, rendered});
+}
 const hash = folder => Object.fromEntries(['Global.qml', 'VehicleEvent.qml'].map(name => [name, crypto.createHash('sha256').update(fs.readFileSync(path.join(folder, name))).digest('hex')]));
 const results = phase === 'patched' && fs.existsSync(resultPath) ? JSON.parse(fs.readFileSync(resultPath, 'utf8')) : {};
-results.failureModes = ['Incorrect pressure scale for bar, kgf/cm2, and psi', 'Wrong wheel after front or rear swap', 'Unavailable pressure loses placeholder', 'Small RPM updates retain stale values, including 100 to zero', 'DPC handler throws before all four values refresh', 'Metric consumption modes select wrong fuel volume units', 'US MPG mode selects metric or imperial volume', 'Unavailable fuel loses placeholder or unit'];
-results.scope = 'Actual QML source blocks in isolated Node VM with mocked measurement getters. Math and state logic only. No Qt runtime or device accuracy proof.';
+results.failureModes = ['Incorrect pressure scale for bar, kgf/cm2, and psi', 'Wrong wheel after front or rear swap', 'Unavailable pressure loses placeholder', 'Small RPM updates retain stale values, including 100 to zero', 'DPC handler throws before all four values refresh', 'Metric consumption modes select wrong fuel volume units', 'US MPG mode selects metric or imperial volume', 'Unavailable fuel loses placeholder or unit', 'Fuel percentages outside 0..100 remain real readings', 'One invalid tank changes sibling validity', 'Flow mode receives distance-consumption conversion or labels', 'Hidden or unavailable consumption becomes a real number', 'Raw consumption animation interpolates sentinel transitions'];
+results.scope = 'Actual QML source blocks and scalar bindings in isolated Node VM with mocked measurement getters. Sentinel animation replay models the declared raw Behavior endpoints. No Qt renderer, animation engine, device accuracy, or active compiled-consumer proof.';
 results.conversionReference = 'https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b9';
-results[phase] = {source, hashes: hash(source), count: rows.length, passed: rows.filter(row => row.pass).length, failed: rows.filter(row => !row.pass).length, rows, rpmStates, dpcStates};
+results[phase] = {source, hashes: hash(source), count: rows.length, passed: rows.filter(row => row.pass).length, failed: rows.filter(row => !row.pass).length, rows, rpmStates, dpcStates, lpkStates, transitions};
 results.originalHashes = hash(original);
 results.patchHashes = hash(candidate);
+fs.mkdirSync(path.dirname(resultPath), {recursive: true});
 fs.writeFileSync(resultPath, JSON.stringify(results, null, 2) + '\n');
 console.log(JSON.stringify({phase, count: rows.length, passed: results[phase].passed, failed: results[phase].failed, resultPath}));
 if (phase === 'patched' && results[phase].failed) process.exitCode = 1;

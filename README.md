@@ -2,14 +2,16 @@
 
 Shared Codex and Claude project for the VikNav 13.1-inch Ford F150 cluster.
 
-Private repository: [primez-x/f150-dash-cluster](https://github.com/primez-x/f150-dash-cluster).
+Repository: [primez-x/f150-dash-cluster](https://github.com/primez-x/f150-dash-cluster).
 
 Continue in the T3 project **F150 Dash Cluster**, which uses `C:\f150-dash-cluster` as the workspace.
 Start each agent with `AGENTS.md` and this README. Claude also has `CLAUDE.md` as the entry point.
 
 The repository contains source candidates, verification tools, and the complete design handoff.
 Raw backups, extracted firmware, private settings, and credentials remain local in this workspace.
-A fresh clone needs the local firmware evidence before the replay tools can run.
+A fresh clone can run gauge, unit, and boot replays with the included static fixtures.
+Cache analysis and UI candidate preparation still require the local Launcher. Required parser metadata is included.
+Vendor source and assets retain the original notices. No blanket redistribution license is assigned.
 
 Goals:
 
@@ -36,6 +38,8 @@ Goals:
 | `analysis/capture-04/` | Meter, settings, cruise, reliability, and compiled-QML evidence |
 | `patches/capture-04/` | PC-only source candidates |
 | `tests/` | Focused source and state replay checks |
+| `evidence/fixtures/capture-04/` | Static source and menu test inputs, parser metadata, and provenance |
+| `evidence/qt-5.14.2/` | Verified opcode header, upstream provenance, and Qt license texts |
 | `handoff/claude-dashboard/` | Six-layout design handoff and assets |
 | `diagnostic/` | USB capture tooling and historical packages |
 | `analysis/relocation.json` | Earlier project location and preservation checks |
@@ -52,11 +56,16 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - The cache decoder maps all 198 units and validates objects, bindings, functions, and bytecode spans.
 - The source candidate corrects pressure conversion, low-RPM updates, DPC assignments, and idle fuel units.
 - The candidate keeps temperature and speed preferences independent. Separate saved overrides prevent native unit snapshots from changing manual choices.
-- Both source replays pass: 206 gauge cases and 194 unit-state cases. Independent review confirmed the candidate logic and persistence SQL.
+- Both source replays pass: 527 gauge cases and 194 unit-state cases. Earlier independent review covered the original unit and persistence changes.
+- Source formatters distinguish L/h fuel flow from distance consumption. Raw consumption values no longer animate through unavailable sentinels.
+- Fuel range-validity flags preserve invalid raw samples for diagnostics. Compiled gauge visibility and unit-label changes remain integration work.
 - Five temperature families preserve documented unavailable states. Native calibration and actual vehicle accuracy remain unverified.
 - Boot candidates remove automatic formatting after mount failure and stop later init scripts after critical mount failures.
 - Private-data migration restores the original directory after a failed mount. If rollback fails, the data remains in `/private-move`.
 - A failed copy preserves the migration backup. Independent review approved the boot candidates for a local commit.
+- New Factory and Units source pages pass 1,060 source assertions and 49 host Qt UI checks.
+- Thirteen additional Qt checks execute the patched System Settings cache and verify route creation, removal, and recreation.
+- Native Qt fixture previews cover both pages at 1920×932 and 1920×720. Real vehicle rendering remains unverified.
 - All six layouts have detailed specifications, coordinate schematics, and genuine assets under `handoff/claude-dashboard/`.
 
 ## Focused checks
@@ -68,6 +77,7 @@ node tests/gauge-replay.cjs original
 node tests/gauge-replay.cjs patched
 node tests/unit-state-replay.cjs original
 node tests/unit-state-replay.cjs patched
+node tests/settings-menu-replay.cjs
 ```
 
 The original phase must reproduce the known failures. The patched phase must pass. Results are stored under `analysis/capture-04/`.
@@ -80,6 +90,34 @@ wsl.exe -d Ubuntu --exec python3 /mnt/c/f150-dash-cluster/tests/mount-safeguard.
 
 The boot replay uses mocked mount, filesystem-check, and format commands. Migration cases use guarded file operations inside temporary directories.
 The replay also executes the candidate init loop against fake services. No device partition is mounted or changed.
+
+The fixture manifest preserves source and export hashes. One vendor menu-code comment is removed from the VehicleEvent fixture.
+The original captured source remains unchanged outside Git. Git keeps the selected fixture bytes unchanged.
+Earlier public commits retain the removed vendor menu-code comment. This source change does not purge Git history or change device access.
+
+Prepare a new UI candidate directory:
+
+```powershell
+python tools/prepare_ui_candidate.py --output analysis/capture-04/ui-candidate-next
+python tests/ui-loader-replay.py
+```
+
+The generator rejects an existing output directory. Choose a new directory for each candidate.
+Candidate firmware remains under ignored `analysis/` paths. No USB update package is installed or deployed by these commands.
+
+Check cache routing with the exact host Qt version:
+
+```powershell
+wsl.exe -d Ubuntu --exec python3 -m venv /mnt/c/f150-dash-cluster/tools/qt-host/venv
+wsl.exe -d Ubuntu --exec /mnt/c/f150-dash-cluster/tools/qt-host/venv/bin/python -m pip install -r /mnt/c/f150-dash-cluster/tests/qt-host-requirements.txt
+wsl.exe -d Ubuntu --exec /mnt/c/f150-dash-cluster/tools/qt-host/venv/bin/python /mnt/c/f150-dash-cluster/tests/qt-ui-loader.py
+```
+
+The Qt probe requires the local Launcher, recovered resources, and decoded metadata under `analysis/capture-04/qml-cache/`.
+The Qt probe uses fixture components and a mocked native type. The probe never loads the captured ARM program or native plugins.
+The host accepts original and redirected caches for the main and System Settings routes.
+Global and VehicleEvent wrappers compile in isolated directories. Factory and Units pages run with safe context stubs.
+Wrapper startup and vehicle behavior remain unverified.
 
 Decode the installed Launcher metadata:
 
@@ -101,11 +139,17 @@ Open `handoff/claude-dashboard/index.html` for the gallery. Schematics describe 
 
 Source replay verifies selected math and state transitions. Source replay does not verify Qt rendering, CAN interpretation, sensor calibration, or live vehicle behavior.
 
-The source candidates require integration into the active compiled UI or a verified external-source loader. No custom dashboard update has been installed.
+The UI candidate redirects compiled loaders to four source files. The generator preserves native code, ELF geometry, and the other 196 cache units.
+No custom dashboard update has been installed. Device-fork cache acceptance and wrapper startup remain unverified.
 
-The Units menu must show manual/follow state and expose `followVehicleUnits()` before vehicle delivery. The handoff includes that interface contract.
+The new Units page shows independent Manual/Follow state and exposes `followVehicleUnits()`. Host tests verify the controls with recorded native-call stubs.
 
-The new settings menu and consolidated cruise region remain UI integration work. The review records both current cruise display paths across all six layouts.
+The new Factory page exposes the 19 existing controls through normal navigation. Stored credentials and authentication settings remain unchanged.
+Selecting the Factory row creates the page and schedules the vendor status query after 50 ms.
+Selecting Back removes the page. Selecting Factory again creates a new page and sends another query.
+The candidate replaces the normal Factory entry. The original PIN page and advanced odometer, shell, and update pages have no route from that entry.
+Vendor recovery and update access require separate checks before deployment.
+Cruise consolidation and compiled fuel-quality gates remain integration work. The review records current bindings across all six layouts.
 
 Boot candidates require target-shell and hardware checks before deployment. Launcher starts before the separate media mount in the captured boot order.
 The existing stop functions do not unmount partitions. A restart can return a filesystem-check error when a partition remains mounted.
@@ -116,3 +160,10 @@ Confirm migration precedence, display availability, and recovery access before a
 Fuel and coolant calibration, invalid native values, signal freshness, polling limits, and shutdown behavior require vehicle reference data and hardware checks.
 
 Keep power relays and vehicle controls unchanged until separate hardware checks prove the shutdown path.
+
+## Third-party source notices
+
+`evidence/qt-5.14.2/qv4instr_moth_p.h` preserves the Qt 5.14.2 copyright and license header unchanged.
+The adjacent `LICENSE.LGPL3`, `LICENSE.GPL2`, and `LICENSE.GPL3` files preserve the upstream license texts.
+`PROVENANCE.json` records official source URLs and byte hashes. The decoder reads opcode declarations from the header.
+Vendor QML fixtures and dashboard assets retain vendor ownership. This repository grants no new license for vendor content.

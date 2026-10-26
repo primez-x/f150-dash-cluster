@@ -889,6 +889,7 @@ Item {
     property int consumptionUnit: 0
     property int dte: 0xFFFF         // 续航里程
     property int fuelPercentage: 0
+    property bool fuelPercentageValid: fuelPercentage>=0 && fuelPercentage<=100
     property int fuelFillerPosition: 0  // 0: left, 1: right,  應用工廠設置決定
     property int fuelLevel: 0     // 0: white, 1: yellow, 2: red
     property var mFuelUnit:
@@ -903,6 +904,8 @@ Item {
     property int subTank: 0
     property int mainTankPercentage: 0
     property int subTankPercentage: 0
+    property bool mainTankPercentageValid: mainTankPercentage>=0 && mainTankPercentage<=100
+    property bool subTankPercentageValid: subTankPercentage>=0 && subTankPercentage<=100
     property int mainTankState: 0
     property int subTankState: 0
     property string tankUnit: "L" //metricSystem?"L":"GAL"
@@ -954,7 +957,7 @@ Item {
                                            (dte==0xFFFF?"---":(dte*tripFactor).toFixed(0))+(unit?(" "+tripUnit):"")
     }
     function getFuelPercentage(){
-        return fuelPercentage+"%"
+        return (fuelPercentageValid?fuelPercentage:"---")+"%"
     }
     property var mFuelStateColor:
     [
@@ -1355,23 +1358,20 @@ Item {
         "L/h",
     ]
     property int lpkUnitIndex: 0
-    property string lpkUnit: mFuelUnit[consumptionUnit]//consumptionUnit?mLpkUnit[lpkUnitIndex]:"MPG"
+    property string lpkUnit: lpkUnitIndex===1?mLpkUnit[1]:mFuelUnit[consumptionUnit]
     property real lpk: 0x7FFF             // 瞬时油耗
-    Behavior on lpk{
-        NumberAnimation{
-            duration: 300
-        }
-    }
+    property bool lpkValid: lpk!==0x7FFF && lpk!==0x7FFE
     function isLpkVisible(){
         return lpk!=0x7FFE
     }
     function getLpkData(){
-        return lpk>100?0:getFuelConsumption(lpk)
+        if(!lpkValid)
+            return 0
+        return lpkUnitIndex===1?lpk.toFixed(1):lpk>100?0:getFuelConsumption(lpk)
     }
     function getLPK(unit){
-        return (lpk==0x7FFF?"--.-":getFuelConsumption(lpk))+(unit?(" "+lpkUnit):"")
-                //consumptionUnit?lpk.toFixed(1):(lpk/fuelFactor).toFixed(1))+
-               // (unit?(" "+lpkUnit):"")
+        return (!lpkValid?"--.-":lpkUnitIndex===1?lpk.toFixed(1):getFuelConsumption(lpk))+
+               (unit?(" "+lpkUnit):"")
     }
     ////////////////////////////////
     // 【0x12】智能怠速 idleInfoNotify

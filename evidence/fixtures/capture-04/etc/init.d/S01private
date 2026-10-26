@@ -1,0 +1,56 @@
+#! /bin/sh
+
+NAME=mount
+PARTITION=/dev/mmcblk0p5
+
+start(){
+    printf "Mounting private"
+    if [ -e /private/zj_save ]; then
+        echo "move /private"
+        mv /private /private-move
+    fi
+    mkdir -p /private
+    e2fsck -y $PARTITION
+    mount -o sync $PARTITION /private
+    if [ $? -ne 0 ]; then
+        echo [$0]: Failed to mount $1!
+        mkfs.ext4 $PARTITION
+        e2fsck -y $PARTITION
+        mount -o sync $PARTITION /private
+    fi
+    if [ -e /private-move ]; then
+        echo "remove /private-move"
+        cp -a /private-move/*.ini /private
+        cp -a /private-move/z* /private
+        rm -rf  /private-move
+    fi
+    rm -rf /root 
+    mkdir -p /private/root
+    ln -s /private/root /root
+}
+
+stop(){
+    printf "umounting private"
+}
+
+case "$1" in
+  start)
+    printf "Starting $NAME: "
+    start
+    ;;
+  stop)
+    printf "Stopping $NAME: "
+    stop
+    ;;
+  restart|reload)
+    echo "Restarting $NAME: "
+    stop
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|reload}" >&2
+    exit 1
+    ;;
+esac
+
+exit 0

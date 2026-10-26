@@ -1,0 +1,46 @@
+#! /bin/sh
+
+NAME=mount
+PARTITION=/dev/mmcblk0p6
+
+start(){
+    printf "Mounting mnt"
+    mkdir -p /mnt
+    e2fsck -y $PARTITION  
+    mount $PARTITION /mnt
+    if [ $? -ne 0 ]; then
+    	echo [$0]: Failed to mount $1!
+	mkfs.ext4 $PARTITION
+	e2fsck -y $PARTITION
+ 	mount $PARTITION /mnt
+    fi
+    rm -rf /mnt/usb
+    rm -rf /mnt/sdcard
+    sync
+}
+
+stop(){
+    printf "umounting mnt"	
+}
+
+case "$1" in
+  start)
+    printf "Starting $NAME: "
+    start 
+    ;;
+  stop)
+    printf "Stopping $NAME: "
+    stop
+    ;;
+  restart|reload)
+    echo "Restarting $NAME: "
+    stop
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|reload}" >&2
+    exit 1
+    ;;
+esac
+
+exit 0

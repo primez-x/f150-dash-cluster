@@ -1,0 +1,789 @@
+{
+  "schema": "decoded-qml-lifecycle-fixture-v1",
+  "units": [
+    {
+      "qrc_path": "Trucks/menu/system/factory/FactoryGenericSetup.qml",
+      "compiled_unit_sha256": "4f23890baaa8453c85bd51e09d133afd1dde25396b0931f440910ddd0aad63ca",
+      "root_completion_function": 117,
+      "view_completion_function": 108,
+      "timer_count": 3,
+      "timers": [
+        {
+          "index": 27,
+          "type": "Timer",
+          "id": "mPostActionTimerId",
+          "location": {
+            "line": 381,
+            "column": 4
+          },
+          "bindings": [
+            {
+              "index": 0,
+              "property": "onTriggered",
+              "type": "Script",
+              "flags": 0,
+              "unit_offset": 24480,
+              "file_offset": 4795824,
+              "location": {
+                "line": 385,
+                "column": 8
+              },
+              "value_location": {
+                "line": 385,
+                "column": 21
+              },
+              "string_index": 0,
+              "string": "",
+              "function_index": 116
+            },
+            {
+              "index": 1,
+              "property": "running",
+              "type": "Boolean",
+              "flags": 0,
+              "unit_offset": 24504,
+              "file_offset": 4795848,
+              "location": {
+                "line": 384,
+                "column": 8
+              },
+              "value_location": {
+                "line": 384,
+                "column": 17
+              },
+              "value": false
+            },
+            {
+              "index": 2,
+              "property": "interval",
+              "type": "Number",
+              "flags": 0,
+              "unit_offset": 24528,
+              "file_offset": 4795872,
+              "location": {
+                "line": 383,
+                "column": 8
+              },
+              "value_location": {
+                "line": 383,
+                "column": 18
+              },
+              "constant_index": 8,
+              "value": {
+                "index": 8,
+                "unit_offset": 2128,
+                "kind": "double",
+                "value": 50.0
+              }
+            }
+          ]
+        }
+      ],
+      "functions": [
+        {
+          "index": 108,
+          "name": "expression for onCompleted",
+          "location": {
+            "line": 350,
+            "column": 8
+          },
+          "code_file_offset": 4783360,
+          "code_sha256": "df8b053ca34ee983d9e0b01288595bd12dddfd1c4d2a2d02361ff4dcc0a44e49",
+          "bytecode": [
+            {
+              "offset": 0,
+              "size": 1,
+              "opcode": 198,
+              "name": "CreateCallContext",
+              "args": {}
+            },
+            {
+              "offset": 1,
+              "size": 5,
+              "opcode": 47,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 300
+              },
+              "references": {
+                "index": "contentItem"
+              }
+            },
+            {
+              "offset": 6,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 7
+              }
+            },
+            {
+              "offset": 8,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 1
+              }
+            },
+            {
+              "offset": 10,
+              "size": 9,
+              "opcode": 63,
+              "name": "SetLookup",
+              "args": {
+                "index": 301,
+                "base": 7
+              },
+              "references": {
+                "index": "preferredHighlightBegin"
+              }
+            },
+            {
+              "offset": 19,
+              "size": 5,
+              "opcode": 47,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 302
+              },
+              "references": {
+                "index": "contentItem"
+              }
+            },
+            {
+              "offset": 24,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 7
+              }
+            },
+            {
+              "offset": 26,
+              "size": 2,
+              "opcode": 4,
+              "name": "LoadConst",
+              "args": {
+                "index": 10
+              },
+              "references": {
+                "index": {
+                  "index": 10,
+                  "unit_offset": 2144,
+                  "kind": "double",
+                  "value": 0.1
+                }
+              }
+            },
+            {
+              "offset": 28,
+              "size": 9,
+              "opcode": 63,
+              "name": "SetLookup",
+              "args": {
+                "index": 303,
+                "base": 7
+              },
+              "references": {
+                "index": "preferredHighlightEnd"
+              }
+            },
+            {
+              "offset": 37,
+              "size": 5,
+              "opcode": 47,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 304
+              },
+              "references": {
+                "index": "mMenuFuncId"
+              }
+            },
+            {
+              "offset": 42,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 7
+              }
+            },
+            {
+              "offset": 44,
+              "size": 1,
+              "opcode": 6,
+              "name": "LoadZero",
+              "args": {}
+            },
+            {
+              "offset": 45,
+              "size": 9,
+              "opcode": 63,
+              "name": "SetLookup",
+              "args": {
+                "index": 305,
+                "base": 7
+              },
+              "references": {
+                "index": "currentIndex"
+              }
+            },
+            {
+              "offset": 54,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 1
+              }
+            },
+            {
+              "offset": 56,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 7
+              }
+            },
+            {
+              "offset": 58,
+              "size": 2,
+              "opcode": 48,
+              "name": "StoreNameSloppy",
+              "args": {
+                "name": 67
+              },
+              "references": {
+                "name": "mCompleted"
+              }
+            },
+            {
+              "offset": 60,
+              "size": 3,
+              "opcode": 26,
+              "name": "MoveReg",
+              "args": {
+                "srcReg": 7,
+                "destReg": 6
+              }
+            },
+            {
+              "offset": 63,
+              "size": 1,
+              "opcode": 208,
+              "name": "PopContext",
+              "args": {}
+            },
+            {
+              "offset": 64,
+              "size": 2,
+              "opcode": 22,
+              "name": "LoadReg",
+              "args": {
+                "reg": 6
+              }
+            },
+            {
+              "offset": 66,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            }
+          ]
+        },
+        {
+          "index": 116,
+          "name": "expression for onTriggered",
+          "location": {
+            "line": 385,
+            "column": 8
+          },
+          "code_file_offset": 4784224,
+          "code_sha256": "df7ae472373656f9d9008f69b099cd652d601e4efe0c4b71d48694e94585358e",
+          "bytecode": [
+            {
+              "offset": 0,
+              "size": 1,
+              "opcode": 198,
+              "name": "CreateCallContext",
+              "args": {}
+            },
+            {
+              "offset": 1,
+              "size": 5,
+              "opcode": 47,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 326
+              },
+              "references": {
+                "index": "mEventHandleId"
+              }
+            },
+            {
+              "offset": 6,
+              "size": 5,
+              "opcode": 59,
+              "name": "GetLookup",
+              "args": {
+                "index": 327
+              },
+              "references": {
+                "index": "item"
+              }
+            },
+            {
+              "offset": 11,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 7
+              }
+            },
+            {
+              "offset": 13,
+              "size": 17,
+              "opcode": 167,
+              "name": "CallPropertyLookup",
+              "args": {
+                "lookupIndex": 328,
+                "base": 7,
+                "argc": 0,
+                "argv": 0
+              },
+              "references": {
+                "lookupIndex": "systemInquire"
+              }
+            },
+            {
+              "offset": 30,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 1
+              }
+            },
+            {
+              "offset": 32,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 7
+              }
+            },
+            {
+              "offset": 34,
+              "size": 2,
+              "opcode": 48,
+              "name": "StoreNameSloppy",
+              "args": {
+                "name": 67
+              },
+              "references": {
+                "name": "mCompleted"
+              }
+            },
+            {
+              "offset": 36,
+              "size": 3,
+              "opcode": 26,
+              "name": "MoveReg",
+              "args": {
+                "srcReg": 7,
+                "destReg": 6
+              }
+            },
+            {
+              "offset": 39,
+              "size": 1,
+              "opcode": 208,
+              "name": "PopContext",
+              "args": {}
+            },
+            {
+              "offset": 40,
+              "size": 2,
+              "opcode": 22,
+              "name": "LoadReg",
+              "args": {
+                "reg": 6
+              }
+            },
+            {
+              "offset": 42,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            }
+          ]
+        },
+        {
+          "index": 117,
+          "name": "expression for onCompleted",
+          "location": {
+            "line": 391,
+            "column": 4
+          },
+          "code_file_offset": 4784360,
+          "code_sha256": "62b4a0b7ecbb728132a0cf46c0a7f73df325fb792646468d4b4b58d4eeea3c16",
+          "bytecode": [
+            {
+              "offset": 0,
+              "size": 1,
+              "opcode": 198,
+              "name": "CreateCallContext",
+              "args": {}
+            },
+            {
+              "offset": 1,
+              "size": 5,
+              "opcode": 47,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 329
+              },
+              "references": {
+                "index": "mPostActionTimerId"
+              }
+            },
+            {
+              "offset": 6,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 7
+              }
+            },
+            {
+              "offset": 8,
+              "size": 17,
+              "opcode": 167,
+              "name": "CallPropertyLookup",
+              "args": {
+                "lookupIndex": 330,
+                "base": 7,
+                "argc": 0,
+                "argv": 0
+              },
+              "references": {
+                "lookupIndex": "restart"
+              }
+            },
+            {
+              "offset": 25,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 6
+              }
+            },
+            {
+              "offset": 27,
+              "size": 1,
+              "opcode": 208,
+              "name": "PopContext",
+              "args": {}
+            },
+            {
+              "offset": 28,
+              "size": 2,
+              "opcode": 22,
+              "name": "LoadReg",
+              "args": {
+                "reg": 6
+              }
+            },
+            {
+              "offset": 30,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "qrc_path": "Trucks/menu/system/MenuSystemUnits.qml",
+      "compiled_unit_sha256": "576a56deb0b8266c09373253a408ab5341dc34f061fb9feb450897d507c82e42",
+      "root_completion_function": 36,
+      "view_completion_function": 34,
+      "timer_count": 0,
+      "timers": [],
+      "functions": [
+        {
+          "index": 34,
+          "name": "expression for onCompleted",
+          "location": {
+            "line": 232,
+            "column": 9
+          },
+          "code_file_offset": 4634112,
+          "code_sha256": "076a00e3b35f87210f81b8ff4a8d90964d59bf05bab35d2754b67a7634e855b6",
+          "bytecode": [
+            {
+              "offset": 0,
+              "size": 1,
+              "opcode": 198,
+              "name": "CreateCallContext",
+              "args": {}
+            },
+            {
+              "offset": 1,
+              "size": 5,
+              "opcode": 47,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 139
+              },
+              "references": {
+                "index": "contentItem"
+              }
+            },
+            {
+              "offset": 6,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 7
+              }
+            },
+            {
+              "offset": 8,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 1
+              }
+            },
+            {
+              "offset": 10,
+              "size": 9,
+              "opcode": 63,
+              "name": "SetLookup",
+              "args": {
+                "index": 140,
+                "base": 7
+              },
+              "references": {
+                "index": "preferredHighlightBegin"
+              }
+            },
+            {
+              "offset": 19,
+              "size": 5,
+              "opcode": 47,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 141
+              },
+              "references": {
+                "index": "contentItem"
+              }
+            },
+            {
+              "offset": 24,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 7
+              }
+            },
+            {
+              "offset": 26,
+              "size": 2,
+              "opcode": 4,
+              "name": "LoadConst",
+              "args": {
+                "index": 9
+              },
+              "references": {
+                "index": {
+                  "index": 9,
+                  "unit_offset": 1080,
+                  "kind": "double",
+                  "value": 0.1
+                }
+              }
+            },
+            {
+              "offset": 28,
+              "size": 9,
+              "opcode": 63,
+              "name": "SetLookup",
+              "args": {
+                "index": 142,
+                "base": 7
+              },
+              "references": {
+                "index": "preferredHighlightEnd"
+              }
+            },
+            {
+              "offset": 37,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 1
+              }
+            },
+            {
+              "offset": 39,
+              "size": 2,
+              "opcode": 48,
+              "name": "StoreNameSloppy",
+              "args": {
+                "name": 86
+              },
+              "references": {
+                "name": "mCompleted"
+              }
+            },
+            {
+              "offset": 41,
+              "size": 5,
+              "opcode": 47,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 143
+              },
+              "references": {
+                "index": "mSystemUnitId"
+              }
+            },
+            {
+              "offset": 46,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 7
+              }
+            },
+            {
+              "offset": 48,
+              "size": 1,
+              "opcode": 6,
+              "name": "LoadZero",
+              "args": {}
+            },
+            {
+              "offset": 49,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 8
+              }
+            },
+            {
+              "offset": 51,
+              "size": 9,
+              "opcode": 63,
+              "name": "SetLookup",
+              "args": {
+                "index": 144,
+                "base": 7
+              },
+              "references": {
+                "index": "currentIndex"
+              }
+            },
+            {
+              "offset": 60,
+              "size": 3,
+              "opcode": 26,
+              "name": "MoveReg",
+              "args": {
+                "srcReg": 8,
+                "destReg": 6
+              }
+            },
+            {
+              "offset": 63,
+              "size": 1,
+              "opcode": 208,
+              "name": "PopContext",
+              "args": {}
+            },
+            {
+              "offset": 64,
+              "size": 2,
+              "opcode": 22,
+              "name": "LoadReg",
+              "args": {
+                "reg": 6
+              }
+            },
+            {
+              "offset": 66,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            }
+          ]
+        },
+        {
+          "index": 36,
+          "name": "expression for onCompleted",
+          "location": {
+            "line": 371,
+            "column": 5
+          },
+          "code_file_offset": 4634376,
+          "code_sha256": "ffc7eba3e34305c412138039c58a250f1b6ab535fe99c2447335f8302e4454b3",
+          "bytecode": [
+            {
+              "offset": 0,
+              "size": 1,
+              "opcode": 198,
+              "name": "CreateCallContext",
+              "args": {}
+            },
+            {
+              "offset": 1,
+              "size": 1,
+              "opcode": 208,
+              "name": "PopContext",
+              "args": {}
+            },
+            {
+              "offset": 2,
+              "size": 2,
+              "opcode": 22,
+              "name": "LoadReg",
+              "args": {
+                "reg": 6
+              }
+            },
+            {
+              "offset": 4,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
