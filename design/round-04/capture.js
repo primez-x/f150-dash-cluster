@@ -7,8 +7,8 @@ async (page) => {
   const base = "http://127.0.0.1:8731/design/round-04/";
   const out = "design/round-04/shots/";
   const shots = [
-    ["daily-a", ["normal", "cold", "turn", "lowtire", "warmcoolant", "hottrans"]],
-    ["daily-b", ["normal", "cold", "turn", "lowfuel", "reserve", "warmcoolant", "hottrans"]],
+    ["daily-a", ["normal", "cold", "turn", "lowtire", "warmcoolant", "hottrans", "stale"]],
+    ["daily-b", ["normal", "cold", "turn", "lowfuel", "reserve", "warmcoolant", "hottrans", "stale"]],
     ["tow-a", ["normal", "hottrans", "turn"]],
     ["tow-b", ["normal", "hottrans", "turn"]],
   ];
@@ -30,5 +30,6 @@ async (page) => {
     await shot(`${name}.html?view=physical&ruler=1`, `${name}-physical.png`, 1920, 720);
   }
   for (const p of [1, 2, 3]) await shot(`daily-a.html?page=${p}`, `daily-a-page${p}.png`, 1920, 932);
+  for (const name of ["daily-a", "daily-b"]) await shot(`${name}.html?night=1&still=1`, `${name}-night.png`, 1920, 932);
   return errors;
 }

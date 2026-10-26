@@ -38,10 +38,6 @@ function rail({ side = "l", x0 = 190, x1 = 640, n, value, color = ACC, redFrom =
   return g + `</g>`;
 }
 
-// Fuel colour follows the round 4 rule: amber at 1/8 tank, red with the truck low-fuel light.
-const fuelState = s => fuelLight(s) ? "reserve" : s.fuel <= LOW ? "low" : "";
-const fuelColor = s => ({ reserve: "#ff3b30", low: "#ffb020", "": ACC })[fuelState(s)];
-
 // Corner readout: small label row over one large value, an optional sub line, then optional raw HTML. side "r" right-aligns the stack.
 const cornerRead = ({ side = "l", at, label, value, unit = "", sub = "", after = "", cls = "", field = "" }) =>
   `<div class="abs corner ${side} ${cls}" style="${at}" data-field="${field}"><span class="k">${label}</span>` +

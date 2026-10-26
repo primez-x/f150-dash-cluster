@@ -18,8 +18,9 @@ async (page) => {
     await page.screenshot({ path: out + path });
     if (h === 932) for (const v of await page.evaluate(() => shroudViolations())) errors.push(`${url}: shroud ${v}`);
   };
-  for (const scene of ["normal", "cruise", "braking", "warmcoolant", "hottrans", "lowfuel", "reserve", "turn", "lowtire"]) await shot(`tow.html?scene=${scene}&still=1`, `tow-${scene}.png`, 1920, 932);
+  for (const scene of ["normal", "cruise", "braking", "warmcoolant", "hottrans", "lowfuel", "reserve", "turn", "lowtire", "stale"]) await shot(`tow.html?scene=${scene}&still=1`, `tow-${scene}.png`, 1920, 932);
   await shot("tow.html?view=physical&ruler=1", "tow-physical.png", 1920, 720);
+  await shot("tow.html?night=1&still=1", "tow-night.png", 1920, 932);
   for (const p of [1, 2, 3]) await shot(`tow.html?page=${p}&still=1`, `tow-page${p}.png`, 1920, 932);
   for (const accent of ["teal", "ice", "blue", "slate"]) {
     await shot(`tow.html?accent=${accent}&still=1`, `accent-${accent}-tow.png`, 1920, 932);

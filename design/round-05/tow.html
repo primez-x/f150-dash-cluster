@@ -48,13 +48,13 @@
 // over tire pressures, fuel, and trailer brake.
 const s = state("tow");
 frame(s);
-layer(segBar({ x0: 200, x1: 860, y: 482, n: 44, max: 7000, value: s.rpm, redFrom: 6000, h: 20, w: 10 }));
+layer(segBar({ x0: 200, x1: 860, y: 482, n: 44, max: TACHO_MAX, value: s.rpm, redFrom: REDLINE, h: 20, w: 10 }));
 const segs = Array.from({ length: 20 }, (_, i) => {
   const v = (i + 1) / 2, lit = s.braking && v <= s.output;
   return `<i class="${lit ? `lit${v + .5 > s.output ? " head" : ""}` : v <= s.gain ? "avail" : ""}"></i>`;
 }).join("");
 place(`
-  <div class="abs big speed" data-field="speed">${s.speed}</div>
+  <div class="abs big speed" data-field="speed">${digits(s.speed)}</div>
   <div class="abs sunit" data-field="vehicleSpeedUnit">MPH</div>
   <div class="abs gdiv"></div>
   <div class="abs gblk">${gear(s, 120)}${chip(s)}</div>

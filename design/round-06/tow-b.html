@@ -36,10 +36,10 @@
 // the white marker show the gain setting. The card moves up under the speed, and the temperature columns get 180 px back.
 const s = state("tow");
 frame(s);
-layer(rail({ n: 36, value: s.rpm / 7000, redFrom: 6 / 7, ends: ["0", "7"], field: "tacho rpm" }) +
+layer(rail({ n: 36, value: s.rpm / TACHO_MAX, redFrom: REDLINE / TACHO_MAX, ends: ["0", TACHO_MAX / 1000], field: "tacho rpm" }) +
   rail({ side: "r", x1: 560, n: 20, value: s.braking ? s.output / 10 : 0, avail: s.gain / 10, mark: s.gain / 10, ends: ["0", "10"], field: "trailer brake output" }));
 place(`
-  <div class="abs big speed" data-field="speed">${s.speed}</div>
+  <div class="abs big speed" data-field="speed">${digits(s.speed)}</div>
   <div class="abs sunit" data-field="vehicleSpeedUnit">MPH</div>
   <div class="abs gdiv"></div>
   <div class="abs gblk">${gear(s, 120)}${chip(s)}</div>

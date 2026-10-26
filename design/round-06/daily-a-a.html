@@ -27,19 +27,16 @@
 const s = state("daily");
 frame(s, { lowCorners: true });
 layer(
-  crescent({ cx: 800, cy: 470, r: 560, a0: 238, a1: 305, max: 120, major: 10, labelStep: 20, value: s.speed, field: "speed", labelSide: 1 }) +
-  crescent({ cx: 1120, cy: 470, r: 560, a0: 122, a1: 55, max: 7, major: 1, labelStep: 1, value: s.rpm / 1000, redFrom: 6, field: "tacho rpm" }) +
-  tempArc({ cx: 800, cy: 470, r: 470, from: 238, to: 290, T: s.T.coolant }) +
-  tempArc({ cx: 1120, cy: 470, r: 470, from: 122, to: 70, T: s.T.oil })
+  crescents(s)
 );
 place(`
-  <div class="abs big speed" data-field="speed">${s.speed}</div>
+  <div class="abs big speed" data-field="speed">${digits(s.speed)}</div>
   <div class="abs sunit" data-field="vehicleSpeedUnit">MPH</div>
   <div class="abs grow">${gear(s, 84)}${chip(s)}</div>
   <div class="abs tread temp ${s.T.coolant.state}" style="left:430px">${tIcon(s.T.coolant)}${tempText(s.T.coolant)}</div>
   <div class="abs tread temp ${s.T.oil.state}" style="right:430px">${tempText(s.T.oil)}${tIcon(s.T.oil)}</div>
-  ${cornerRead({ at: "left:64px;top:704px", label: `${fuelIcon}FUEL`, value: s.fuel, unit: "%", cls: fuelState(s), field: "fuelPercentage" })}
-  ${cornerRead({ side: "r", at: "right:64px;top:704px", label: "RANGE", value: s.range, unit: "mi", cls: fuelState(s), field: "DTE" })}
+  ${cornerRead({ at: "left:64px;top:704px", label: `${fuelIcon}FUEL`, value: dash(s.fuel), unit: "%", cls: fuelState(s), field: "fuelPercentage" })}
+  ${cornerRead({ side: "r", at: "right:64px;top:704px", label: "RANGE", value: dash(s.range), unit: "mi", cls: fuelState(s), field: "DTE" })}
   ${card(s, "left:640px;top:556px;width:640px;height:156px")}`);
 finish(s);
 </script>

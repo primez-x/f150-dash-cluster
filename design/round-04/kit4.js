@@ -1,6 +1,7 @@
 // Round 4 kit: shared state, temperature colours, paged info card, alert, turn edges.
 // Loads after round-01/shared.js and round-02/kit.js (backdrop, place, layer, arcs, segBar, fuel, ICON, ALARM, TRUCK_TOP).
-// Query options: ?scene=normal|turn|cruise|cold|lowfuel|reserve|lowtire|braking|warmcoolant|hottrans  ?accent=teal|ice|blue|slate  ?page=<n>  &still=1  ?view=physical&ruler=1
+// Query options: ?scene=normal|turn|cruise|cold|lowfuel|reserve|lowtire|braking|warmcoolant|hottrans|stale  ?accent=teal|ice|blue|slate
+//   ?page=<n>  ?night=1  ?fuel=<pct>  &still=1  ?view=physical&ruler=1  ?bezel=0
 
 // Temperatures arrive in °C: waterTemp, gearBoxTemp, oilTemp, diffOilTemp. 0xFE hides a reading; 0xFF shows "---".
 // Firmware colour rules: oil cold below 70 °C, diff cold below 49 °C, coolant warm / hot from waterLevel 1 / 2.
@@ -11,23 +12,39 @@ const TEMP = {
   oil: { icon: "oilTemp", label: "OIL", field: "oilTemp getOilTemp()", cold: 70, warm: 126, hot: 136, lo: 100, hi: 300 },
   diff: { icon: null, label: "DIFF", field: "diffOilTemp getDiffOilTemp()", cold: 49, warm: 111, hot: 131, lo: 80, hi: 280 },
 };
+// States: cold, normal (shown quiet), warm, hot, and nodata. nodata covers 0xFF and a reading the truck stopped sending.
 const c2f = c => Math.round(c * 1.8 + 32);
 function temp(kind, c) {
-  const t = TEMP[kind], f = c2f(c), frac = x => Math.min(1, Math.max(0, (x - t.lo) / (t.hi - t.lo)));
-  return { ...t, kind, c, f, state: c >= t.hot ? "hot" : c >= t.warm ? "warm" : c < t.cold ? "cold" : "normal",
-    pct: frac(f), coldTo: frac(c2f(t.cold)), warmFrom: frac(c2f(t.warm)), hotFrom: frac(c2f(t.hot)) };
+  const t = TEMP[kind], frac = x => Math.min(1, Math.max(0, (x - t.lo) / (t.hi - t.lo)));
+  const zones = { coldTo: frac(c2f(t.cold)), warmFrom: frac(c2f(t.warm)), hotFrom: frac(c2f(t.hot)) };
+  if (c == null) return { ...t, ...zones, kind, c, f: "--", state: "nodata", pct: 0 };
+  const f = c2f(c);
+  return { ...t, ...zones, kind, c, f, state: c >= t.hot ? "hot" : c >= t.warm ? "warm" : c < t.cold ? "cold" : "normal", pct: frac(f) };
 }
 const TCOL = { cold: "var(--cold)", normal: "var(--accent)", warm: "var(--warm)", hot: "var(--hot)" };
-const tempText = (T, deg = true) => `<span class="rv">${T.f}${deg ? `<span class="deg">°F</span>` : ""}</span>`;
+const tempText = (T, deg = true) => `<span class="rv">${T.f}${deg && T.state !== "nodata" ? `<span class="deg">°F</span>` : ""}</span>`;
+
+// Engine redline: a design value until confirmed for this truck's engine. TACHO_MAX follows the firmware scale
+// setting tachoSpeedMax (6000 or 7000 RPM). Every RPM gauge reads both values from here.
+const REDLINE = 6000, TACHO_MAX = 7000;
+
+// Fuel warning by range: amber at LOW_RANGE miles to empty, red when the truck low-fuel light (alarm 151) comes on.
+// lowPct is the tank fraction where the amber band starts at the current economy.
+const LOW_RANGE = 50;
+const fuelLow = s => s.range != null && s.range <= LOW_RANGE;
+const lowPct = s => s.fuel && s.range ? Math.min(100, s.fuel * LOW_RANGE / s.range) : 0;
+const fuelState = s => s.fuel == null ? "nodata" : fuelLight(s) ? "reserve" : fuelLow(s) ? "low" : "";
+const fuelColor = s => ({ reserve: "#ff3b30", low: "#ffb020" })[fuelState(s)] || ACC;
+const dash = v => v ?? "--";
 
 const BASE = {
   daily: {
-    mode: "daily", speed: 64, gear: "D", gearNum: 6, drive: "2H", rpm: 2150, fuel: 62, range: 312, cruise: "off", telltales: [],
+    mode: "daily", speed: 64, gear: "D", gearNum: 6, drive: "2H", rpm: 2150, fuel: 62, range: 312, cruise: "off", cruiseSet: 65, telltales: [],
     temps: { coolant: 96, oil: 104, trans: 82 }, tires: [35, 35, 35, 35], low: -1, trip: "128.4", avg: "17.8", mpgNow: 21.4,
     pages: ["trip", "economy", "tires", "temps", "vehicle"],
   },
   tow: {
-    mode: "tow", speed: 58, gear: "D", gearNum: 4, drive: "2H", rpm: 2600, fuel: 46, range: 188, cruise: "off", telltales: [90],
+    mode: "tow", speed: 58, gear: "D", gearNum: 4, drive: "2H", rpm: 2600, fuel: 46, range: 188, cruise: "off", cruiseSet: 65, telltales: [90],
     temps: { trans: 93, coolant: 99, oil: 110, diff: 85 }, tires: [38, 38, 41, 41], low: -1, trip: "86.2", avg: "9.6", mpgNow: 8.9,
     gain: 5.5, grade: 6, trailerMi: 342, brakeType: "Heavy", pages: ["trailer", "trip", "economy", "vehicle"],
   },
@@ -38,8 +55,8 @@ const SCENES = {
   turn: s => Object.assign(s, { turn: "l", cruise: "set" }),
   cruise: s => Object.assign(s, { cruise: "set", speed: 64, rpm: 1900 }),
   cold: s => Object.assign(s, { speed: 28, gearNum: 3, rpm: 1350, temps: Object.fromEntries(Object.keys(s.temps).map(k => [k, COLD[k]])) }),
-  lowfuel: s => Object.assign(s, { fuel: 11, range: Math.round(s.range * 11 / s.fuel),
-    alert: ["caution", ICON("fuel"), "FUEL LOW", `${Math.round(s.range * 11 / s.fuel)} mi to empty`, true] }),
+  lowfuel: s => Object.assign(s, { fuel: Math.round(s.fuel * 45 / s.range), range: 45,
+    alert: ["caution", ICON("fuel"), "FUEL LOW", "45 mi to empty", true] }),
   reserve: s => Object.assign(s, { fuel: 6, range: Math.round(s.range * 6 / s.fuel), telltales: [...s.telltales, 151],
     alert: ["warn", ICON("fuel"), "FUEL RESERVE", `${Math.round(s.range * 6 / s.fuel)} mi to empty · refuel now`, true] }),
   lowtire: s => Object.assign(s, { tires: [s.tires[0], s.tires[1], s.tires[2], 24], low: 3, telltales: [...s.telltales, 24],
@@ -49,6 +66,8 @@ const SCENES = {
   warmcoolant: s => Object.assign(s, { temps: { ...s.temps, coolant: 110 } }),
   hottrans: s => Object.assign(s, { rpm: 3400, gearNum: 3, grade: 8, telltales: [...s.telltales, 8], temps: { ...s.temps, trans: 124, diff: 114 },
     alert: ["warn", ICON("gearBoxTemp"), "TRANSMISSION HOT", `${c2f(124)} °F · reduce load or speed`] }),
+  // Signal timeout: the truck stopped sending fuel and oil temperature. Readings show "--" instead of the last value.
+  stale: s => Object.assign(s, { fuel: null, range: null, temps: { ...s.temps, oil: null } }),
 };
 
 // Accent colour setting: one palette for every layout, teal by default. Amber and red stay reserved for warnings.
@@ -61,19 +80,22 @@ function state(mode) {
   if (params.has("still")) document.body.classList.add("still");
   if (params.has("ruler")) document.body.classList.add("ruler");
   if (params.get("bezel") === "0") document.body.classList.add("nobezel");
+  if (params.has("night")) document.body.classList.add("night");
   const s = (SCENES[params.get("scene")] || SCENES.normal)(structuredClone(BASE[mode]));
+  if (params.has("fuel") && s.fuel) Object.assign(s, { range: Math.round(s.range * +params.get("fuel") / s.fuel), fuel: +params.get("fuel") });
   s.page = +(params.get("page") || 0) % s.pages.length;
   s.T = Object.fromEntries(Object.entries(s.temps).map(([k, c]) => [k, temp(k, c)]));
-  // The background glow takes the worst temperature or fuel colour: amber for a warm temperature or 1/8 tank,
+  // The background glow takes the worst temperature or fuel colour: amber for a warm temperature or LOW_RANGE miles to empty,
   // red for a hot temperature or the low-fuel light. Other alerts leave the glow alone.
-  const states = Object.values(s.T).map(T => T.state), fuel = params.has("fuel") ? +params.get("fuel") : s.fuel;
+  const states = Object.values(s.T).map(T => T.state);
   if (states.includes("hot") || fuelLight(s)) document.body.classList.add("glow-hot");
-  else if (states.includes("warm") || fuel <= LOW) document.body.classList.add("glow-warm");
+  else if (states.includes("warm") || fuelLow(s)) document.body.classList.add("glow-warm");
   return s;
 }
 
-// Top corners hold only low-priority items (wheel rim). Telltales and cruise stay top center.
+// Top corners hold only low-priority items (wheel rim). Telltales, cruise, and alerts stay top center.
 // lowCorners moves the clock and outside temperature into the bottom corners beside the shroud, as stock UI1 does.
+// Alerts appear in one place on every layout: a banner under the telltales. The banner covers the cruise readout while active.
 function frame(s, { lowCorners = false } = {}) {
   const y = lowCorners ? "top:auto;bottom:44px" : "";
   backdrop(SHROUD_TOP);
@@ -81,7 +103,8 @@ function frame(s, { lowCorners = false } = {}) {
   <div class="abs tb" style="left:64px;${y}" data-field="native RTC clock">10:42</div>
   <div class="abs tb" style="right:64px;${y}" data-field="outSideTemp outSideTempUnit">68<small>°F</small></div>
   <div class="abs telltales" style="left:960px;top:22px;transform:translateX(-50%)" data-field="alarmTable">${s.telltales.map(id => `<img src="${ALARM(id)}" alt="">`).join("")}</div>
-  <div class="abs cruise" style="left:810px;top:80px;width:300px;height:80px" data-state="${s.cruise}" data-unit="MPH"></div>`);
+  <div class="abs cruise" style="left:810px;top:80px;width:300px;height:80px" data-state="${s.alert ? "off" : s.cruise}" data-unit="MPH"></div>
+  ${s.alert ? `<div class="abs alert4 ${s.alert[0]}" data-field="alarmTable"><i class="ic${s.alert[4] ? " flip" : ""}" style="--src:url(${s.alert[1]})"></i><span class="t">${s.alert[2]}</span><span class="s">${s.alert[3]}</span></div>` : ""}`);
 }
 
 // Steering column shroud: the bezel hides this arch at the bottom center of the canvas (traced from a photo of the
@@ -143,7 +166,44 @@ function finish(s) {
 const gear = (s, size) => `<div class="gear4" style="font-size:${size}px" data-field="trucksShiftGear getGearNum()">${s.gear}<sup>${s.gearNum}</sup></div>`;
 const chip = s => `<span class="dchip" data-field="getGearAwd()">${s.drive}</span>`;
 const fuelLight = s => s.telltales.includes(151);   // alarmTable[151]: truck low-fuel light
-const fuel4 = (s, at) => fuel({ pct: s.fuel, range: s.range, at, light: fuelLight(s) });
+const fuel4 = (s, at) => fuel({ pct: s.fuel, range: s.range, at, light: fuelLight(s), low: fuelLow(s), mark: lowPct(s) });
+
+// Speed digits sit in fixed-width cells so the number never shifts sideways as the value changes.
+const digits = n => String(n).split("").map(d => `<i>${d}</i>`).join("");
+
+// Daily A crescents: speed left, tachometer right, coolant and oil arcs inside. a0 is the speed zero angle; the tachometer mirrors.
+// With cruise set, a marker on the speed scale shows the set speed.
+function crescents(s, a0 = 238) {
+  const sp = { cx: 800, cy: 470, r: 560, a0, a1: 305, max: 120 };
+  let g = crescent({ ...sp, major: 10, labelStep: 20, value: s.speed, field: "speed", labelSide: 1 }) +
+    crescent({ cx: 1120, cy: 470, r: 560, a0: 360 - a0, a1: 55, max: TACHO_MAX / 1000, major: 1, labelStep: 1, value: s.rpm / 1000, redFrom: REDLINE / 1000, field: "tacho rpm" }) +
+    tempArc({ cx: 800, cy: 470, r: 470, from: 238, to: 290, T: s.T.coolant }) +
+    tempArc({ cx: 1120, cy: 470, r: 470, from: 122, to: 70, T: s.T.oil });
+  if (s.cruise === "set") {
+    const a = sp.a0 + (sp.a1 - sp.a0) * s.cruiseSet / sp.max, p = (r, da = 0) => polar(sp.cx, sp.cy, r, a + da).map(v => v.toFixed(1)).join(" ");
+    g += `<path data-field="cruiseSpeedSet" d="M${p(sp.r + 30)} L${p(sp.r + 46, -1.4)} L${p(sp.r + 46, 1.4)} Z" fill="var(--accent)"/>`;
+  }
+  return g;
+}
+
+// Daily B halo: RPM segments over the top, fuel arc closing the bottom (E lower left, F lower right). Returns the fuel readout.
+function halo(s, { cx = 960, cy = 456, r = 256 } = {}) {
+  const n = 56, lastLit = Math.floor(s.rpm / TACHO_MAX * n - .5);
+  let g = `<g data-field="tacho rpm">`;
+  for (let i = 0; i < n; i++) {
+    const t = (i + .5) / n, a = -105 + 210 * t, v = TACHO_MAX * t, lit = v <= s.rpm, isRed = v >= REDLINE;
+    const [x0, y0] = polar(cx, cy, r, a), [x1, y1] = polar(cx, cy, r + (isRed ? 32 : 24), a);
+    const op = lit ? .2 + .8 * Math.pow((i + 1) / (lastLit + 1), 1.6) : 1, head = lit && i >= lastLit - 1;
+    g += line(x0, y0, x1, y1, lit ? (isRed ? "#ff3b30" : ACC) : isRed ? "#2a1210" : "#12171d", 7, `stroke-linecap="round" stroke-opacity="${op.toFixed(2)}"${head ? ' filter="url(#glow)"' : ""}`);
+  }
+  const e = 236, f = 124, at = p => e - (e - f) * p / 100;
+  g += `</g><g data-field="fuelPercentage"><path d="${arc(cx, cy, r + 14, f, e)}" fill="none" stroke="#fff" stroke-opacity=".05" stroke-width="8"/>`;
+  if (s.fuel != null) g += `<path d="${arc(cx, cy, r + 14, at(lowPct(s)), e)}" fill="none" stroke="#ffb020" stroke-opacity=".3" stroke-width="8"/>` + tailArc(cx, cy, r + 14, e, at(s.fuel), 8, fuelColor(s));
+  const [ex, ey] = polar(cx, cy, r + 52, e), [fx, fy] = polar(cx, cy, r + 52, f);
+  layer(g + text(ex, ey + 8, "E", 22, "#6b7480") + text(fx, fy + 8, "F", 22, "#6b7480") + `</g>`);
+  return `<div class="abs fread ${fuelState(s)}" data-field="fuelPercentage DTE"><i class="ic" style="--src:url(${ICON("fuel")})"></i>` +
+    `<span class="rv">${dash(s.fuel)}<span class="u">%</span></span><span class="sep"></span><span class="rv">${dash(s.range)}<span class="u">mi</span></span></div>`;
+}
 
 function tires4(s, h, at) {
   const t = (i, f) => `<span class="rv${i === s.low ? " low" : ""}" data-field="mTpmsPressure ${f}">${s.tires[i]}</span>`;
@@ -156,7 +216,7 @@ const PAGES = {
   trip: s => ["TRIP A", "TripAB.qml RunTimeInfo.qml",
     `<div class="cells">${cell("DIST", s.trip, "mi", "mTripA")}${cell("TIME", "2:41", "h", "RunTimeInfo")}${cell("AVG", s.avg, "mpg", "mAvgFuel")}</div>`],
   economy: s => ["FUEL ECONOMY", "MpgInfo.qml AvgFuelinfo.qml",
-    `<div class="cells">${cell("NOW", s.mpgNow, "mpg", "instant mpg")}${cell("AVG", s.avg, "mpg", "mAvgFuel")}${cell("RANGE", s.range, "mi", "DTE")}</div>
+    `<div class="cells">${cell("NOW", s.mpgNow, "mpg", "instant mpg")}${cell("AVG", s.avg, "mpg", "mAvgFuel")}${cell("RANGE", dash(s.range), "mi", "DTE")}</div>
      <div class="meter"><i style="width:${s.mpgNow / 30 * 100}%"></i></div>`],
   tires: s => ["TIRES · PSI", "TpmsInfo.qml",
     `<div class="cells">${["LF", "RF", "LR", "RR"].map((k, i) => cell(k, s.tires[i], "", `mTpmsPressure ${k}`)).join("")}</div>`],
@@ -166,13 +226,13 @@ const PAGES = {
   vehicle: s => ["VEHICLE", "OilLifeinfo.qml BatteryMeter.qml trucksOilPressure",
     `<div class="cells">${cell("OIL PRESS", Math.round(2.9 * 14.5), "psi", "trucksOilPressure (bar)")}${cell("OIL LIFE", "72", "%", "trucksOilLifePercentage")}${cell("BATT", "14.2", "V", "batterVoltage")}</div>`],
   // Trailer miles: trucksTrailerDistance. Brake type: trucksSetupInfo[17], Light or Heavy electric (vehicle setting).
-  trailer: s => ["TRAILER", "trucksTrailerDistance trucksSetupInfo[17] trucksTrailerGain",
-    `<div class="cells">${cell("TRAILER", s.trailerMi, "mi", "trucksTrailerDistance getTrucksTrailerDistance()")}${cell("BRAKE TYPE", s.brakeType, "", "trucksSetupInfo[17] mTrailerBreakType")}${cell("GAIN", s.gain.toFixed(1), "", "trucksTrailerGain")}</div>`],
+  // Gain stays on the trailer brake readout only.
+  trailer: s => ["TRAILER", "trucksTrailerDistance trucksSetupInfo[17]",
+    `<div class="cells">${cell("TRAILER", s.trailerMi, "mi", "trucksTrailerDistance getTrucksTrailerDistance()")}${cell("BRAKE TYPE", s.brakeType, "", "trucksSetupInfo[17] mTrailerBreakType")}</div>`],
 };
 
-// The card and the alert share one box. While an alert is active, the alert replaces the card.
+// Paged card. Alerts appear in the banner under the telltales (frame), so the card always shows the current page.
 function card(s, at) {
-  if (s.alert) return `<div class="abs alert4 ${s.alert[0]}" style="${at}" data-field="alarmTable"><i class="ic${s.alert[4] ? " flip" : ""}" style="--src:url(${s.alert[1]})"></i><div><div class="t">${s.alert[2]}</div><div class="s">${s.alert[3]}</div></div></div>`;
   const [title, src, body] = PAGES[s.pages[s.page]](s);
   return `<div class="abs card" style="${at}" data-field="drivingInfoIndex (steering wheel left / right) · ${src}">
     <span class="chev l">‹</span><span class="chev r">›</span>
@@ -184,10 +244,11 @@ function card(s, at) {
 function tempArc({ cx, cy, r, from, to, T, w = 8 }) {
   const a = p => from + (to - from) * p;
   const seg = (p0, p1, col, op) => `<path d="${arc(cx, cy, r, Math.min(a(p0), a(p1)), Math.max(a(p0), a(p1)))}" fill="none" stroke="${col}" stroke-opacity="${op}" stroke-width="${w}"/>`;
-  return `<g data-field="${T.field}">${seg(0, 1, "#ffffff", .05)}${seg(0, T.coldTo, "#a0ccf5", .2)}${seg(T.warmFrom, T.hotFrom, "#ffb020", .32)}${seg(T.hotFrom, 1, "#ff3b30", .45)}${tailArc(cx, cy, r, a(0), a(T.pct), w, TCOL[T.state])}</g>`;
+  const fill = T.state === "nodata" ? "" : `<g opacity="${T.state === "normal" ? .5 : 1}">${tailArc(cx, cy, r, a(0), a(T.pct), w, TCOL[T.state])}</g>`;
+  return `<g data-field="${T.field}">${seg(0, 1, "#ffffff", .05)}${seg(0, T.coldTo, "#a0ccf5", .2)}${seg(T.warmFrom, T.hotFrom, "#ffb020", .32)}${seg(T.hotFrom, 1, "#ff3b30", .45)}${fill}</g>`;
 }
 const zones = (T, dir) => `linear-gradient(${dir}, rgba(160, 204, 245, .2) 0 ${T.coldTo * 100}%, rgba(255, 255, 255, .05) ${T.coldTo * 100}% ${T.warmFrom * 100}%, ` +
   `rgba(255, 176, 32, .32) ${T.warmFrom * 100}% ${T.hotFrom * 100}%, rgba(255, 59, 48, .45) ${T.hotFrom * 100}% 100%)`;
 const tempTrack = T => `<div class="ztrack" style="background:${zones(T, "90deg")}"><i style="width:${T.pct * 100}%"></i></div>`;
 const tempCol = (T, h) => `<div class="zcol" style="height:${h}px;background:${zones(T, "0deg")}"><i style="height:${T.pct * 100}%"></i></div>`;
-const tIcon = (T, h = 34) => T.icon ? `<img src="${ICON(T.icon)}" style="height:${h}px;opacity:.85" alt="">` : `<span class="k" style="letter-spacing:2px">DIFF</span>`;
+const tIcon = (T, h = 34) => T.icon ? `<img class="tic" src="${ICON(T.icon)}" style="height:${h}px" alt="">` : `<span class="k" style="letter-spacing:2px">DIFF</span>`;

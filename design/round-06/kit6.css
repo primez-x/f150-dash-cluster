@@ -8,3 +8,4 @@
 .corner.low .big { color: var(--caution); } .corner.low .ic { background: var(--caution); }
 .corner.reserve .big { color: var(--warn); } .corner.reserve .ic { background: var(--warn); }
 .corner.on .big { color: var(--accent); }
+.corner.nodata .big { color: #4a525c; }

@@ -11,8 +11,32 @@ body.glow-hot { --ambient: var(--hot); --ambient-o: .24; }
 .u { font: var(--small) "BMW Type Global"; color: #6b7480; margin-left: 4px; letter-spacing: 0; }
 .rv { font: var(--read) "BMW Type Global"; line-height: 1; color: var(--normal); }
 
-/* Temperature colour states. */
-.cold { --tc: var(--cold); } .normal { --tc: var(--normal); } .warm { --tc: var(--warm); } .hot { --tc: var(--hot); }
+/* Temperature colour states. Normal stays quiet (dim value, icon, and fill) so a change to warm, hot, or cold stands out.
+   nodata: the reading is 0xFF or the truck stopped sending; the value shows "--" with no fill. */
+.cold { --tc: var(--cold); } .normal { --tc: #8a929c; } .warm { --tc: var(--warm); } .hot { --tc: var(--hot); } .nodata { --tc: #4a525c; }
+.tic { opacity: .85; }
+.temp.normal .tic { opacity: .45; }
+.temp.nodata .tic { opacity: .25; }
+.temp.normal .ztrack i, .temp.normal .zcol i { opacity: .5; }
+.temp.nodata .ztrack i, .temp.nodata .zcol i { display: none; }
+
+/* Speed digits in fixed-width cells (Konexy digits are up to .9 em wide; "1" is .31 em). */
+.speed i { display: inline-block; width: .88em; text-align: center; font-style: normal; }
+
+/* Night (headlights on, firmware ill): whites drop to about 75 %, the floor glow halves. Warnings keep full colour. */
+body.night { --normal: #b4bac1; }
+body.night .big, body.night .gear4 { color: #c2c7cd; text-shadow: none; }
+body.night .tb { color: #a9b0b8; }
+body.night:not(.glow-warm):not(.glow-hot) { --ambient-o: .06; }
+
+/* Fuel readouts: no data shows "--". */
+.fuel.nodata .v, .fuel.nodata .dte { color: #4a525c; }
+.fuel.nodata .track i { display: none; }
+.fread .ic { width: 32px; height: 32px; background: #c9d1da; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; transform: scaleX(-1); align-self: center; }
+.fread.low .ic { background: var(--caution); } .fread.low .rv { color: var(--caution); }
+.fread.reserve .ic { background: var(--warn); } .fread.reserve .rv { color: var(--warn); }
+.fread.nodata .rv { color: #4a525c; }
+.fread .sep { width: 1px; height: 30px; background: rgba(255, 255, 255, .14); align-self: center; }
 .temp .rv { color: var(--tc); }
 .temp .deg { font-size: 24px; vertical-align: top; color: var(--tc); opacity: .8; margin-left: 2px; }
 
@@ -46,12 +70,17 @@ body.glow-hot { --ambient: var(--hot); --ambient-o: .24; }
 .card .meter { position: relative; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .06); margin-top: 14px; }
 .card .meter i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: linear-gradient(90deg, transparent, var(--accent)); }
 
-/* Alert: takes the card position while active, so the eye finds the problem where the card sits. */
-.alert4 { box-sizing: border-box; padding: 0 28px; border-radius: 22px; display: flex; align-items: center; gap: 22px; }
-.alert4 .ic { width: 58px; height: 58px; flex: none; background: currentColor; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; }
+/* Alert banner: one place on every layout, top center under the telltales and next to the light that raised the alert.
+   A warning (red) pulses once when the banner appears; a caution (amber) appears without a pulse. */
+.alert4 { left: 960px; top: 78px; height: 64px; transform: translateX(-50%); box-sizing: border-box; padding: 0 28px; border-radius: 18px;
+  display: flex; align-items: center; gap: 16px; white-space: nowrap; }
+.alert4 .ic { width: 40px; height: 40px; flex: none; background: currentColor; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; }
 .alert4 .ic.flip { transform: scaleX(-1); }
-.alert4 .t { font: 600 var(--read) "BMW Type Global"; line-height: 1.05; }
-.alert4 .s { font: 24px "BMW Type Global"; color: #c9d1da; margin-top: 8px; }
+.alert4 .t { font: 600 30px "BMW Type Global"; }
+.alert4 .s { font: 22px "BMW Type Global"; color: #c9d1da; margin-left: 6px; }
+.alert4.warn { animation: pulse 1.4s ease-out 1; }
+.still .alert4.warn { animation: none; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, .7); } 100% { box-shadow: 0 0 0 28px rgba(255, 59, 48, 0), 0 0 44px rgba(255, 59, 48, .22); } }
 .alert4.caution { color: var(--caution); background: rgba(255, 176, 32, .1); border: 2px solid var(--caution); box-shadow: 0 0 40px rgba(255, 176, 32, .16); }
 .alert4.warn { color: var(--warn); background: rgba(255, 59, 48, .12); border: 2px solid var(--warn); box-shadow: 0 0 44px rgba(255, 59, 48, .22); }
 

@@ -24,9 +24,17 @@
 <ul>
   <li>Paged card: the steering wheel left and right keys change the page, as the stock layouts do with <code>drivingInfoIndex</code>.
     Daily pages: trip, fuel economy, tires, temperatures, vehicle. Towing pages: trailer, trip, fuel economy, vehicle. Add <code>?page=1</code> and so on to preview a page.</li>
-  <li>Alerts take the card position while active, so a problem appears where the eye already looks for secondary data.</li>
+  <li>Alerts: one place on every layout, a banner top center under the telltales, next to the light that raised the alert.
+    The card keeps showing the current page. A red warning pulses once when the banner appears. The banner covers the cruise readout while active.</li>
+  <li>Quiet normal state: normal temperatures show dim values, icons, and fills. A warm, hot, or cold reading returns to full colour, so a change stands out without reading numbers.</li>
+  <li>No data: a reading the truck stops sending (or 0xFF) shows "--" with no gauge fill, never the last value. The timeout length is integration work.</li>
+  <li>Speed digits sit in fixed-width cells, so the number never shifts sideways as the value changes.</li>
+  <li>Cruise: on Daily A, a marker on the speed crescent shows the set speed. Daily B and Towing have no speed gauge and keep the top-center cruise readout.</li>
+  <li>Night: add <code>?night=1</code>. Whites drop to about 75 % and the floor glow halves when the headlights are on (firmware <code>ill</code>). Warning colours stay full.</li>
+  <li>RPM: every RPM gauge reads one redline value (<code>REDLINE</code> in kit4.js, 6000 until confirmed for this engine) and the firmware scale <code>tachoSpeedMax</code> (6000 or 7000).</li>
   <li>Temperatures show real °F from <code>waterTemp</code>, <code>gearBoxTemp</code>, <code>oilTemp</code>, and <code>diffOilTemp</code>. Colour: blue cold, white normal, amber warm, red hot. A reading the truck does not send stays hidden.</li>
-  <li>Background glow: the floor glow turns amber when any temperature is warm or fuel reaches 1/8 tank. The glow turns red when any temperature is hot or the truck low-fuel light (alarm 151) comes on. Other alerts leave the glow alone.</li>
+  <li>Background glow: the floor glow turns amber when any temperature is warm or the range drops to 50 miles. The glow turns red when any temperature is hot or the truck low-fuel light (alarm 151) comes on. Other alerts leave the glow alone.</li>
+  <li>Fuel warning by range: the fuel gauge turns amber at 50 miles to empty, and the gauge marker shows where that point falls at the current economy. 50 miles is a design value.</li>
   <li>Colour: every layout shares one accent palette, teal by default. See the accent setting in <a href="../round-05/">round 5</a>.</li>
   <li>Usable area: the steering column shroud hides an arch at the bottom center of the screen, traced from a photo of the installed cluster.
     Every preview draws the arch in black. Content stays at least 20 px clear of the arch, and the bottom corners stay usable.
@@ -49,12 +57,16 @@
   <div><h3>B · Halo</h3><a href="daily-b.html"><img src="shots/daily-b-normal.png" alt=""></a></div>
   <div><h3>A · cold start</h3><a href="daily-a.html?scene=cold"><img src="shots/daily-a-cold.png" alt=""></a></div>
   <div><h3>B · cold start</h3><a href="daily-b.html?scene=cold"><img src="shots/daily-b-cold.png" alt=""></a></div>
-  <div><h3>A · low tire (alert in the card position)</h3><a href="daily-a.html?scene=lowtire"><img src="shots/daily-a-lowtire.png" alt=""></a></div>
-  <div><h3>B · fuel 1/8 tank: amber glow</h3><a href="daily-b.html?scene=lowfuel"><img src="shots/daily-b-lowfuel.png" alt=""></a></div>
+  <div><h3>A · low tire (alert banner under the telltales)</h3><a href="daily-a.html?scene=lowtire"><img src="shots/daily-a-lowtire.png" alt=""></a></div>
+  <div><h3>B · 45 miles to empty: amber glow</h3><a href="daily-b.html?scene=lowfuel"><img src="shots/daily-b-lowfuel.png" alt=""></a></div>
   <div><h3>A · left turn, cruise set</h3><a href="daily-a.html?scene=turn"><img src="shots/daily-a-turn.png" alt=""></a></div>
   <div><h3>A · card page 4 of 5 (temperatures)</h3><a href="daily-a.html?page=3"><img src="shots/daily-a-page3.png" alt=""></a></div>
   <div><h3>A · coolant warm: amber glow</h3><a href="daily-a.html?scene=warmcoolant"><img src="shots/daily-a-warmcoolant.png" alt=""></a></div>
   <div><h3>B · transmission hot: red glow</h3><a href="daily-b.html?scene=hottrans"><img src="shots/daily-b-hottrans.png" alt=""></a></div>
+  <div><h3>A · no data: oil temperature and fuel stopped</h3><a href="daily-a.html?scene=stale"><img src="shots/daily-a-stale.png" alt=""></a></div>
+  <div><h3>B · no data: oil temperature and fuel stopped</h3><a href="daily-b.html?scene=stale"><img src="shots/daily-b-stale.png" alt=""></a></div>
+  <div><h3>A · night</h3><a href="daily-a.html?night=1"><img src="shots/daily-a-night.png" alt=""></a></div>
+  <div><h3>B · night</h3><a href="daily-b.html?night=1"><img src="shots/daily-b-night.png" alt=""></a></div>
 </div>
 <div class="pick">Daily: keep both. A and B become two separate layouts.</div>
 

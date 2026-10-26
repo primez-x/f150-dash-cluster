@@ -200,16 +200,18 @@ function gforce({ cx, cy, r, gx, gy, peak }) {
   return s + `</g>`;
 }
 
-// Fuel gauge for every layout: level first, range second, amber at 1/8 tank, red with the low-fuel light.
-// LOW (1/8 tank) is a design value: the gauge turns amber. The truck low-fuel light (alarm 151) turns the gauge red.
+// Fuel gauge for every layout: level first, range second, amber when low, red with the low-fuel light.
+// By default low means LOW (1/8 tank), a design value; round 4 passes a range-based low and its marker position (mark).
+// The truck low-fuel light (alarm 151) turns the gauge red. pct null means no data: the gauge shows "--".
 // ?fuel=<pct> previews any level; range scales with the level.
 // fuelRefuelingPortPositon (0 left, 1 right) sets the filler arrow; the stock icon points right.
 const LOW = 12.5;
-function fuel({ pct, range, at, port = 0, light = false }) {
-  if (params.has("fuel")) { range = Math.round(range * +params.get("fuel") / pct); pct = +params.get("fuel"); }
-  return `<div class="abs bar fuel${light ? " reserve" : pct <= LOW ? " low" : ""}" style="${at}" data-field="fuelPercentage DTE fuelRefuelingPortPositon">
-    <div class="head"><span class="k"><i class="ic${port ? "" : " flip"}" style="--src:url(${ICON("fuel")})"></i>FUEL</span><span class="v">${pct}<span class="u">%</span><span class="dte">${range}<span class="u">mi range</span></span></span></div>
-    <div class="track"><i style="width:${pct}%"></i><b style="left:${LOW}%"></b></div><div class="ends"><span>E</span><span>F</span></div>
+function fuel({ pct, range, at, port = 0, light = false, low = null, mark = LOW }) {
+  if (params.has("fuel") && pct) { range = Math.round(range * +params.get("fuel") / pct); pct = +params.get("fuel"); }
+  const state = pct == null ? " nodata" : light ? " reserve" : (low ?? pct <= LOW) ? " low" : "";
+  return `<div class="abs bar fuel${state}" style="${at}" data-field="fuelPercentage DTE fuelRefuelingPortPositon">
+    <div class="head"><span class="k"><i class="ic${port ? "" : " flip"}" style="--src:url(${ICON("fuel")})"></i>FUEL</span><span class="v">${pct ?? "--"}<span class="u">%</span><span class="dte">${range ?? "--"}<span class="u">mi range</span></span></span></div>
+    <div class="track"><i style="width:${pct ?? 0}%"></i><b style="left:${mark}%"></b></div><div class="ends"><span>E</span><span>F</span></div>
   </div>`;
 }
 
