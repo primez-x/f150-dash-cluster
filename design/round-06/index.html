@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 6</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+  .pick { margin-top: 16px; padding: 10px 14px; background: #141a21; border-radius: 6px; color: #fff; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 6 · Bottom corners</h1>
+<p>The steering column shroud hides the bottom center of the screen. Above y 740 the full width is usable. Below y 740 the usable area
+  narrows along the shroud into two corners. Each corner fits one tall readout, as stock UI1 uses the corners for RPM and km/h.
+  A card or a three-cell row does not fit. Each layout below spends the corners on the room the shroud took away.
+  Builds on the <a href="../round-04/">round 4</a> and <a href="../round-05/">round 5</a> layouts.</p>
+<ul>
+  <li>Corner readout: a small label over one large value, at the outer edge of the corner.</li>
+  <li>Shroud rail: a segment gauge that follows the shroud edge. The value fills from the corner toward the center.</li>
+  <li>Clock and outside temperature can move from the top corners, which the wheel rim hides, down to the bottom corners.</li>
+  <li>Check from the driver seat that the bottom corners are visible through the wheel before you pick.</li>
+</ul>
+<a href="usable.html"><img src="shots/usable.png" alt="Usable area diagram"></a>
+
+<h2>Daily A · pick A or B</h2>
+<p>Both options move fuel out of the center column. The speed returns to 240 px, and the card clears the shroud with room to spare.</p>
+<div class="grid">
+  <div><h3>A · Corner readouts: fuel left, range right, clock and outside temperature below them</h3><a href="daily-a-a.html"><img src="shots/daily-a-a-normal.png" alt=""></a></div>
+  <div><h3>B · Shroud rails: fuel rail left (E to F), instant economy rail right; crescents end a little higher</h3><a href="daily-a-b.html"><img src="shots/daily-a-b-normal.png" alt=""></a></div>
+  <div><h3>A · fuel 1/8 tank</h3><a href="daily-a-a.html?scene=lowfuel"><img src="shots/daily-a-a-lowfuel.png" alt=""></a></div>
+  <div><h3>B · fuel 1/8 tank</h3><a href="daily-a-b.html?scene=lowfuel"><img src="shots/daily-a-b-lowfuel.png" alt=""></a></div>
+  <div><h3>A · left turn, cruise set</h3><a href="daily-a-a.html?scene=turn"><img src="shots/daily-a-a-turn.png" alt=""></a></div>
+  <div><h3>B · left turn, cruise set</h3><a href="daily-a-b.html?scene=turn"><img src="shots/daily-a-b-turn.png" alt=""></a></div>
+</div>
+
+<h2>Daily B · pick A or B</h2>
+<p>The halo and its fuel arc sit over the shroud, so the corners cannot give the halo more room. These options move the side content instead.</p>
+<div class="grid">
+  <div><h3>A · Low clock: clock and outside temperature move to the bottom corners; the rest stays</h3><a href="daily-b-a.html"><img src="shots/daily-b-a-normal.png" alt=""></a></div>
+  <div><h3>B · Low sides: temperatures and card also drop, so the top quarter holds only telltales and cruise</h3><a href="daily-b-b.html"><img src="shots/daily-b-b-normal.png" alt=""></a></div>
+  <div><h3>A · low-fuel light (reserve)</h3><a href="daily-b-a.html?scene=reserve"><img src="shots/daily-b-a-reserve.png" alt=""></a></div>
+  <div><h3>B · low-fuel light (reserve)</h3><a href="daily-b-b.html?scene=reserve"><img src="shots/daily-b-b-reserve.png" alt=""></a></div>
+</div>
+
+<h2>Towing · pick A or B</h2>
+<p>Both options move RPM and the trailer brake into the corners. The card moves up under the speed, and the temperature columns get their full 180 px back.
+  Grade moves under fuel.</p>
+<div class="grid">
+  <div><h3>A · Corner readouts: RPM with a short bar left, trailer brake gain with output segments right</h3><a href="tow-a.html"><img src="shots/tow-a-normal.png" alt=""></a></div>
+  <div><h3>B · Shroud rails: RPM rail left, trailer brake rail right (dim range and marker = gain)</h3><a href="tow-b.html"><img src="shots/tow-b-normal.png" alt=""></a></div>
+  <div><h3>A · braking: output 4.0 of gain 5.5</h3><a href="tow-a.html?scene=braking"><img src="shots/tow-a-braking.png" alt=""></a></div>
+  <div><h3>B · braking: output 4.0 of gain 5.5</h3><a href="tow-b.html?scene=braking"><img src="shots/tow-b-braking.png" alt=""></a></div>
+  <div><h3>A · transmission hot</h3><a href="tow-a.html?scene=hottrans"><img src="shots/tow-a-hottrans.png" alt=""></a></div>
+  <div><h3>B · transmission hot</h3><a href="tow-b.html?scene=hottrans"><img src="shots/tow-b-hottrans.png" alt=""></a></div>
+</div>
+</body>
+</html>

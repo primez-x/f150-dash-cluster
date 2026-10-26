@@ -1,0 +1,10 @@
+/* Round 6: readouts in the bottom corners beside the steering column shroud. Loads after round-04/kit4.css. */
+.corner { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; white-space: nowrap; }
+.corner.r { align-items: flex-end; }
+.corner .k { display: flex; align-items: center; gap: 10px; }
+.corner .big { font: 56px "BMW Type Global"; line-height: 1; color: var(--normal); }
+.corner .sub { font: 24px "BMW Type Global"; color: #c9d1da; }
+.corner .ic { width: 30px; height: 30px; background: #c9d1da; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; transform: scaleX(-1); }
+.corner.low .big { color: var(--caution); } .corner.low .ic { background: var(--caution); }
+.corner.reserve .big { color: var(--warn); } .corner.reserve .ic { background: var(--warn); }
+.corner.on .big { color: var(--accent); }

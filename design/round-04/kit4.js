@@ -72,25 +72,38 @@ function state(mode) {
   return s;
 }
 
-// Corners hold only low-priority items (wheel rim). Telltales and cruise stay top center.
-function frame(s) {
+// Top corners hold only low-priority items (wheel rim). Telltales and cruise stay top center.
+// lowCorners moves the clock and outside temperature into the bottom corners beside the shroud, as stock UI1 does.
+function frame(s, { lowCorners = false } = {}) {
+  const y = lowCorners ? "top:auto;bottom:44px" : "";
   backdrop(SHROUD_TOP);
   place(`
-  <div class="abs tb" style="left:64px" data-field="native RTC clock">10:42</div>
-  <div class="abs tb" style="right:64px" data-field="outSideTemp outSideTempUnit">68<small>°F</small></div>
+  <div class="abs tb" style="left:64px;${y}" data-field="native RTC clock">10:42</div>
+  <div class="abs tb" style="right:64px;${y}" data-field="outSideTemp outSideTempUnit">68<small>°F</small></div>
   <div class="abs telltales" style="left:960px;top:22px;transform:translateX(-50%)" data-field="alarmTable">${s.telltales.map(id => `<img src="${ALARM(id)}" alt="">`).join("")}</div>
   <div class="abs cruise" style="left:810px;top:80px;width:300px;height:80px" data-state="${s.cruise}" data-unit="MPH"></div>`);
 }
 
 // Steering column shroud: the bezel hides this arch at the bottom center of the canvas (traced from a photo of the
 // installed cluster running stock UI1). Shown by default so every preview matches the driver view; ?bezel=0 hides the shape.
-// Keep content at least SHROUD_MARGIN px clear of the arch. The floor glow rises from the arch top so the glow stays visible.
-const SHROUD = "M165 932 C240 820 470 758 960 752 C1450 758 1680 820 1755 932 Z", SHROUD_TOP = 752, SHROUD_MARGIN = 20;
+// Keep content at least SHROUD_MARGIN px clear of the arch and the screen edges. The floor glow rises from the arch top so the glow stays visible.
+// SHROUD_CUBIC is the left half of the arch; the right half mirrors at x 960.
+const SHROUD_CUBIC = [[165, 932], [240, 820], [470, 758], [960, 752]], SHROUD_TOP = 752, SHROUD_MARGIN = 20;
+const SHROUD = `M${SHROUD_CUBIC[0]} C${SHROUD_CUBIC.slice(1).join(" ")} C${SHROUD_CUBIC.slice(0, 3).reverse().map(([x, y]) => [1920 - x, y]).join(" ")} Z`;
+
+// Point on the left half of the arch at t (0 = bottom corner, 1 = top center), with the unit normal that points away from the shroud.
+function shroudAt(t) {
+  const [p0, p1, p2, p3] = SHROUD_CUBIC, u = 1 - t;
+  const at = i => u * u * u * p0[i] + 3 * u * u * t * p1[i] + 3 * u * t * t * p2[i] + t * t * t * p3[i];
+  const d = i => 3 * u * u * (p1[i] - p0[i]) + 6 * u * t * (p2[i] - p1[i]) + 3 * t * t * (p3[i] - p2[i]);
+  const n = Math.hypot(d(0), d(1));
+  return { x: at(0), y: at(1), nx: d(1) / n, ny: -d(0) / n };
+}
 const BEZEL = `<svg class="abs bezel" width="1920" height="932" aria-hidden="true"><path d="${SHROUD}"/></svg>`;
 
-// Captures call this: every drawn element that reaches into the shroud margin, with the overlap in canvas px.
+// Captures call this: every drawn element that reaches into the shroud or screen-edge margin, with the overlap in canvas px.
 function shroudViolations() {
-  const arch = document.querySelector(".bezel path"), top = new Array(1921).fill(Infinity), len = arch.getTotalLength();
+  const arch = document.querySelector(".bezel path"), top = new Array(1921).fill(932), len = arch.getTotalLength();
   for (let l = 0; l <= len; l += 1) { const p = arch.getPointAtLength(l), x = Math.round(p.x); top[x] = Math.min(top[x], p.y); }
   const limit = (x0, x1) => { let m = Infinity; for (let x = Math.max(0, Math.floor(x0)); x <= Math.min(1920, Math.ceil(x1)); x++) m = Math.min(m, top[x]); return m - SHROUD_MARGIN; };
   const c = document.getElementById("canvas").getBoundingClientRect(), k = 1920 / c.width;
@@ -104,12 +117,13 @@ function shroudViolations() {
       if (getComputedStyle(el).display === "none" || !el.getBoundingClientRect().width && !el.getBoundingClientRect().height) continue;
       for (let l = 0; l <= n; l += 2) {
         const p = new DOMPoint(el.getPointAtLength(l).x, el.getPointAtLength(l).y).matrixTransform(m), x = (p.x - c.left) * k, y = (p.y - c.top) * k;
-        over = Math.max(over, y + sw / 2 - limit(x - sw / 2, x + sw / 2));
+        over = Math.max(over, y + sw / 2 - limit(x - sw / 2, x + sw / 2), SHROUD_MARGIN - x + sw / 2, x + sw / 2 - 1920 + SHROUD_MARGIN);
       }
     } else {
       const r = el.getBoundingClientRect();
       if (!r.width || !r.height) continue;
-      over = (r.bottom - c.top) * k - limit((r.left - c.left) * k, (r.right - c.left) * k);
+      const x0 = (r.left - c.left) * k, x1 = (r.right - c.left) * k;
+      over = Math.max((r.bottom - c.top) * k - limit(x0, x1), SHROUD_MARGIN - x0, x1 - 1920 + SHROUD_MARGIN);
     }
     if (over > 0) out.set(name(el), Math.max(out.get(name(el)) || 0, Math.round(over)));
   }

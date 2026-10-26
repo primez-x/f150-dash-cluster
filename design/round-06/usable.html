@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 6 · Usable area</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="../round-02/kit.css">
+<link rel="stylesheet" href="../round-04/kit4.css">
+</head>
+<body class="daily">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="../round-02/kit.js"></script>
+<script src="../round-04/kit4.js"></script>
+<script>
+// Usable area on the installed cluster: the shroud arch, the 20 px content margin, and the corner area below y 740.
+state("daily");
+backdrop(SHROUD_TOP);
+const M = SHROUD_MARGIN, edge = [];
+for (let i = 0; i <= 200; i++) { const p = shroudAt(i / 200); edge.push([p.x, p.y - M]); }
+const fmt = pts => pts.map(p => p.map(v => v.toFixed(1)).join(" ")).join(" L");
+const margin = [...edge, ...edge.slice().reverse().map(([x, y]) => [1920 - x, y])].filter(([, y]) => y <= 932 - M);
+const corner = side => {
+  const pts = edge.filter(([, y]) => y >= 740 && y <= 932 - M).map(([x, y]) => [side ? 1920 - x : x, y]).reverse(), ex = side ? 1920 - M : M;
+  return `<path d="M${ex} 740 L${fmt(pts)} L${ex} ${932 - M} Z" fill="var(--accent)" fill-opacity=".16" stroke="var(--accent)" stroke-opacity=".6"/>`;
+};
+let g = `<rect x="${M}" y="${M}" width="${1920 - 2 * M}" height="${932 - 2 * M}" fill="none" stroke="#6b7480" stroke-dasharray="6 8"/>`;
+g += corner(0) + corner(1);
+g += `<path d="M${fmt(margin)}" fill="none" stroke="#ffb020" stroke-width="2" stroke-dasharray="10 8"/>`;
+g += line(M, 740, 1920 - M, 740, "#ffffff", 1, `stroke-opacity=".25" stroke-dasharray="4 8"`);
+g += text(960, 718, "y 740 · full width above this line", 22, "#c9d1da");
+g += text(960, 412, "Usable: full width from the top down to the shroud margin", 30, "#e8ecf1");
+g += text(960, 452, "Orange dashed line: 20 px margin above the shroud · teal: extra corner area below y 740", 22, "#9aa4af");
+layer(g);
+place(BEZEL);
+let n = text(960, 850, "steering column shroud", 26, "#6b7480");
+for (const [x, y] of [[410, 780], [290, 820], [215, 860], [180, 900]]) {
+  n += `<circle cx="${x}" cy="${y}" r="5" fill="#ffb020"/><circle cx="${1920 - x}" cy="${y}" r="5" fill="#ffb020"/>`;
+  n += text(x - 14, y + 7, `x ≤ ${x} at y ${y}`, 20, "#ffb020", "end") + text(1920 - x + 14, y + 7, `x ≥ ${1920 - x} at y ${y}`, 20, "#ffb020", "start");
+}
+layer(n);
+</script>
+</body>
+</html>
