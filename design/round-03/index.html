@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 3</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+  .pick { margin-top: 16px; padding: 10px 14px; background: #141a21; border-radius: 6px; color: #fff; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 3 · one fixed layout</h1>
+<p>Daily and Towing share one layout. Each item has one place in every mode, so the eye never searches. Sample values only.</p>
+<ul>
+  <li>Center: speed, gear, and drive state; fuel and range directly under the speed; rpm under fuel. One alert slot under rpm stays empty until something is wrong.</li>
+  <li>Left: transmission, coolant, and oil temperature. Right: tire pressures, then mode data (trip data in Daily, trailer gain and grade in Towing). Bottom: odometer, trip, and battery.</li>
+  <li>Top corners sit behind the wheel rim, so only the clock, mode name, and outside temperature go there. Telltales and cruise stay top center (off-road A contract).</li>
+  <li>Normal values are quiet grey. Caution is amber, warning is red, and both also fill the alert slot.</li>
+  <li>Turn signals: a green light along the screen edge with the stock arrow at mid height, bound to <code>turnLeftLight</code> / <code>turnRightLight</code>. The light fades with the flasher.</li>
+  <li>Text sizes: driving values 46 px, all other text at least 28 px. Basis: 13.1 in glass, model index 0 scale 0.7752, 750 mm eye distance, and the ISO 15008 character heights (about 20 and 12 arcmin).</li>
+</ul>
+
+<h2>True-size check</h2>
+<p>Open a physical preview with the ruler, for example <a href="daily-a.html?view=physical&amp;ruler=1">daily A physical</a>.
+  Resize the browser window until the orange bar on the left measures 100 mm with a real ruler. Then view the screen from your normal driving distance.</p>
+
+<h2>Daily · pick A or B</h2>
+<p>Same layout. A shows temperatures as columns and rpm as segments. B shows temperatures as rows and rpm as a line.</p>
+<div class="grid">
+  <div><h3>A · Columns · normal</h3><a href="daily-a.html"><img src="shots/daily-a-normal.png" alt=""></a></div>
+  <div><h3>B · Rows · normal</h3><a href="daily-b.html"><img src="shots/daily-b-normal.png" alt=""></a></div>
+  <div><h3>A · left turn, cruise set</h3><a href="daily-a.html?scene=turn"><img src="shots/daily-a-turn.png" alt=""></a></div>
+  <div><h3>B · left turn, cruise set</h3><a href="daily-b.html?scene=turn"><img src="shots/daily-b-turn.png" alt=""></a></div>
+  <div><h3>A · low fuel</h3><a href="daily-a.html?scene=lowfuel"><img src="shots/daily-a-lowfuel.png" alt=""></a></div>
+  <div><h3>B · low fuel</h3><a href="daily-b.html?scene=lowfuel"><img src="shots/daily-b-lowfuel.png" alt=""></a></div>
+  <div><h3>A · low tire</h3><a href="daily-a.html?scene=lowtire"><img src="shots/daily-a-lowtire.png" alt=""></a></div>
+  <div><h3>B · low tire</h3><a href="daily-b.html?scene=lowtire"><img src="shots/daily-b-lowtire.png" alt=""></a></div>
+</div>
+<div class="pick">Daily pick: A or B</div>
+
+<h2>Towing · locked B on the fixed layout</h2>
+<div class="grid">
+  <div><h3>Normal</h3><a href="tow.html"><img src="shots/tow-normal.png" alt=""></a></div>
+  <div><h3>Grade, transmission hot</h3><a href="tow.html?scene=hottrans"><img src="shots/tow-hottrans.png" alt=""></a></div>
+  <div><h3>Left turn, cruise set</h3><a href="tow.html?scene=turn"><img src="shots/tow-turn.png" alt=""></a></div>
+  <div><h3>Low fuel</h3><a href="tow.html?scene=lowfuel"><img src="shots/tow-lowfuel.png" alt=""></a></div>
+  <div><h3>Low tire</h3><a href="tow.html?scene=lowtire"><img src="shots/tow-lowtire.png" alt=""></a></div>
+  <div><h3>Physical preview with ruler</h3><a href="tow.html?view=physical&amp;ruler=1"><img src="shots/tow-physical.png" alt=""></a></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,127 @@
+/* Round 3 kit: one fixed layout for every mode, sized for reading while driving.
+   Loads after round-01/shared.css and round-02/kit.css.
+
+   Legibility tiers (see kit3.js for the derivation):
+   --t-value 46px  driving values: fuel, range, temperatures, tire pressures, rpm, set speed (about 20 arcmin)
+   --t-label 28px  labels, units, trip data, clock (about 12 arcmin, the floor for any text on screen) */
+:root { --t-value: 46px; --t-label: 28px; --quiet: #9aa4af; --label: #7d8792; --turn: #2ee06e; }
+
+/* Corners: poor visibility behind the wheel rim, so only clock, mode, and outside temperature. */
+.corner { top: 24px; font: 34px "BMW Type Global"; color: #c9d1da; }
+.corner small { font-size: var(--t-label); color: var(--label); margin-left: 4px; }
+.corner.mode { top: 72px; font-size: var(--t-label); font-weight: 600; letter-spacing: 4px; color: var(--accent); }
+
+.k { font: var(--t-label) "BMW Type Global"; letter-spacing: 2px; color: var(--label); text-transform: uppercase; }
+.u { font: var(--t-label) "BMW Type Global"; color: var(--label); margin-left: 6px; letter-spacing: 0; }
+.v { font: var(--t-value) "BMW Type Global"; color: #eef2f6; line-height: 1; }
+
+/* Top center: telltales and the cruise region (off-road A contract: 810, 104, 300 x 80). */
+.telltales { gap: 22px; }
+.telltales img { height: 54px; }
+.cruise .ico { height: 52px; }
+.cruise .tag { font-size: var(--t-label); }
+.cruise .set { font-size: 54px; }
+.cruise .unit { font-size: var(--t-label); }
+
+/* Speed and gear. Speed is right-aligned and gear left-aligned, so neither moves when speed gains a digit. */
+.speed { right: 830px; top: 178px; font-size: 260px; letter-spacing: -4px; text-align: right; }
+.sunit { right: 834px; top: 404px; font: var(--t-label) "BMW Type Global"; letter-spacing: 6px; color: var(--label); }
+.gdiv { left: 1120px; top: 206px; width: 1px; height: 230px; background: rgba(255, 255, 255, .1); }
+.gear { left: 1152px; top: 222px; font-size: 150px; }
+.gear sup { font-size: 62px; color: var(--accent); margin-left: 4px; vertical-align: top; position: relative; top: 6px; }
+.drive { left: 1156px; top: 384px; display: flex; gap: 10px; }
+.drive span { font: 600 var(--t-label) "BMW Type Global"; padding: 4px 16px; border-radius: 999px; color: #05070a; background: var(--accent); }
+.drive .lock { background: var(--caution); }
+
+/* Fuel slot under the speed: the round 2 gauge at tier sizes. */
+.fuel .k { display: flex; align-items: center; gap: 12px; }
+.fuel .ic { width: 42px; height: 42px; }
+.fuel .v { font-size: var(--t-value); }
+.fuel .u { font-size: var(--t-label); }
+.fuel .track { height: 12px; border-radius: 6px; }
+.fuel .track i { border-radius: 6px; }
+.fuel .track i::after { top: -5px; width: 22px; height: 22px; right: -8px; }
+.fuel .track b { top: -8px; bottom: -8px; width: 2px; }
+.fuel .ends { font-size: var(--t-label); margin-top: 8px; }
+
+/* Tach: quiet strip with the rpm value at tier size. */
+.rpmv { left: 1176px; top: 616px; }
+.rpmv .v { color: var(--quiet); }
+.tline { left: 560px; top: 640px; width: 590px; height: 8px; border-radius: 4px; background: rgba(255, 255, 255, .05); }
+.tline i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: linear-gradient(90deg, transparent, var(--accent)); }
+.tline i::after { content: ""; position: absolute; right: -8px; top: -7px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 0 14px var(--accent); }
+.tline b { position: absolute; top: -6px; bottom: -6px; right: 0; background: rgba(255, 59, 48, .35); border-radius: 0 4px 4px 0; }
+
+/* Alert slot: empty when normal. Caution is amber, warning is red. */
+.alert { left: 560px; top: 708px; width: 800px; height: 112px; box-sizing: border-box; padding: 0 32px; border-radius: 22px;
+  display: flex; align-items: center; gap: 26px; }
+.alert .ic { width: 64px; height: 64px; flex: none; background: currentColor; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; }
+.alert .ic.flip { transform: scaleX(-1); }
+.alert.caution .ic { color: var(--caution); }
+.alert.warn .ic { color: var(--warn); }
+.alert .t { font: 600 var(--t-value) "BMW Type Global"; line-height: 1; }
+.alert .s { font: var(--t-label) "BMW Type Global"; color: #c9d1da; margin-top: 8px; }
+.alert.caution { background: rgba(255, 176, 32, .1); border: 2px solid var(--caution); box-shadow: 0 0 40px rgba(255, 176, 32, .16); }
+.alert.caution .t { color: var(--caution); }
+.alert.warn { background: rgba(255, 59, 48, .12); border: 2px solid var(--warn); box-shadow: 0 0 44px rgba(255, 59, 48, .22); }
+.alert.warn .t { color: var(--warn); }
+
+/* Temperatures, left zone. Normal values stay quiet; abnormal values take the caution or warning colour. */
+.temps .v { color: var(--quiet); }
+.temps .caution .v { color: var(--caution); }
+.temps .warn .v { color: var(--warn); }
+.temps img { height: 40px; opacity: .85; }
+/* Columns (A and towing). */
+.cols { display: flex; justify-content: space-between; }
+.tcol { width: 165px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.tcol .col { position: relative; width: 22px; height: 300px; border-radius: 11px; background: rgba(255, 255, 255, .05); }
+.tcol .col i { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 11px; background: linear-gradient(0deg, transparent, var(--accent)); }
+.tcol .col i::after { content: ""; position: absolute; left: -4px; right: -4px; top: -7px; height: 14px; border-radius: 7px; background: #fff; box-shadow: 0 0 16px var(--accent); }
+.tcol .col .hot { position: absolute; left: -8px; right: -8px; top: 0; height: 15%; border-top: 2px solid var(--warn); background: rgba(255, 59, 48, .12); border-radius: 4px; }
+.tcol.warn .col i { background: linear-gradient(0deg, transparent, var(--warn)); }
+.tcol.warn .col i::after { box-shadow: 0 0 18px var(--warn); }
+/* Rows (B). */
+.trow { margin-bottom: 44px; }
+.trow .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.trow .head .k { display: flex; align-items: center; gap: 12px; }
+.trow .track { height: 10px; border-radius: 5px; }
+.trow .track i::after { top: -6px; width: 22px; height: 22px; right: -8px; }
+.trow .track .hot { position: absolute; top: -6px; bottom: -6px; right: 0; width: 15%; border-left: 2px solid var(--warn); background: rgba(255, 59, 48, .12); }
+.trow.warn .track i { background: linear-gradient(90deg, transparent, var(--warn)); }
+
+/* Tires, right zone. Driver side (LF, LR) on the left. */
+.tires .grid { display: grid; grid-template-columns: 1fr 96px 1fr; grid-template-rows: 1fr 1fr; align-items: center; justify-items: center; height: 230px; margin-top: 18px; }
+.tires .grid img { grid-column: 2; grid-row: 1 / span 2; height: 210px; }
+.tires .t { font: var(--t-value) "BMW Type Global"; color: #dfe5ec; }
+.tires .t.low { color: var(--caution); }
+
+/* Flexible rows under the tires: trip data in daily, trailer data in towing. */
+.flex .row { display: flex; justify-content: space-between; align-items: baseline; padding: 18px 0; border-top: 1px solid rgba(255, 255, 255, .08); }
+
+/* Bottom band. Visible below the wheel hub, so lower-priority data lives here at label size or larger. */
+.dock3 { left: 0; right: 0; top: 852px; display: flex; justify-content: center; gap: 0; }
+.dock3 .chip { display: flex; align-items: baseline; gap: 14px; padding: 0 44px; border-left: 1px solid rgba(255, 255, 255, .08); }
+.dock3 .chip:first-child { border-left: 0; }
+.dock3 .v { font-size: 38px; color: #c9d1da; }
+
+/* Turn signals: a vertical light along the screen edge, brightest at mid height, plus the stock arrow.
+   Bound to turnLeftLight / turnRightLight, which already toggle with the flasher; the fade makes the pulse.
+   On the device: one static image per side with an opacity transition. */
+.turn { top: 0; bottom: 0; width: 150px; opacity: 0; pointer-events: none; }
+.turn.l { left: 0; background: radial-gradient(ellipse 150px 62% at 0 50%, rgba(46, 224, 110, .55), rgba(46, 224, 110, .12) 55%, transparent 100%); }
+.turn.r { right: 0; background: radial-gradient(ellipse 150px 62% at 100% 50%, rgba(46, 224, 110, .55), rgba(46, 224, 110, .12) 55%, transparent 100%); }
+.turn::before { content: ""; position: absolute; top: 8%; bottom: 8%; width: 5px; border-radius: 3px;
+  background: linear-gradient(transparent, var(--turn) 30%, #b9ffd2 50%, var(--turn) 70%, transparent); box-shadow: 0 0 18px var(--turn); }
+.turn.l::before { left: 0; }
+.turn.r::before { right: 0; }
+.turn img { position: absolute; top: 50%; transform: translateY(-50%); height: 58px; filter: drop-shadow(0 0 12px var(--turn)); }
+.turn.l img { left: 22px; }
+.turn.r img { right: 22px; }
+.turn.on { animation: flash .66s ease-in-out infinite; }
+.still .turn.on { animation: none; opacity: 1; }
+@keyframes flash { 0%, 50% { opacity: 1; } 62%, 100% { opacity: 0; } }
+
+/* Physical preview ruler in the left side bar: 100 mm on the real glass is 616 px of the 1920 x 720 screen. */
+#ruler { display: none; position: absolute; left: 150px; top: 52px; width: 14px; height: 616px; border: 2px solid #ffb020; border-left: 0; box-sizing: border-box; }
+#ruler span { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); font: 22px/1.3 "BMW Type Global"; color: #ffb020; text-align: right; }
+body.physical.ruler #ruler { display: block; }
