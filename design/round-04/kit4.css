@@ -57,15 +57,13 @@
 .tp img { grid-column: 2; grid-row: 1 / span 2; }
 .tp .rv.low { color: var(--caution); }
 
-/* Turn signals: vertical edge light with the stock arrow (round 3 behaviour). */
+/* Turn signals: vertical edge light only, brightest at mid height. */
 .turn { top: 0; bottom: 0; width: 150px; opacity: 0; pointer-events: none; }
 .turn.l { left: 0; background: radial-gradient(ellipse 150px 62% at 0 50%, rgba(46, 224, 110, .5), rgba(46, 224, 110, .1) 55%, transparent 100%); }
 .turn.r { right: 0; background: radial-gradient(ellipse 150px 62% at 100% 50%, rgba(46, 224, 110, .5), rgba(46, 224, 110, .1) 55%, transparent 100%); }
 .turn::before { content: ""; position: absolute; top: 8%; bottom: 8%; width: 5px; border-radius: 3px;
   background: linear-gradient(transparent, var(--turn) 30%, #b9ffd2 50%, var(--turn) 70%, transparent); box-shadow: 0 0 18px var(--turn); }
 .turn.l::before { left: 0; } .turn.r::before { right: 0; }
-.turn img { position: absolute; top: 50%; transform: translateY(-50%); height: 54px; filter: drop-shadow(0 0 12px var(--turn)); }
-.turn.l img { left: 22px; } .turn.r img { right: 22px; }
 .turn.on { animation: flash .66s ease-in-out infinite; }
 .still .turn.on { animation: none; opacity: 1; }
 @keyframes flash { 0%, 50% { opacity: 1; } 62%, 100% { opacity: 0; } }

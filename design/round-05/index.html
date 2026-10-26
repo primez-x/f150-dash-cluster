@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 5</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 5 · Towing hybrid</h1>
+<p>Left half from towing A: speed, gear, fuel, trailer brake, and the paged card. Right half from towing B, stacked: temperature columns over tire pressures.
+  Builds on the <a href="../round-04/">round 4</a> kit. Daily A and Daily B both stay as separate layouts.</p>
+<ul>
+  <li>Trailer brake: the gain setting is always visible, with a marker on the output scale. While the brake pedal is pressed, the segments light up to the live output and the panel shows BRAKING.</li>
+  <li>Data gap: the firmware has the gain setting (<code>trucksTrailerGain</code>) but no field for the brake pedal or the live controller output.
+    The live display needs a new vehicle signal. That work belongs to the vehicle protocol side, not the design.</li>
+  <li>Turn signals: edge light only.</li>
+</ul>
+<div class="grid">
+  <div><h3>Normal</h3><a href="tow.html"><img src="shots/tow-normal.png" alt=""></a></div>
+  <div><h3>Braking: output 4.0 of gain 5.5</h3><a href="tow.html?scene=braking"><img src="shots/tow-braking.png" alt=""></a></div>
+  <div><h3>Grade, transmission hot, diff warm</h3><a href="tow.html?scene=hottrans"><img src="shots/tow-hottrans.png" alt=""></a></div>
+  <div><h3>Left turn, cruise set</h3><a href="tow.html?scene=turn"><img src="shots/tow-turn.png" alt=""></a></div>
+  <div><h3>Low tire</h3><a href="tow.html?scene=lowtire"><img src="shots/tow-lowtire.png" alt=""></a></div>
+  <div><h3>Physical preview with ruler</h3><a href="tow.html?view=physical&amp;ruler=1"><img src="shots/tow-physical.png" alt=""></a></div>
+</div>
+</body>
+</html>

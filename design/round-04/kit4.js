@@ -2,8 +2,6 @@
 // Loads after round-01/shared.js and round-02/kit.js (backdrop, place, layer, arcs, segBar, fuel, ICON, ALARM, TRUCK_TOP).
 // Query options: ?scene=normal|turn|cold|lowfuel|lowtire|hottrans  ?page=<n>  &still=1  ?view=physical&ruler=1
 
-const TURN = side => `${IMG}/common/turnlight/tsico_${side}_h.png`;
-
 // Temperatures arrive in °C: waterTemp, gearBoxTemp, oilTemp, diffOilTemp. 0xFE hides a reading; 0xFF shows "---".
 // Firmware colour rules: oil cold below 70 °C, diff cold below 49 °C, coolant warm / hot from waterLevel 1 / 2.
 // Every other limit here is a design value until checked against the truck.
@@ -43,6 +41,8 @@ const SCENES = {
     alert: ["caution", ICON("fuel"), "LOW FUEL", `${Math.round(s.range * 9 / s.fuel)} mi to empty`, true] }),
   lowtire: s => Object.assign(s, { tires: [s.tires[0], s.tires[1], s.tires[2], 24], low: 3, telltales: [...s.telltales, 24],
     alert: ["caution", ALARM(24), "RIGHT REAR TIRE LOW", "24 psi"] }),
+  // Live trailer braking. No firmware field reports pedal or controller output yet; see round 5 notes.
+  braking: s => Object.assign(s, { braking: true, output: 4, speed: 46, rpm: 1500 }),
   hottrans: s => Object.assign(s, { rpm: 3400, gearNum: 3, grade: 8, telltales: [...s.telltales, 8], temps: { ...s.temps, trans: 124, diff: 114 },
     alert: ["warn", ICON("gearBoxTemp"), "TRANSMISSION HOT", `${c2f(124)} °F · reduce load or speed`] }),
 };
@@ -70,8 +70,8 @@ function frame(s) {
 // Turn edges and the true-size ruler go last so they sit above everything.
 function finish(s) {
   place(`
-  <div class="abs turn l${s.turn === "l" ? " on" : ""}" data-field="turnLeftLight turnLeftLightEnabled"><img src="${TURN("left")}" alt=""></div>
-  <div class="abs turn r${s.turn === "r" ? " on" : ""}" data-field="turnRightLight turnRightLightEnabled"><img src="${TURN("right")}" alt=""></div>
+  <div class="abs turn l${s.turn === "l" ? " on" : ""}" data-field="turnLeftLight turnLeftLightEnabled"></div>
+  <div class="abs turn r${s.turn === "r" ? " on" : ""}" data-field="turnRightLight turnRightLightEnabled"></div>
   <div id="physical-label">Physical preview · model index 0 assumption · scale 0.7752</div>`);
   document.getElementById("stage").insertAdjacentHTML("beforeend", `<div id="ruler"><span>100 mm<br>on the<br>real<br>screen</span></div>`);
 }
