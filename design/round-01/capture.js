@@ -5,7 +5,7 @@ async (page) => {
   const base = "http://127.0.0.1:8731/design/round-01/";
   const out = "design/round-01/shots/";
   const mocks = ["driving-a", "driving-b", "offroad-a", "offroad-b"];
-  const states = ["available", "engaged", "acc", "lim"];
+  const states = ["available", "active", "set", "acc", "lim"];
   const done = [];
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });

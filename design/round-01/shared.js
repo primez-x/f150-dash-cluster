@@ -1,5 +1,5 @@
 // Round 1 shared behavior: stage scale, physical preview, cruise states, and SVG arc helpers.
-// Query options: ?view=physical  ?cruise=off|available|engaged|acc|lim
+// Query options: ?view=physical  ?cruise=off|available|active|set|acc|lim
 const ASSETS = "../../handoff/claude-dashboard/assets";
 const IMG = ASSETS + "/launcher/Trucks/images";
 const params = new URLSearchParams(location.search);
@@ -19,7 +19,8 @@ function fitStage() {
 const CRUISE = {
   off:       { ico: null,               tag: "",       set: "" },
   available: { ico: "common/acc/cruise.png", tag: "CRUISE", set: "– –" },
-  engaged:   { ico: "common/acc/cruise.png", tag: "SET",    set: "65" },
+  active:    { ico: "common/acc/cruise.png", tag: "CRUISE", set: "– –" },
+  set:       { ico: "common/acc/cruise.png", tag: "SET",    set: "65" },
   acc:       { ico: "common/acc/acc1.png",   tag: "ACC",    set: "65" },
   lim:       { ico: null,               tag: "LIM",    set: "70" },
 };

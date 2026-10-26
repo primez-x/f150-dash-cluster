@@ -13,7 +13,7 @@
   .opt img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
   .opt ul { margin: 10px 0 0; padding-left: 18px; }
   .opt a { color: #7fbfff; }
-  .strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; align-items: end; }
+  .strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 10px; align-items: end; }
   .strip figure { margin: 0; text-align: center; }
   .strip img { max-width: 100%; border: 1px solid #222a33; border-radius: 4px; background: #000; }
   .strip figcaption { font-size: 12px; color: #7d8792; }
@@ -24,7 +24,7 @@
 <h1>F150 cluster · Design round 1</h1>
 <p>Two views, one A/B pick per view. Sample values only; no vehicle data. Canvas 1920 × 932 (declared design coordinates).
   Each mock also has a physical preview at 1920 × 720 with the model index 0 transform (uniform 0.7752 scale, 216 px side bars). The F150 model index is unverified.
-  Open a mock with <code>?view=physical</code> or <code>?cruise=off|available|engaged|acc|lim</code>.</p>
+  Open a mock with <code>?view=physical</code> or <code>?cruise=off|available|active|set|acc|lim</code>.</p>
 <p>Picking a letter also locks that letter's cross-layout contracts for all six layout slots: cruise region position, cruise state styles, and alarm grid position.</p>
 
 <h2>Driving view</h2>
@@ -41,7 +41,8 @@
     <div class="strip">
       <figure><figcaption>Off: hidden</figcaption></figure>
       <figure><img src="shots/cruise-a-available.png" alt=""><figcaption>Available</figcaption></figure>
-      <figure><img src="shots/cruise-a-engaged.png" alt=""><figcaption>Engaged + set speed</figcaption></figure>
+      <figure><img src="shots/cruise-a-active.png" alt=""><figcaption>Active, no set speed</figcaption></figure>
+      <figure><img src="shots/cruise-a-set.png" alt=""><figcaption>Set speed</figcaption></figure>
       <figure><img src="shots/cruise-a-acc.png" alt=""><figcaption>ACC + set speed</figcaption></figure>
       <figure><img src="shots/cruise-a-lim.png" alt=""><figcaption>LIM + limit speed</figcaption></figure>
     </div>
@@ -58,7 +59,8 @@
     <div class="strip">
       <figure><figcaption>Off: hidden</figcaption></figure>
       <figure><img src="shots/cruise-b-available.png" alt=""><figcaption>Available</figcaption></figure>
-      <figure><img src="shots/cruise-b-engaged.png" alt=""><figcaption>Engaged + set speed</figcaption></figure>
+      <figure><img src="shots/cruise-b-active.png" alt=""><figcaption>Active, no set speed</figcaption></figure>
+      <figure><img src="shots/cruise-b-set.png" alt=""><figcaption>Set speed</figcaption></figure>
       <figure><img src="shots/cruise-b-acc.png" alt=""><figcaption>ACC + set speed</figcaption></figure>
       <figure><img src="shots/cruise-b-lim.png" alt=""><figcaption>LIM + limit speed</figcaption></figure>
     </div>

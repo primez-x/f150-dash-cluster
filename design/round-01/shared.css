@@ -40,8 +40,10 @@ body.physical #physical-label { display: block; }
 .cruise[data-state="available"] .ico { filter: grayscale(1) brightness(1.6); opacity: .8; }
 .cruise[data-state="available"] .tag { color: #c9d1da; }
 .cruise[data-state="available"] .set { color: #5d6670; }
-.cruise[data-state="engaged"] .tag,
-.cruise[data-state="engaged"] .set,
+.cruise[data-state="active"] .tag,
+.cruise[data-state="active"] .set,
+.cruise[data-state="set"] .tag,
+.cruise[data-state="set"] .set,
 .cruise[data-state="acc"] .tag,
 .cruise[data-state="acc"] .set { color: var(--ok); }
 .cruise[data-state="lim"] .tag { color: #e8ecf1; border: 2px solid currentColor; border-radius: 6px; padding: 2px 8px; }
