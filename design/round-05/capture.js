@@ -16,7 +16,7 @@ async (page) => {
     await page.evaluate(() => document.fonts.ready);
     await page.screenshot({ path: out + path });
   };
-  for (const scene of ["normal", "braking", "warmcoolant", "hottrans", "turn", "lowtire"]) await shot(`tow.html?scene=${scene}&still=1`, `tow-${scene}.png`, 1920, 932);
+  for (const scene of ["normal", "cruise", "braking", "warmcoolant", "hottrans", "turn", "lowtire"]) await shot(`tow.html?scene=${scene}&still=1`, `tow-${scene}.png`, 1920, 932);
   await shot("tow.html?view=physical&ruler=1", "tow-physical.png", 1920, 720);
   for (const accent of ["teal", "ice", "blue", "slate"]) {
     await shot(`tow.html?accent=${accent}&still=1`, `accent-${accent}-tow.png`, 1920, 932);

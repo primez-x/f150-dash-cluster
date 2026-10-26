@@ -36,6 +36,7 @@ const COLD = { coolant: 38, oil: 31, trans: 24, diff: 20 };
 const SCENES = {
   normal: s => s,
   turn: s => Object.assign(s, { turn: "l", cruise: "set" }),
+  cruise: s => Object.assign(s, { cruise: "set", speed: 64, rpm: 1900 }),
   cold: s => Object.assign(s, { speed: 28, gearNum: 3, rpm: 1350, temps: Object.fromEntries(Object.keys(s.temps).map(k => [k, COLD[k]])) }),
   lowfuel: s => Object.assign(s, { fuel: 9, range: Math.round(s.range * 9 / s.fuel), telltales: [...s.telltales, 151],
     alert: ["caution", ICON("fuel"), "LOW FUEL", `${Math.round(s.range * 9 / s.fuel)} mi to empty`, true] }),

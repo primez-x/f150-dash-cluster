@@ -7,10 +7,11 @@
 <link rel="stylesheet" href="../round-02/kit.css">
 <link rel="stylesheet" href="../round-04/kit4.css">
 <style>
-  .speed { right: 1300px; top: 236px; text-align: right; font-size: 210px; letter-spacing: -4px; }
-  .sunit { right: 1304px; top: 452px; font: 22px "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
-  .gdiv { left: 646px; top: 258px; width: 1px; height: 210px; background: rgba(255, 255, 255, .1); }
-  .gblk { left: 674px; top: 262px; display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+  .speed { right: 1300px; top: 206px; text-align: right; font-size: 210px; letter-spacing: -4px; }
+  .sunit { right: 1304px; top: 422px; font: 22px "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
+  .gdiv { left: 646px; top: 228px; width: 1px; height: 210px; background: rgba(255, 255, 255, .1); }
+  .gblk { left: 674px; top: 232px; display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+  .rpmrow { left: 200px; top: 462px; width: 660px; display: flex; align-items: baseline; justify-content: space-between; }
   .half { left: 960px; top: 210px; width: 1px; height: 640px; background: linear-gradient(transparent, rgba(255, 255, 255, .08), transparent); }
 
   /* Trailer brake: gain is always visible; while the brake pedal is pressed, output segments light up to the live level. */
@@ -43,12 +44,13 @@
 <script src="../round-02/kit.js"></script>
 <script src="../round-04/kit4.js"></script>
 <script>
-// Left half from towing A: speed, gear, and the paged card. Right half from towing B: temperature columns
+// Left half from towing A: speed, gear, RPM, and the paged card. Right half from towing B: temperature columns
 // over tire pressures, fuel, and trailer brake.
 const s = state("tow");
 s.pages = ["trip", "economy", "vehicle"];
 s.page = +(params.get("page") || 0) % s.pages.length;
 frame(s);
+layer(segBar({ x0: 200, x1: 860, y: 532, n: 44, max: 7000, value: s.rpm, redFrom: 6000, h: 20, w: 10 }));
 const segs = Array.from({ length: 20 }, (_, i) => {
   const v = (i + 1) / 2, lit = s.braking && v <= s.output;
   return `<i class="${lit ? `lit${v + .5 > s.output ? " head" : ""}` : v <= s.gain ? "avail" : ""}"></i>`;
@@ -58,7 +60,8 @@ place(`
   <div class="abs sunit" data-field="vehicleSpeedUnit">MPH</div>
   <div class="abs gdiv"></div>
   <div class="abs gblk">${gear(s, 120)}${chip(s)}</div>
-  ${card(s, "left:200px;top:584px;width:660px;height:176px")}
+  <div class="abs rpmrow" data-field="tacho rpm"><span class="k">RPM</span><span class="rv">${s.rpm.toLocaleString("en-US")}<span class="u">rpm</span></span></div>
+  ${card(s, "left:200px;top:604px;width:660px;height:176px")}
   <div class="abs brake${s.braking ? " on" : ""}" style="left:1390px;top:704px;width:450px"
     data-field="trucksTrailerGain (setting); live output: no firmware field yet (brake pedal + controller output needed)">
     <div class="top"><span class="k">TRAILER BRAKE</span><span class="state">BRAKING</span>
