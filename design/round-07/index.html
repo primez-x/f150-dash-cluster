@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 7</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+  table { border-collapse: collapse; margin-top: 10px; }
+  td, th { padding: 4px 14px; text-align: right; border-bottom: 1px solid #222a33; color: #c9d1da; }
+  th:first-child, td:first-child { text-align: left; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 7 · Full corners</h1>
+<p>Round 6 put small readouts in the bottom corners and left most of the corner area empty. Round 7 gives each corner a real gauge.
+  The wheel rim hides the top corners and the bottom corners stay visible, so the bottom corners now carry primary or secondary gauges.
+  The clock and outside temperature go back to the top corners. Round 7 replaces the round 6 corner options; the round 6 pick is no longer needed.</p>
+<ul>
+  <li>A · Corner modules: a thick band along the shroud from the corner toward the center, and one large value (104 px) in the corner.
+    The same module appears on every layout.</li>
+  <li>B · Main gauges move down: Daily A speed and RPM rise out of the corners as wings; Daily B temperatures fan out of the left corner;
+    towing RPM and trailer brake become corner dials, as stock UI1 puts RPM and speed in the corners.</li>
+  <li>Normal states stay quiet: grey temperature bands, dim unlit segments. Amber and red appear only for a warning.</li>
+  <li>Add <code>?usable=1</code> to any layout to draw the corner area (orange) over the design.</li>
+  <li>Check from the driver seat that the bottom corners are visible through the wheel, and that the large values read at arm's length.</li>
+</ul>
+
+<h2>Corner use</h2>
+<p>Percent of each corner area (below y 740, inside the 20 px margins, in 12 px cells) that holds bright content, at the normal scene.
+  Dim content, such as unlit segments, does not count. Measured by <code>capture.js</code> with <code>cornerUse()</code> in kit4.js.</p>
+<table>
+  <tr><th>Layout</th><th>Round 6 left</th><th>Round 6 right</th><th>Round 7 left</th><th>Round 7 right</th></tr>
+  <tr><td>Daily A · A</td><td>17</td><td>17</td><td>42</td><td>36</td></tr>
+  <tr><td>Daily A · B</td><td>31</td><td>30</td><td>27</td><td>27</td></tr>
+  <tr><td>Daily B · A</td><td>4</td><td>3</td><td>42</td><td>36</td></tr>
+  <tr><td>Daily B · B</td><td>4</td><td>3</td><td>18</td><td>42</td></tr>
+  <tr><td>Towing · A</td><td>14</td><td>8</td><td>26</td><td>9</td></tr>
+  <tr><td>Towing · B</td><td>22</td><td>9</td><td>26</td><td>9</td></tr>
+</table>
+<p>The towing right corner reads low at rest because the trailer brake segments light only while braking. Daily B option B reads low on
+  the left because normal temperatures show quiet grey; a warm or hot reading lights the band in full colour.</p>
+
+<h2>Daily A · pick A or B</h2>
+<div class="grid">
+  <div><h3>A · Corner modules: fuel left, instant economy right (marker = average)</h3><a href="daily-a-a.html"><img src="shots/daily-a-a-normal.png" alt=""></a></div>
+  <div><h3>B · Wings: speed and RPM rise out of the corners; fuel and economy bands under the wing feet</h3><a href="daily-a-b.html"><img src="shots/daily-a-b-normal.png" alt=""></a></div>
+  <div><h3>A · 45 miles to empty</h3><a href="daily-a-a.html?scene=lowfuel"><img src="shots/daily-a-a-lowfuel.png" alt=""></a></div>
+  <div><h3>B · 45 miles to empty</h3><a href="daily-a-b.html?scene=lowfuel"><img src="shots/daily-a-b-lowfuel.png" alt=""></a></div>
+  <div><h3>A · corner area overlay</h3><a href="daily-a-a.html?usable=1"><img src="shots/daily-a-a-usable.png" alt=""></a></div>
+  <div><h3>B · corner area overlay</h3><a href="daily-a-b.html?usable=1"><img src="shots/daily-a-b-usable.png" alt=""></a></div>
+  <div><h3>A · no data: fuel stopped</h3><a href="daily-a-a.html?scene=stale"><img src="shots/daily-a-a-stale.png" alt=""></a></div>
+  <div><h3>B · no data: fuel stopped</h3><a href="daily-a-b.html?scene=stale"><img src="shots/daily-a-b-stale.png" alt=""></a></div>
+</div>
+
+<h2>Daily B · pick A or B</h2>
+<p>Both options take fuel out of the halo, so the halo shows RPM only.</p>
+<div class="grid">
+  <div><h3>A · Corner modules: fuel left, instant economy right; temperatures and card keep the upper sides</h3><a href="daily-b-a.html"><img src="shots/daily-b-a-normal.png" alt=""></a></div>
+  <div><h3>B · Temperature fan: coolant, oil, and transmission bands fan out of the left corner; fuel module right; card under the halo</h3><a href="daily-b-b.html"><img src="shots/daily-b-b-normal.png" alt=""></a></div>
+  <div><h3>A · coolant warm</h3><a href="daily-b-a.html?scene=warmcoolant"><img src="shots/daily-b-a-warmcoolant.png" alt=""></a></div>
+  <div><h3>B · coolant warm</h3><a href="daily-b-b.html?scene=warmcoolant"><img src="shots/daily-b-b-warmcoolant.png" alt=""></a></div>
+  <div><h3>A · low-fuel light (reserve)</h3><a href="daily-b-a.html?scene=reserve"><img src="shots/daily-b-a-reserve.png" alt=""></a></div>
+  <div><h3>B · low-fuel light (reserve)</h3><a href="daily-b-b.html?scene=reserve"><img src="shots/daily-b-b-reserve.png" alt=""></a></div>
+</div>
+
+<h2>Towing · pick A or B</h2>
+<p>Boost joins RPM in the left corner on both options. The firmware has no boost field yet (see the <a href="../round-05/">round 5</a> notes).</p>
+<div class="grid">
+  <div><h3>A · Corner modules: RPM band with a boost band outside it; trailer brake band (dim range and marker = gain)</h3><a href="tow-a.html"><img src="shots/tow-a-normal.png" alt=""></a></div>
+  <div><h3>B · Corner dials: RPM dial with a boost ring inside; trailer brake dial. The card narrows to clear the dial</h3><a href="tow-b.html"><img src="shots/tow-b-normal.png" alt=""></a></div>
+  <div><h3>A · braking: output 4.0 of gain 5.5, boost in vacuum</h3><a href="tow-a.html?scene=braking"><img src="shots/tow-a-braking.png" alt=""></a></div>
+  <div><h3>B · braking: output 4.0 of gain 5.5, boost in vacuum</h3><a href="tow-b.html?scene=braking"><img src="shots/tow-b-braking.png" alt=""></a></div>
+  <div><h3>A · transmission hot, 15 psi boost on a grade</h3><a href="tow-a.html?scene=hottrans"><img src="shots/tow-a-hottrans.png" alt=""></a></div>
+  <div><h3>B · transmission hot, 15 psi boost on a grade</h3><a href="tow-b.html?scene=hottrans"><img src="shots/tow-b-hottrans.png" alt=""></a></div>
+  <div><h3>A · physical preview with ruler</h3><a href="tow-a.html?view=physical&ruler=1"><img src="shots/tow-a-physical.png" alt=""></a></div>
+  <div><h3>B · physical preview with ruler</h3><a href="tow-b.html?view=physical&ruler=1"><img src="shots/tow-b-physical.png" alt=""></a></div>
+</div>
+</body>
+</html>

@@ -27,7 +27,7 @@
 const s = state("daily");
 frame(s);
 layer(
-  crescents(s, 244) +
+  crescents(s, { a0: 244 }) +
   rail({ x1: 560, n: 24, value: (s.fuel ?? 0) / 100, color: fuelColor(s), warnTo: lowPct(s) / 100, ends: ["E", "F"], field: "fuelPercentage" }) +
   rail({ side: "r", x1: 560, n: 24, value: s.mpgNow / 30, ends: ["0", "30"], field: "instant mpg" })
 );

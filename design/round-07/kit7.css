@@ -1,0 +1,4 @@
+/* Round 7: corner modules. Loads after round-06/kit6.css. */
+.corner.xl .big { font-size: 104px; letter-spacing: -2px; }
+.corner.xl .u { font-size: 22px; }
+.corner .sub .u { font-size: 18px; }

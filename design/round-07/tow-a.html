@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 7 · Towing · A Corner modules</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="../round-02/kit.css">
+<link rel="stylesheet" href="../round-04/kit4.css">
+<link rel="stylesheet" href="../round-06/kit6.css">
+<link rel="stylesheet" href="kit7.css">
+<style>
+  .speed { right: 1300px; top: 156px; text-align: right; font-size: 210px; letter-spacing: -4px; }
+  .sunit { right: 1304px; top: 372px; font: 22px "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
+  .gdiv { left: 646px; top: 178px; width: 1px; height: 210px; background: rgba(255, 255, 255, .1); }
+  .gblk { left: 674px; top: 182px; display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+  .half { left: 960px; top: 180px; width: 1px; height: 480px; background: linear-gradient(transparent, rgba(255, 255, 255, .08), transparent); }
+  .corner.rpm .big { font-size: 80px; }
+  .grade { display: flex; align-items: center; gap: 14px; }
+  .grade .rv { font-size: 30px; }
+  .state { font: 600 var(--small) "BMW Type Global"; letter-spacing: 4px; color: var(--accent); }
+  .cols { left: 1010px; top: 190px; width: 800px; display: flex; justify-content: space-between; }
+  .tc { width: 170px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .tc .rv { font-size: 34px; }
+  .tc .lab { height: 34px; display: flex; align-items: center; gap: 10px; }
+  .tc .lab .k { font-size: 16px; letter-spacing: 2px; }
+</style>
+</head>
+<body class="tow">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="../round-02/kit.js"></script>
+<script src="../round-04/kit4.js"></script>
+<script src="../round-06/kit6.js"></script>
+<script src="kit7.js"></script>
+<script>
+// Towing with one module per bottom corner. Left, the engine: an RPM band along the shroud with a boost band outside it
+// (center zero; vacuum fills toward the corner in grey). Right, the trailer brake: output band with the gain as a dim
+// range and a white marker. Each module shows one large value in the corner pocket.
+const s = state("tow");
+frame(s);
+layer(
+  band({ value: s.rpm / TACHO_MAX, redFrom: REDLINE / TACHO_MAX, field: "tacho rpm" }) +
+  band({ n: 30, len: 14, w: 6, from: boostAt(0), value: boostAt(s.boost), color: boostColor(s), mark: boostAt(0), field: "boost: no firmware field yet (new vehicle signal needed)" }, 1) +
+  band({ side: "r", value: s.braking ? s.output / 10 : 0, avail: s.gain / 10, mark: s.gain / 10, ends: ["0", "10"], field: "trailer brake output" })
+);
+place(`
+  <div class="abs big speed" data-field="speed">${digits(s.speed)}</div>
+  <div class="abs sunit" data-field="vehicleSpeedUnit">MPH</div>
+  <div class="abs gdiv"></div>
+  <div class="abs gblk">${gear(s, 120)}${chip(s)}</div>
+  ${card(s, "left:200px;top:430px;width:660px;height:176px")}
+  ${cornerRead({ at: "left:48px;top:628px", label: "RPM", value: s.rpm.toLocaleString("en-US"), sub: `boost ${boostText(s)}<span class="u">psi</span>`, cls: "xl rpm", field: "tacho rpm · boost" })}
+  ${cornerRead({ side: "r", at: "right:48px;top:628px", label: s.braking ? `<span class="state">BRAKING</span>` : "TRAILER BRAKE",
+    value: (s.braking ? s.output : s.gain).toFixed(1), unit: s.braking ? `of ${s.gain.toFixed(1)}` : "gain", cls: `xl${s.braking ? " on" : ""}`,
+    field: "trucksTrailerGain (setting); live output: no firmware field yet (brake pedal + controller output needed)" })}
+  <div class="abs half"></div>
+  <div class="abs cols">${["trans", "coolant", "oil", "diff"].map(k => { const T = s.T[k];
+    return `<div class="tc temp ${T.state}" data-field="${T.field}">${tempText(T)}${tempCol(T, 130)}<div class="lab">${T.icon ? `${tIcon(T, 30)}<span class="k">${T.label}</span>` : tIcon(T)}</div></div>`; }).join("")}</div>
+  ${tires4(s, 200, "left:990px;top:440px;width:360px")}
+  ${fuel4(s, "left:1390px;top:440px;width:450px")}
+  <div class="abs grade" style="left:1390px;top:548px" data-field="mPitch (grade = tan pitch)"><span class="k">GRADE</span>
+    <svg width="56" height="26"><path d="M2 24 L54 ${24 - 22 * Math.min(1, s.grade / 10)} L54 24 Z" fill="var(--accent-dim)" stroke="var(--accent)" stroke-width="2"/></svg>
+    <span class="rv">+${s.grade}<span class="u">%</span></span></div>`);
+finish(s);
+</script>
+</body>
+</html>

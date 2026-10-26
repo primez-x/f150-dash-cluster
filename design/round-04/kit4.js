@@ -143,10 +143,16 @@ function shroudAt(t) {
 }
 const BEZEL = `<svg class="abs bezel" width="1920" height="932" aria-hidden="true"><path d="${SHROUD}"/></svg>`;
 
-// Captures call this: every drawn element that reaches into the shroud or screen-edge margin, with the overlap in canvas px.
-function shroudViolations() {
+// Shroud top edge for each canvas x (932 where the shroud does not reach).
+function archTop() {
   const arch = document.querySelector(".bezel path"), top = new Array(1921).fill(932), len = arch.getTotalLength();
   for (let l = 0; l <= len; l += 1) { const p = arch.getPointAtLength(l), x = Math.round(p.x); top[x] = Math.min(top[x], p.y); }
+  return top;
+}
+
+// Captures call this: every drawn element that reaches into the shroud or screen-edge margin, with the overlap in canvas px.
+function shroudViolations() {
+  const top = archTop();
   const limit = (x0, x1) => { let m = Infinity; for (let x = Math.max(0, Math.floor(x0)); x <= Math.min(1920, Math.ceil(x1)); x++) m = Math.min(m, top[x]); return m - SHROUD_MARGIN; };
   const c = document.getElementById("canvas").getBoundingClientRect(), k = 1920 / c.width;
   const name = el => `${el.tagName.toLowerCase()}${el.classList.length ? "." + [...el.classList].join(".") : ""}${el.closest("[data-field]") ? ` [${el.closest("[data-field]").dataset.field.slice(0, 40)}]` : ""}`;
@@ -172,8 +178,45 @@ function shroudViolations() {
   return [...out].map(([n, o]) => `${n} +${o}px`);
 }
 
+// Corner area below y 740 inside the margins, as one closed path per side (r mirrors). ?usable=1 draws both over a layout.
+function cornerPath(side) {
+  const pts = [];
+  for (let i = 200; i >= 0; i--) { const p = shroudAt(i / 200), y = p.y - SHROUD_MARGIN; if (y >= 740 && y <= 932 - SHROUD_MARGIN) pts.push([side === "r" ? 1920 - p.x : p.x, y]); }
+  const ex = side === "r" ? 1920 - SHROUD_MARGIN : SHROUD_MARGIN;
+  return `M${ex} 740 L${pts.map(p => p.map(v => v.toFixed(1)).join(" ")).join(" L")} L${ex} ${932 - SHROUD_MARGIN} Z`;
+}
+const usableOverlay = () => `<svg class="abs usable" width="1920" height="932" aria-hidden="true">` +
+  ["l", "r"].map(side => `<path d="${cornerPath(side)}" fill="#ffb020" fill-opacity=".12" stroke="#ffb020" stroke-width="2" stroke-dasharray="10 8"/>`).join("") +
+  line(SHROUD_MARGIN, 740, 1920 - SHROUD_MARGIN, 740, "#ffb020", 1, `stroke-opacity=".5" stroke-dasharray="4 8"`) + `</svg>`;
+
+// Captures call this with a PNG screenshot of the canvas (base64): the fraction of each corner area, in 12 px cells,
+// that holds visible content (any pixel brighter than the backdrop).
+async function cornerUse(png) {
+  const img = new Image(); img.src = `data:image/png;base64,${png}`; await img.decode();
+  const c = document.createElement("canvas"); c.width = img.width; c.height = img.height;
+  const ctx = c.getContext("2d"); ctx.drawImage(img, 0, 0);
+  const k = img.width / 1920, data = ctx.getImageData(0, 0, img.width, img.height).data, top = archTop(), C = 12, use = {};
+  for (const side of ["l", "r"]) {
+    let cells = 0, used = 0;
+    for (let y = 740; y + C <= 932 - SHROUD_MARGIN; y += C) for (let x0 = SHROUD_MARGIN; x0 + C <= 960; x0 += C) {
+      const xs = side === "r" ? 1920 - x0 - C : x0;
+      if (y + C > Math.min(...top.slice(xs, xs + C + 1)) - SHROUD_MARGIN) continue;
+      cells++;
+      let lit = false;
+      for (let yy = y; yy < y + C && !lit; yy += 2) for (let xx = xs; xx < xs + C && !lit; xx += 2) {
+        const i = (Math.round(yy * k) * img.width + Math.round(xx * k)) * 4;
+        lit = Math.max(data[i], data[i + 1], data[i + 2]) > 90;
+      }
+      if (lit) used++;
+    }
+    use[side] = Math.round(100 * used / cells);
+  }
+  return use;
+}
+
 // Turn edges and the true-size ruler go last so they sit above everything.
 function finish(s) {
+  if (params.has("usable")) place(usableOverlay());
   place(`
   <div class="abs turn l${s.turn === "l" ? " on" : ""}" data-field="turnLeftLight turnLeftLightEnabled"></div>
   <div class="abs turn r${s.turn === "r" ? " on" : ""}" data-field="turnRightLight turnRightLightEnabled"></div>
@@ -190,14 +233,15 @@ const fuel4 = (s, at) => fuel({ pct: s.fuel, range: s.range, at, light: fuelLigh
 // Speed digits sit in fixed-width cells so the number never shifts sideways as the value changes.
 const digits = n => String(n).split("").map(d => `<i>${d}</i>`).join("");
 
-// Daily A crescents: speed left, tachometer right, coolant and oil arcs inside. a0 is the speed zero angle; the tachometer mirrors.
+// Daily A crescents: speed left, tachometer right, coolant and oil arcs inside (90 px in, from t[0] to t[1]).
+// a0 is the speed zero angle and a1 the speed maximum (0 = up, clockwise); the tachometer mirrors at x 960.
 // With cruise set, a marker on the speed scale shows the set speed in the cruise readout colour.
-function crescents(s, a0 = 238) {
-  const sp = { cx: 800, cy: 470, r: 560, a0, a1: 305, max: 120 };
+function crescents(s, { cx = 800, cy = 470, r = 560, a0 = 238, a1 = 305, t = [238, 290] } = {}) {
+  const sp = { cx, cy, r, a0, a1, max: 120 };
   let g = crescent({ ...sp, major: 10, labelStep: 20, value: s.speed, field: "speed", labelSide: 1 }) +
-    crescent({ cx: 1120, cy: 470, r: 560, a0: 360 - a0, a1: 55, max: TACHO_MAX / 1000, major: 1, labelStep: 1, value: s.rpm / 1000, redFrom: REDLINE / 1000, field: "tacho rpm" }) +
-    tempArc({ cx: 800, cy: 470, r: 470, from: 238, to: 290, T: s.T.coolant }) +
-    tempArc({ cx: 1120, cy: 470, r: 470, from: 122, to: 70, T: s.T.oil });
+    crescent({ cx: 1920 - cx, cy, r, a0: 360 - a0, a1: 360 - a1, max: TACHO_MAX / 1000, major: 1, labelStep: 1, value: s.rpm / 1000, redFrom: REDLINE / 1000, field: "tacho rpm" }) +
+    tempArc({ cx, cy, r: r - 90, from: t[0], to: t[1], T: s.T.coolant }) +
+    tempArc({ cx: 1920 - cx, cy, r: r - 90, from: 360 - t[0], to: 360 - t[1], T: s.T.oil });
   if (s.cruise === "set") {
     const a = sp.a0 + (sp.a1 - sp.a0) * s.cruiseSet / sp.max, p = (r, da = 0) => polar(sp.cx, sp.cy, r, a + da).map(v => v.toFixed(1)).join(" ");
     g += `<path data-field="cruiseSpeedSet" d="M${p(sp.r + 30)} L${p(sp.r + 46, -1.4)} L${p(sp.r + 46, 1.4)} Z" fill="var(--ok)"/>`;
@@ -206,7 +250,8 @@ function crescents(s, a0 = 238) {
 }
 
 // Daily B halo: RPM segments over the top, fuel arc closing the bottom (E lower left, F lower right). Returns the fuel readout.
-function halo(s, { cx = 960, cy = 456, r = 256 } = {}) {
+// fuel: false draws the RPM segments only, for layouts that show fuel elsewhere.
+function halo(s, { cx = 960, cy = 456, r = 256, fuel = true } = {}) {
   const n = 56, lastLit = Math.floor(s.rpm / TACHO_MAX * n - .5);
   let g = `<g data-field="tacho rpm">`;
   for (let i = 0; i < n; i++) {
@@ -215,6 +260,7 @@ function halo(s, { cx = 960, cy = 456, r = 256 } = {}) {
     const op = lit ? .2 + .8 * Math.pow((i + 1) / (lastLit + 1), 1.6) : 1, head = lit && i >= lastLit - 1;
     g += line(x0, y0, x1, y1, lit ? (isRed ? "#ff3b30" : ACC) : isRed ? "#2a1210" : "#12171d", 7, `stroke-linecap="round" stroke-opacity="${op.toFixed(2)}"${head ? ' filter="url(#glow)"' : ""}`);
   }
+  if (!fuel) { layer(g + `</g>`); return ""; }
   const e = 236, f = 124, at = p => e - (e - f) * p / 100;
   g += `</g><g data-field="fuelPercentage"><path d="${arc(cx, cy, r + 14, f, e)}" fill="none" stroke="#fff" stroke-opacity=".05" stroke-width="8"/>`;
   if (s.fuel != null) g += `<path d="${arc(cx, cy, r + 14, at(lowPct(s)), e)}" fill="none" stroke="#ffb020" stroke-opacity=".3" stroke-width="8"/>` + tailArc(cx, cy, r + 14, e, at(s.fuel), 8, fuelColor(s));
