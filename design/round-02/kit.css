@@ -50,6 +50,10 @@ body.offroad { --accent: #8fd3ff; --accent-dim: rgba(143, 211, 255, .18); }
 .fuel.low .head > .v { color: var(--caution); }
 .fuel.low .track i { background: linear-gradient(90deg, transparent, var(--caution)); }
 .fuel.low .track i::after { box-shadow: 0 0 14px var(--caution), 0 0 4px var(--caution); }
+.fuel.reserve .ic { background: var(--warn); }
+.fuel.reserve .head > .v { color: var(--warn); }
+.fuel.reserve .track i { background: linear-gradient(90deg, transparent, var(--warn)); }
+.fuel.reserve .track i::after { box-shadow: 0 0 14px var(--warn), 0 0 4px var(--warn); }
 .ends { display: flex; justify-content: space-between; font: 14px "BMW Type Global"; color: var(--mute); margin-top: 6px; letter-spacing: 2px; }
 
 /* Vertical bar gauge (towing temperatures). */

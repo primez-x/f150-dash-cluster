@@ -6,7 +6,7 @@ async (page) => {
   const out = "design/round-04/shots/";
   const shots = [
     ["daily-a", ["normal", "cold", "turn", "lowtire", "warmcoolant", "hottrans"]],
-    ["daily-b", ["normal", "cold", "turn", "lowfuel", "warmcoolant", "hottrans"]],
+    ["daily-b", ["normal", "cold", "turn", "lowfuel", "reserve", "warmcoolant", "hottrans"]],
     ["tow-a", ["normal", "hottrans", "turn"]],
     ["tow-b", ["normal", "hottrans", "turn"]],
   ];

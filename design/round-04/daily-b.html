@@ -14,6 +14,8 @@
   .fread .ic { width: 32px; height: 32px; background: #c9d1da; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; transform: scaleX(-1); align-self: center; }
   .fread.low .ic { background: var(--caution); }
   .fread.low .rv { color: var(--caution); }
+  .fread.reserve .ic { background: var(--warn); }
+  .fread.reserve .rv { color: var(--warn); }
   .fread .sep { width: 1px; height: 30px; background: rgba(255, 255, 255, .14); align-self: center; }
   .temps { left: 96px; top: 280px; width: 400px; }
   .trow { margin-bottom: 54px; }
@@ -38,10 +40,10 @@ frame(s);
     const op = lit ? .2 + .8 * Math.pow((i + 1) / (lastLit + 1), 1.6) : 1, head = lit && i >= lastLit - 1;
     g += line(x0, y0, x1, y1, lit ? (isRed ? "#ff3b30" : ACC) : isRed ? "#2a1210" : "#12171d", 7, `stroke-linecap="round" stroke-opacity="${op.toFixed(2)}"${head ? ' filter="url(#glow)"' : ""}`);
   }
-  // Fuel arc: E at lower left, F at lower right, reserve band tinted. Caution colour at reserve.
-  const low = s.fuel <= RESERVE, col = low ? "#ffb020" : ACC, e = 236, f = 124, af = e - (e - f) * s.fuel / 100;
+  // Fuel arc: E at lower left, F at lower right, 1/8 band tinted. Amber at 1/8 tank, red with the low-fuel light.
+  const col = fuelLight(s) ? "#ff3b30" : s.fuel <= LOW ? "#ffb020" : ACC, e = 236, f = 124, af = e - (e - f) * s.fuel / 100;
   g += `</g><g data-field="fuelPercentage"><path d="${arc(cx, cy, r + 14, f, e)}" fill="none" stroke="#fff" stroke-opacity=".05" stroke-width="8"/>`;
-  g += `<path d="${arc(cx, cy, r + 14, e - (e - f) * RESERVE / 100, e)}" fill="none" stroke="#ffb020" stroke-opacity=".3" stroke-width="8"/>`;
+  g += `<path d="${arc(cx, cy, r + 14, e - (e - f) * LOW / 100, e)}" fill="none" stroke="#ffb020" stroke-opacity=".3" stroke-width="8"/>`;
   g += tailArc(cx, cy, r + 14, e, af, 8, col);
   const [ex, ey] = polar(cx, cy, r + 52, e), [fx, fy] = polar(cx, cy, r + 52, f);
   g += text(ex, ey + 8, "E", 22, "#6b7480") + text(fx, fy + 8, "F", 22, "#6b7480") + `</g>`;
@@ -51,7 +53,7 @@ place(`
   <div class="abs gtop">${gear(s, 72)}${chip(s)}</div>
   <div class="abs big speed" data-field="speed">${s.speed}</div>
   <div class="abs sunit" data-field="vehicleSpeedUnit">MPH</div>
-  <div class="abs fread${s.fuel <= RESERVE ? " low" : ""}" data-field="fuelPercentage DTE"><i class="ic" style="--src:url(${ICON("fuel")})"></i><span class="rv">${s.fuel}<span class="u">%</span></span><span class="sep"></span><span class="rv">${s.range}<span class="u">mi</span></span></div>
+  <div class="abs fread${fuelLight(s) ? " reserve" : s.fuel <= LOW ? " low" : ""}" data-field="fuelPercentage DTE"><i class="ic" style="--src:url(${ICON("fuel")})"></i><span class="rv">${s.fuel}<span class="u">%</span></span><span class="sep"></span><span class="rv">${s.range}<span class="u">mi</span></span></div>
   <div class="abs temps">${["coolant", "oil", "trans"].map(k => { const T = s.T[k];
     return `<div class="trow temp ${T.state}" data-field="${T.field}"><div class="head"><span class="k" style="display:flex;align-items:center;gap:14px">${tIcon(T)}${T.label}</span>${tempText(T)}</div>${tempTrack(T)}</div>`; }).join("")}</div>
   ${card(s, "left:1360px;top:280px;width:470px;height:200px")}`);

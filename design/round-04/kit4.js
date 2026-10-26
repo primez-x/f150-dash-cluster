@@ -1,6 +1,6 @@
 // Round 4 kit: shared state, temperature colours, paged info card, alert, turn edges.
 // Loads after round-01/shared.js and round-02/kit.js (backdrop, place, layer, arcs, segBar, fuel, ICON, ALARM, TRUCK_TOP).
-// Query options: ?scene=normal|turn|cold|lowfuel|lowtire|hottrans  ?page=<n>  &still=1  ?view=physical&ruler=1
+// Query options: ?scene=normal|turn|cruise|cold|lowfuel|reserve|lowtire|braking|warmcoolant|hottrans  ?accent=teal|ice|blue|slate  ?page=<n>  &still=1  ?view=physical&ruler=1
 
 // Temperatures arrive in °C: waterTemp, gearBoxTemp, oilTemp, diffOilTemp. 0xFE hides a reading; 0xFF shows "---".
 // Firmware colour rules: oil cold below 70 °C, diff cold below 49 °C, coolant warm / hot from waterLevel 1 / 2.
@@ -38,8 +38,10 @@ const SCENES = {
   turn: s => Object.assign(s, { turn: "l", cruise: "set" }),
   cruise: s => Object.assign(s, { cruise: "set", speed: 64, rpm: 1900 }),
   cold: s => Object.assign(s, { speed: 28, gearNum: 3, rpm: 1350, temps: Object.fromEntries(Object.keys(s.temps).map(k => [k, COLD[k]])) }),
-  lowfuel: s => Object.assign(s, { fuel: 9, range: Math.round(s.range * 9 / s.fuel), telltales: [...s.telltales, 151],
-    alert: ["caution", ICON("fuel"), "LOW FUEL", `${Math.round(s.range * 9 / s.fuel)} mi to empty`, true] }),
+  lowfuel: s => Object.assign(s, { fuel: 11, range: Math.round(s.range * 11 / s.fuel),
+    alert: ["caution", ICON("fuel"), "FUEL LOW", `${Math.round(s.range * 11 / s.fuel)} mi to empty`, true] }),
+  reserve: s => Object.assign(s, { fuel: 6, range: Math.round(s.range * 6 / s.fuel), telltales: [...s.telltales, 151],
+    alert: ["warn", ICON("fuel"), "FUEL RESERVE", `${Math.round(s.range * 6 / s.fuel)} mi to empty · refuel now`, true] }),
   lowtire: s => Object.assign(s, { tires: [s.tires[0], s.tires[1], s.tires[2], 24], low: 3, telltales: [...s.telltales, 24],
     alert: ["caution", ALARM(24), "RIGHT REAR TIRE LOW", "24 psi"] }),
   // Live trailer braking. No firmware field reports pedal or controller output yet; see round 5 notes.
@@ -64,10 +66,11 @@ function state(mode) {
   const s = (SCENES[params.get("scene")] || SCENES.normal)(structuredClone(BASE[mode]));
   s.page = +(params.get("page") || 0) % s.pages.length;
   s.T = Object.fromEntries(Object.entries(s.temps).map(([k, c]) => [k, temp(k, c)]));
-  // The background glow takes the worst temperature colour: amber when warm, red when hot. Other alerts leave the glow alone.
-  const states = Object.values(s.T).map(T => T.state);
-  if (states.includes("hot")) document.body.classList.add("temp-hot");
-  else if (states.includes("warm")) document.body.classList.add("temp-warm");
+  // The background glow takes the worst temperature or fuel colour: amber for a warm temperature or 1/8 tank,
+  // red for a hot temperature or the low-fuel light. Other alerts leave the glow alone.
+  const states = Object.values(s.T).map(T => T.state), fuel = params.has("fuel") ? +params.get("fuel") : s.fuel;
+  if (states.includes("hot") || fuelLight(s)) document.body.classList.add("glow-hot");
+  else if (states.includes("warm") || fuel <= LOW) document.body.classList.add("glow-warm");
   return s;
 }
 
@@ -93,7 +96,8 @@ function finish(s) {
 
 const gear = (s, size) => `<div class="gear4" style="font-size:${size}px" data-field="trucksShiftGear getGearNum()">${s.gear}<sup>${s.gearNum}</sup></div>`;
 const chip = s => `<span class="dchip" data-field="getGearAwd()">${s.drive}</span>`;
-const fuel4 = (s, at) => fuel({ pct: s.fuel, range: s.range, at });
+const fuelLight = s => s.telltales.includes(151);   // alarmTable[151]: truck low-fuel light
+const fuel4 = (s, at) => fuel({ pct: s.fuel, range: s.range, at, light: fuelLight(s) });
 
 function tires4(s, h, at) {
   const t = (i, f) => `<span class="rv${i === s.low ? " low" : ""}" data-field="mTpmsPressure ${f}">${s.tires[i]}</span>`;
