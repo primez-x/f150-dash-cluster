@@ -89,7 +89,7 @@ function tires4(s, h, at) {
 const cell = (k, v, u = "", f = "", cls = "") => `<div class="cell ${cls}" data-field="${f}"><div class="k">${k}</div><div class="rv">${v}${u ? `<span class="u">${u}</span>` : ""}</div></div>`;
 const PAGES = {
   trip: s => ["TRIP A", "TripAB.qml RunTimeInfo.qml",
-    `<div class="cells">${cell("DISTANCE", s.trip, "mi", "mTripA")}${cell("RUN TIME", "2:41", "h", "RunTimeInfo")}${cell("AVG", s.avg, "mpg", "mAvgFuel")}</div>`],
+    `<div class="cells">${cell("DIST", s.trip, "mi", "mTripA")}${cell("TIME", "2:41", "h", "RunTimeInfo")}${cell("AVG", s.avg, "mpg", "mAvgFuel")}</div>`],
   economy: s => ["FUEL ECONOMY", "MpgInfo.qml AvgFuelinfo.qml",
     `<div class="cells">${cell("NOW", s.mpgNow, "mpg", "instant mpg")}${cell("AVG", s.avg, "mpg", "mAvgFuel")}${cell("RANGE", s.range, "mi", "DTE")}</div>
      <div class="meter"><i style="width:${s.mpgNow / 30 * 100}%"></i></div>`],
