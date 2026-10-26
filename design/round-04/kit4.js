@@ -43,6 +43,7 @@ const SCENES = {
     alert: ["caution", ALARM(24), "RIGHT REAR TIRE LOW", "24 psi"] }),
   // Live trailer braking. No firmware field reports pedal or controller output yet; see round 5 notes.
   braking: s => Object.assign(s, { braking: true, output: 4, speed: 46, rpm: 1500 }),
+  warmcoolant: s => Object.assign(s, { temps: { ...s.temps, coolant: 110 } }),
   hottrans: s => Object.assign(s, { rpm: 3400, gearNum: 3, grade: 8, telltales: [...s.telltales, 8], temps: { ...s.temps, trans: 124, diff: 114 },
     alert: ["warn", ICON("gearBoxTemp"), "TRANSMISSION HOT", `${c2f(124)} °F · reduce load or speed`] }),
 };
@@ -53,6 +54,10 @@ function state(mode) {
   const s = (SCENES[params.get("scene")] || SCENES.normal)(structuredClone(BASE[mode]));
   s.page = +(params.get("page") || 0) % s.pages.length;
   s.T = Object.fromEntries(Object.entries(s.temps).map(([k, c]) => [k, temp(k, c)]));
+  // The background glow takes the worst temperature colour: amber when warm, red when hot. Other alerts leave the glow alone.
+  const states = Object.values(s.T).map(T => T.state);
+  if (states.includes("hot")) document.body.classList.add("temp-hot");
+  else if (states.includes("warm")) document.body.classList.add("temp-warm");
   return s;
 }
 

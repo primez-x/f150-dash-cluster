@@ -8,6 +8,7 @@ async (page) => {
   const errors = [];
   page.on("pageerror", e => errors.push(page.url() + ": " + e.message));
   const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Network.enable");
   await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
   const shot = async (url, path, w, h) => {
     await page.setViewportSize({ width: w, height: h });

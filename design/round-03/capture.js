@@ -13,6 +13,7 @@ async (page) => {
   page.on("pageerror", e => errors.push(page.url() + ": " + e.message));
   page.on("response", r => { if (r.status() >= 400 && !r.url().endsWith("favicon.ico")) errors.push(r.url() + ": " + r.status()); });
   const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Network.enable");
   await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
   const shot = async (url, path, w, h) => {
     await page.setViewportSize({ width: w, height: h });

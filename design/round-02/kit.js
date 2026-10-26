@@ -40,7 +40,7 @@ function backdrop() {
     <defs>
       <radialGradient id="topoFade" cx="50%" cy="48%" r="62%"><stop offset="0" stop-color="#fff" stop-opacity=".12"/><stop offset=".55" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="1"/></radialGradient>
       <mask id="topoMask"><rect width="${W}" height="${H}" fill="url(#topoFade)"/></mask>
-      <radialGradient id="floor" cx="50%" cy="100%" r="60%"><stop offset="0" style="stop-color:var(--accent);stop-opacity:.13"/><stop offset="1" style="stop-color:var(--accent);stop-opacity:0"/></radialGradient>
+      <radialGradient id="floor" cx="50%" cy="100%" r="60%"><stop offset="0" style="stop-color:var(--ambient, var(--accent));stop-opacity:var(--ambient-o, .13)"/><stop offset="1" style="stop-color:var(--ambient, var(--accent));stop-opacity:0"/></radialGradient>
     </defs>
     <rect x="0" y="${H - 420}" width="${W}" height="420" fill="url(#floor)"/>
     <path d="${d}" fill="none" stroke="var(--accent)" stroke-opacity=".085" stroke-width="1.2" mask="url(#topoMask)"/>

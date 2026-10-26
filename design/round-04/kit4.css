@@ -2,6 +2,9 @@
    Loads after round-01/shared.css and round-02/kit.css.
    Tiers: hero (speed, gear) in Konexy; read values 38px (about 16 arcmin on the glass); icons replace most labels;
    small labels 20px only where an icon cannot carry the meaning. */
+/* Background floor glow: accent when every temperature is normal, amber when one is warm, red when one is hot. */
+body.temp-warm { --ambient: var(--warm); --ambient-o: .2; }
+body.temp-hot { --ambient: var(--hot); --ambient-o: .24; }
 :root { --read: 38px; --small: 20px; --cold: #a0ccf5; --normal: #e8ecf1; --warm: var(--caution); --hot: var(--warn); --turn: #2ee06e; }
 
 .k { font: var(--small) "BMW Type Global"; letter-spacing: 3px; color: #6b7480; text-transform: uppercase; }

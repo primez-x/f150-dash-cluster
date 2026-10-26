@@ -8,6 +8,7 @@ async (page) => {
   const states = ["available", "active", "set", "acc", "lim"];
   const done = [];
   const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Network.enable");
   await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
   for (const m of mocks) {
     await page.setViewportSize({ width: 1920, height: 932 });

@@ -8,6 +8,7 @@ async (page) => {
   page.on("pageerror", e => errors.push(page.url() + ": " + e.message));
   page.on("response", r => { if (r.status() >= 400 && !r.url().endsWith("favicon.ico")) errors.push(r.url() + ": " + r.status()); });
   const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Network.enable");
   await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
   const shot = async (url, path, w, h) => {
     await page.setViewportSize({ width: w, height: h });
@@ -15,7 +16,7 @@ async (page) => {
     await page.evaluate(() => document.fonts.ready);
     await page.screenshot({ path: out + path });
   };
-  for (const scene of ["normal", "braking", "hottrans", "turn", "lowtire"]) await shot(`tow.html?scene=${scene}&still=1`, `tow-${scene}.png`, 1920, 932);
+  for (const scene of ["normal", "braking", "warmcoolant", "hottrans", "turn", "lowtire"]) await shot(`tow.html?scene=${scene}&still=1`, `tow-${scene}.png`, 1920, 932);
   await shot("tow.html?view=physical&ruler=1", "tow-physical.png", 1920, 720);
   return errors;
 }

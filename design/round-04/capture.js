@@ -5,8 +5,8 @@ async (page) => {
   const base = "http://127.0.0.1:8731/design/round-04/";
   const out = "design/round-04/shots/";
   const shots = [
-    ["daily-a", ["normal", "cold", "turn", "lowtire"]],
-    ["daily-b", ["normal", "cold", "turn", "lowfuel"]],
+    ["daily-a", ["normal", "cold", "turn", "lowtire", "warmcoolant", "hottrans"]],
+    ["daily-b", ["normal", "cold", "turn", "lowfuel", "warmcoolant", "hottrans"]],
     ["tow-a", ["normal", "hottrans", "turn"]],
     ["tow-b", ["normal", "hottrans", "turn"]],
   ];
@@ -14,6 +14,7 @@ async (page) => {
   page.on("pageerror", e => errors.push(page.url() + ": " + e.message));
   page.on("response", r => { if (r.status() >= 400 && !r.url().endsWith("favicon.ico")) errors.push(r.url() + ": " + r.status()); });
   const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Network.enable");
   await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
   const shot = async (url, path, w, h) => {
     await page.setViewportSize({ width: w, height: h });
