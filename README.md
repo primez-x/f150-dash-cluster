@@ -2,6 +2,15 @@
 
 Shared Codex and Claude project for the VikNav 13.1-inch Ford F150 cluster.
 
+Private repository: [primez-x/f150-dash-cluster](https://github.com/primez-x/f150-dash-cluster).
+
+Continue in the T3 project **F150 Dash Cluster**, which uses `C:\f150-dash-cluster` as the workspace.
+Start each agent with `AGENTS.md` and this README. Claude also has `CLAUDE.md` as the entry point.
+
+The repository contains source candidates, verification tools, and the complete design handoff.
+Raw backups, extracted firmware, private settings, and credentials remain local in this workspace.
+A fresh clone needs the local firmware evidence before the replay tools can run.
+
 Goals:
 
 - Correct fuel, coolant, temperature-unit, gauge, and cruise defects.
