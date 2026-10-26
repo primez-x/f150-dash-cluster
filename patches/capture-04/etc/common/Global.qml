@@ -598,6 +598,31 @@ Item {
     onAlarmChangedChanged: {
         // 示宽灯(大灯)
         ill=Math.floor(alarmTable[12])
+        updateTowDashboard()
+    }
+    // Tow/Haul: the TOW telltale (alarm 90) shows the towing layout. Tow/Haul off returns to the saved driver layout.
+    // Only TOW changes act, so a layout the driver selects while towing stays.
+    property int towDashboard: 1
+    property int dashboardBeforeTow: -1     // driver layout to restore; -1 when the towing layout was not selected automatically
+    property int towState: -1               // -1 until the first alarm frame after startup
+    onDashboardBeforeTowChanged: {
+        Funcs.setProperty("dashboardBeforeTow", dashboardBeforeTow)
+    }
+    function updateTowDashboard(){
+        var tow=alarmTable[90]>0?1:0
+        if(tow===towState)
+            return
+        towState=tow
+        if(tow){
+            if(dashboardBeforeTow<0&&dashboard!==towDashboard){
+                dashboardBeforeTow=dashboard
+                dashboard=towDashboard
+            }
+        }else if(dashboardBeforeTow>=0){
+            if(dashboard===towDashboard)
+                dashboard=dashboardBeforeTow
+            dashboardBeforeTow=-1
+        }
     }
     function getAlarm(id){
         return alarmChanged?alarmTable[id]:alarmTable[id]
@@ -3468,6 +3493,7 @@ Item {
         uartDebugEnabled=Funcs.restore_properity("uartDebugEnabled", uartDebugEnabled)
         vehicleModel=Funcs.restore_properity("vehicleModel", vehicleModel)
         dashboard=Funcs.restore_properity("dashboard", dashboard)
+        dashboardBeforeTow=Funcs.restore_properity("dashboardBeforeTow", dashboardBeforeTow)
         language=Funcs.restore_properity("language", language)
         gpsAutoSetRtcEnabled=Funcs.restore_properity("gpsAutoSetRtcEnabled", gpsAutoSetRtcEnabled)
         drivingInfoIndex=Funcs.restore_properity("drivingInfoIndex", drivingInfoIndex)

@@ -57,6 +57,8 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - The source candidate corrects pressure conversion, low-RPM updates, DPC assignments, and idle fuel units.
 - The candidate keeps temperature and speed preferences independent. Separate saved overrides prevent native unit snapshots from changing manual choices.
 - Both source replays pass: 527 gauge cases and 194 unit-state cases. Earlier independent review covered the original unit and persistence changes.
+- The TOW telltale (alarm 90) selects the towing layout (`towDashboard`, now stock UI2). Tow/Haul off returns to the saved driver layout. The tow replay passes 11 cases, and host Qt compiles the source.
+- The MCU source of alarm 90 on this truck is not yet verified. Confirm on the vehicle that the stock TOW telltale lights with Tow/Haul.
 - Source formatters distinguish L/h fuel flow from distance consumption. Raw consumption values no longer animate through unavailable sentinels.
 - Fuel range-validity flags preserve invalid raw samples for diagnostics. Compiled gauge visibility and unit-label changes remain integration work.
 - Five temperature families preserve documented unavailable states. Native calibration and actual vehicle accuracy remain unverified.
@@ -77,6 +79,8 @@ node tests/gauge-replay.cjs original
 node tests/gauge-replay.cjs patched
 node tests/unit-state-replay.cjs original
 node tests/unit-state-replay.cjs patched
+node tests/tow-layout-replay.cjs original
+node tests/tow-layout-replay.cjs patched
 node tests/settings-menu-replay.cjs
 ```
 
