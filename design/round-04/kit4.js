@@ -51,16 +51,13 @@ const SCENES = {
     alert: ["warn", ICON("gearBoxTemp"), "TRANSMISSION HOT", `${c2f(124)} °F · reduce load or speed`] }),
 };
 
-// Accent colour setting. Without a choice, each layout keeps the mode colour (Daily ice, Towing teal).
-// A choice applies to every layout. Amber and red stay reserved for warnings.
+// Accent colour setting: one palette for every layout, teal by default. Amber and red stay reserved for warnings.
 const ACCENTS = { teal: "90, 209, 192", ice: "143, 211, 255", blue: "77, 155, 255", slate: "148, 163, 184" };
 
 function state(mode) {
-  const accent = ACCENTS[params.get("accent")];
-  if (accent) {
-    document.body.style.setProperty("--accent", `rgb(${accent})`);
-    document.body.style.setProperty("--accent-dim", `rgba(${accent}, .18)`);
-  }
+  const accent = ACCENTS[params.get("accent")] || ACCENTS.teal;
+  document.body.style.setProperty("--accent", `rgb(${accent})`);
+  document.body.style.setProperty("--accent-dim", `rgba(${accent}, .18)`);
   if (params.has("still")) document.body.classList.add("still");
   if (params.has("ruler")) document.body.classList.add("ruler");
   const s = (SCENES[params.get("scene")] || SCENES.normal)(structuredClone(BASE[mode]));
