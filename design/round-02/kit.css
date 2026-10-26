@@ -6,61 +6,67 @@ body.sport { --accent: #b48cff; --accent-dim: rgba(180, 140, 255, .18); }
 body.race  { --accent: #f2f5f8; --accent-dim: rgba(242, 245, 248, .14); }
 body.offroad { --accent: #8fd3ff; --accent-dim: rgba(143, 211, 255, .18); }
 
-#canvas { background: radial-gradient(ellipse 70% 62% at 50% 52%, #121820 0%, #06080b 72%); }
+#canvas { background: radial-gradient(ellipse 70% 62% at 50% 50%, #0f141a 0%, #040507 75%); }
 
 /* Top bar: identical on every layout. Cruise region sits at 810, 104 (300 x 80). */
-.tb { top: 26px; font-size: 34px; color: #c9d1da; }
-.tb small { font: 18px "BMW Type Global"; color: var(--sub); margin-left: 6px; }
-.mode-tag { left: 66px; top: 82px; font: 600 16px "BMW Type Global"; letter-spacing: 5px; color: var(--accent); }
+.tb { top: 28px; font: 30px "BMW Type Global"; letter-spacing: 1px; color: #dfe5ec; }
+.tb small { font: 16px "BMW Type Global"; color: var(--sub); margin-left: 4px; }
+.mode-tag { left: 66px; top: 78px; font: 600 14px "BMW Type Global"; letter-spacing: 6px; color: var(--accent); }
+.mode-tag::before { content: ""; display: inline-block; width: 18px; height: 2px; background: var(--accent); vertical-align: middle; margin-right: 10px; box-shadow: 0 0 8px var(--accent); }
 
-.k { font: 18px "BMW Type Global"; letter-spacing: 3px; color: var(--sub); }
-.u { font: 16px "BMW Type Global"; color: var(--sub); margin-left: 6px; letter-spacing: 1px; }
-.big { font-family: "Konexy"; line-height: 1; }
+.k { font: 15px "BMW Type Global"; letter-spacing: 4px; color: #6b7480; text-transform: uppercase; }
+.u { font: 15px "BMW Type Global"; color: #6b7480; margin-left: 6px; letter-spacing: 1px; }
+.big { font-family: "Konexy"; line-height: 1; color: #f4f7fa; text-shadow: 0 0 40px rgba(255, 255, 255, .06); }
+.mid { font-family: "BMW Type Global"; line-height: 1; color: #eef2f6; letter-spacing: .5px; }
 
 /* Gear selector row. */
-.prnd { display: flex; gap: 26px; font-family: "Konexy"; font-size: 36px; color: #313942; align-items: baseline; }
-.prnd .on { color: #fff; text-shadow: 0 0 16px var(--accent); }
+.prnd { display: flex; gap: 28px; font: 32px "BMW Type Global"; color: #2f3740; align-items: baseline; }
+.prnd .on { color: #fff; font-family: "Konexy"; font-size: 40px; text-shadow: 0 0 18px var(--accent); }
 .prnd sup { font-size: 22px; color: var(--accent); margin-left: 2px; }
 
 /* Info tiles. */
 .tiles { display: flex; }
-.tile { padding: 0 30px; border-left: 1px solid var(--line); text-align: center; }
+.tile { padding: 0 34px; border-left: 1px solid rgba(255, 255, 255, .06); text-align: center; }
 .tile:first-child { border-left: 0; }
 .tile .k, .tile .v { white-space: nowrap; }
-.tile .v { font-family: "Konexy"; font-size: 34px; margin-top: 6px; }
+.tile .v { font: 34px "BMW Type Global"; color: #eef2f6; margin-top: 8px; }
 
 /* Linear bar gauge. */
 .bar .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
 .bar .head .k { display: flex; align-items: center; gap: 10px; }
 .bar .head img { height: 26px; opacity: .85; }
-.bar .v { font-family: "Konexy"; font-size: 30px; }
-.track { position: relative; height: 8px; border-radius: 4px; background: #161c23; }
-.track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--accent); box-shadow: 0 0 10px var(--accent-dim); }
-.track b { position: absolute; top: -4px; bottom: -4px; width: 2px; background: #3a434d; }
+.bar .v { font: 28px "BMW Type Global"; color: #eef2f6; }
+.track { position: relative; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .05); }
+.track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: linear-gradient(90deg, transparent, var(--accent)); }
+.track i::after { content: ""; position: absolute; right: -5px; top: -4px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 0 14px var(--accent), 0 0 4px var(--accent); }
+.track b { position: absolute; top: -5px; bottom: -5px; width: 1px; background: rgba(255, 255, 255, .22); }
 .ends { display: flex; justify-content: space-between; font: 14px "BMW Type Global"; color: var(--mute); margin-top: 6px; letter-spacing: 2px; }
 
 /* Vertical bar gauge (towing temperatures). */
 .vbar { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.vbar .col { position: relative; width: 26px; height: 300px; border-radius: 13px; background: #141a21; overflow: hidden; }
-.vbar .col i { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(0deg, var(--accent-dim), var(--accent)); }
-.vbar .band { position: absolute; left: -10px; right: -10px; border-top: 1px dashed #56606b; border-bottom: 1px dashed #56606b; }
-.vbar .v { font-family: "Konexy"; font-size: 28px; }
+.vbar .col { position: relative; width: 18px; height: 300px; border-radius: 9px; background: rgba(255, 255, 255, .05); }
+.vbar .col i { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 9px; background: linear-gradient(0deg, transparent, var(--accent)); }
+.vbar .col i::after { content: ""; position: absolute; left: -3px; right: -3px; top: -6px; height: 12px; border-radius: 6px; background: #fff; box-shadow: 0 0 16px var(--accent); }
+.vbar .band { position: absolute; left: -12px; right: -12px; border-top: 1px solid rgba(255, 255, 255, .14); border-bottom: 1px solid rgba(255, 255, 255, .14); }
+.vbar .v { font: 22px "BMW Type Global"; color: #eef2f6; }
 .vbar img { height: 30px; opacity: .85; }
 
 /* Drivetrain mode chips. */
 .chips { display: flex; gap: 8px; }
-.chips span { font: 600 20px "BMW Type Global"; letter-spacing: 1px; color: var(--mute); padding: 6px 12px; border: 1px solid #222a33; border-radius: 6px; }
-.chips .on { color: #fff; border-color: var(--accent); box-shadow: inset 0 0 12px var(--accent-dim); }
-.chips .lock.on { color: var(--caution); border-color: var(--caution); box-shadow: none; }
+.chips { align-items: center; }
+.chips span { font: 600 19px "BMW Type Global"; letter-spacing: 1px; color: #39414a; padding: 6px 14px; border-radius: 999px; }
+.chips .on { color: #05070a; background: var(--accent); box-shadow: 0 0 18px var(--accent-dim); }
+.chips .lock.on { color: #05070a; background: var(--caution); box-shadow: 0 0 18px rgba(255, 176, 32, .3); }
 
 /* Tire pressures around the LHD truck plan view. Driver side is left. */
 .tpms { display: grid; grid-template-columns: auto 70px auto; gap: 8px 16px; align-items: center; }
-.tpms .t { font-family: "Konexy"; font-size: 28px; text-align: center; }
+.tpms .t { font: 28px "BMW Type Global"; color: #eef2f6; text-align: center; }
 .tpms .t.low { color: var(--caution); }
 .tpms img { grid-row: 1 / span 2; grid-column: 2; height: 130px; justify-self: center; }
 
 /* Dock. */
 .dock { left: 0; right: 0; top: 872px; height: 60px; display: flex; justify-content: center; }
-.dock .chip { display: flex; align-items: baseline; gap: 12px; padding: 0 34px; border-left: 1px solid var(--line); }
+.dock { border-top: 1px solid rgba(255, 255, 255, .04); }
+.dock .chip { display: flex; align-items: baseline; gap: 12px; padding: 0 38px; border-left: 1px solid rgba(255, 255, 255, .06); margin-top: 14px; height: 30px; }
 .dock .chip:first-child { border-left: 0; }
-.dock .v { font-family: "Konexy"; font-size: 26px; color: #c9d1da; }
+.dock .v { font: 24px "BMW Type Global"; color: #dfe5ec; }

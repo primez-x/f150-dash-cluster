@@ -6,8 +6,7 @@
 <link rel="stylesheet" href="../round-01/shared.css">
 <link rel="stylesheet" href="kit.css">
 <style>
-  .panel { top: 200px; width: 400px; height: 560px; box-sizing: border-box; padding: 30px 34px; border-radius: 18px;
-    background: linear-gradient(180deg, rgba(22, 29, 37, .75), rgba(12, 16, 21, .35)); border: 1px solid #161d25; }
+  .panel { top: 220px; width: 380px; box-sizing: border-box; padding: 26px 0 0; border-top: 1px solid rgba(255, 255, 255, .08); }
   .temps { display: flex; justify-content: space-between; margin-top: 22px; }
   .temps .v { font-size: 22px; }
   .speedbox { left: 960px; top: 250px; transform: translateX(-50%); display: flex; align-items: flex-end; gap: 46px; }
@@ -46,7 +45,7 @@ place(`
     <div class="row" style="margin-top:18px" data-field="mPitch (grade = tan pitch)">
       <span class="k">GRADE</span>
       <svg width="120" height="44"><path d="M4 40 L116 ${40 - 36 * Math.min(1, grade / 10)} L116 40 Z" fill="var(--accent-dim)" stroke="var(--accent)" stroke-width="2"/></svg>
-      <span class="big" style="font-size:40px">+${grade.toFixed(0)}<span class="u">%</span></span>
+      <span class="mid" style="font-size:40px">+${grade.toFixed(0)}<span class="u">%</span></span>
     </div>
     <div class="row" style="display:block"><div class="k" style="margin-bottom:12px">TIRES · PSI</div>${tpms([38, 38, 41, 41], -1)}</div>
   </div>
@@ -55,7 +54,7 @@ place(`
     <div class="g"><div class="big" data-field="trucksShiftGear getGearNum()">D<sup style="font-size:46px;color:var(--accent)">4</sup></div><div class="k">GEAR</div></div>
   </div>
   <div class="abs unit" data-field="vehicleSpeedUnit">MPH</div>
-  <div class="abs rpm big" data-field="tacho rpm">2600<span class="u">RPM</span></div>
+  <div class="abs rpm mid" data-field="tacho rpm">2600<span class="u">RPM</span></div>
   <div class="abs" style="left:960px;top:776px;transform:translateX(-50%)">${driveChips("2H", false)}</div>
   <div class="abs dock">
     <div class="chip" data-field="batterVoltage"><span class="k">BATT</span><span class="v">14.1 V</span></div>
