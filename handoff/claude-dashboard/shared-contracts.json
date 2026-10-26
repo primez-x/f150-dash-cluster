@@ -1,0 +1,2455 @@
+{
+  "format": "dashboard-design-evidence-v1",
+  "purpose": "Design new styles from recovered compiled UI evidence",
+  "evidence": "Shipped compiled QML; branch-free expressions are decoder inferences, bytecode preserves unresolved branches",
+  "measurement": {
+    "design_canvas": [
+      1920,
+      932
+    ],
+    "physical_display": [
+      1920,
+      720
+    ],
+    "warning": "Do not compress Y alone or assume full-width fit. Main uses uniform model-dependent scale, rotation, and margins.",
+    "main_loader": {
+      "scale": "mSacel[Number(mTrucksModel)]",
+      "rotation": "mRotation[Number(mTrucksModel)]",
+      "top_margin": "mTopMargin[Number(mTrucksModel)]",
+      "origin": "Item.Top",
+      "model_index_0_scale": "mGlobalHeight === 720 ? 0.7752 : 1",
+      "model_index_0_rotation": 0,
+      "model_index_0_top_margin": 0,
+      "model_index_0_left_margin": 0,
+      "model_index_0_transform": "At 1920x720: x_screen = 960 + 0.7752 * (x_design - 960); y_screen = 0.7752 * y_design",
+      "model_index_0_extent": [
+        1488.384,
+        722.4864
+      ],
+      "limit": "Model identity, current screenFlipEnabled, and runtime margins require device state. No physical overlay asserted."
+    },
+    "main_geometry_evidence": {
+      "component": "main.qml",
+      "functions": [
+        {
+          "index": 2,
+          "name": "expression for mAvailableHeight",
+          "code_unit_offset": 1104,
+          "code_file_offset": 40640,
+          "code_size": 61,
+          "code_sha256": "84b2ee37ab59b7b72d20ce49007d2c67b25df31a03b2adca28ffc9842c025e00",
+          "length": 0,
+          "parameters": [],
+          "locals": [],
+          "return_type": "",
+          "nested_function_index": 4294967295,
+          "registers": 17,
+          "flags": 0,
+          "location": {
+            "line": 23,
+            "column": 5
+          },
+          "line_table": [
+            {
+              "code_offset": 0,
+              "line": 24
+            },
+            {
+              "code_offset": 60,
+              "line": 36
+            }
+          ],
+          "label_count": 0,
+          "bytecode": [
+            {
+              "offset": 0,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 2,
+                "destTemp": 7
+              },
+              "references": {
+                "constIndex": 932
+              }
+            },
+            {
+              "offset": 3,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 2
+              },
+              "references": {
+                "index": "mGlobalId"
+              }
+            },
+            {
+              "offset": 5,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 3
+              },
+              "references": {
+                "index": "item"
+              }
+            },
+            {
+              "offset": 7,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 4
+              },
+              "references": {
+                "index": "vehicleModel"
+              }
+            },
+            {
+              "offset": 9,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 9
+              }
+            },
+            {
+              "offset": 11,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 2
+              }
+            },
+            {
+              "offset": 13,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 9
+              }
+            },
+            {
+              "offset": 15,
+              "size": 2,
+              "opcode": 76,
+              "name": "JumpFalse",
+              "args": {
+                "offset": 7
+              },
+              "target_offset": 24
+            },
+            {
+              "offset": 17,
+              "size": 5,
+              "opcode": 17,
+              "name": "LoadInt",
+              "args": {
+                "value": 720
+              }
+            },
+            {
+              "offset": 22,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 5
+              },
+              "target_offset": 29
+            },
+            {
+              "offset": 24,
+              "size": 5,
+              "opcode": 17,
+              "name": "LoadInt",
+              "args": {
+                "value": 932
+              }
+            },
+            {
+              "offset": 29,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 8
+              }
+            },
+            {
+              "offset": 31,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 3,
+                "destTemp": 9
+              },
+              "references": {
+                "constIndex": 720
+              }
+            },
+            {
+              "offset": 34,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 3,
+                "destTemp": 10
+              },
+              "references": {
+                "constIndex": 720
+              }
+            },
+            {
+              "offset": 37,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 3,
+                "destTemp": 11
+              },
+              "references": {
+                "constIndex": 720
+              }
+            },
+            {
+              "offset": 40,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 4,
+                "destTemp": 12
+              },
+              "references": {
+                "constIndex": 860
+              }
+            },
+            {
+              "offset": 43,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 3,
+                "destTemp": 13
+              },
+              "references": {
+                "constIndex": 720
+              }
+            },
+            {
+              "offset": 46,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 3,
+                "destTemp": 14
+              },
+              "references": {
+                "constIndex": 720
+              }
+            },
+            {
+              "offset": 49,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 3,
+                "destTemp": 15
+              },
+              "references": {
+                "constIndex": 720
+              }
+            },
+            {
+              "offset": 52,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 3,
+                "destTemp": 16
+              },
+              "references": {
+                "constIndex": 720
+              }
+            },
+            {
+              "offset": 55,
+              "size": 3,
+              "opcode": 228,
+              "name": "DefineArray",
+              "args": {
+                "argc": 10,
+                "args": 7
+              }
+            },
+            {
+              "offset": 58,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 6
+              }
+            },
+            {
+              "offset": 60,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "name": "expression for mGlobalWidth",
+          "code_unit_offset": 1232,
+          "code_file_offset": 40768,
+          "code_size": 28,
+          "code_sha256": "524a0920c62dfe5ac198e5d24907aff0176997184dd701f776649e87ad9d7978",
+          "length": 0,
+          "parameters": [],
+          "locals": [],
+          "return_type": "",
+          "nested_function_index": 4294967295,
+          "registers": 8,
+          "flags": 0,
+          "location": {
+            "line": 37,
+            "column": 5
+          },
+          "line_table": [
+            {
+              "code_offset": 0,
+              "line": 37
+            }
+          ],
+          "label_count": 0,
+          "bytecode": [
+            {
+              "offset": 0,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 5
+              },
+              "references": {
+                "index": "Qt"
+              }
+            },
+            {
+              "offset": 2,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 6
+              },
+              "references": {
+                "index": "platform"
+              }
+            },
+            {
+              "offset": 4,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 7
+              },
+              "references": {
+                "index": "os"
+              }
+            },
+            {
+              "offset": 6,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 7
+              }
+            },
+            {
+              "offset": 8,
+              "size": 2,
+              "opcode": 18,
+              "name": "LoadRuntimeString",
+              "args": {
+                "stringId": 75
+              },
+              "references": {
+                "stringId": "linux"
+              }
+            },
+            {
+              "offset": 10,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 7
+              }
+            },
+            {
+              "offset": 12,
+              "size": 2,
+              "opcode": 76,
+              "name": "JumpFalse",
+              "args": {
+                "offset": 6
+              },
+              "target_offset": 20
+            },
+            {
+              "offset": 14,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 8
+              },
+              "references": {
+                "index": "Screen"
+              }
+            },
+            {
+              "offset": 16,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 9
+              },
+              "references": {
+                "index": "desktopAvailableWidth"
+              }
+            },
+            {
+              "offset": 18,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 5
+              },
+              "target_offset": 25
+            },
+            {
+              "offset": 20,
+              "size": 5,
+              "opcode": 17,
+              "name": "LoadInt",
+              "args": {
+                "value": 1920
+              }
+            },
+            {
+              "offset": 25,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 6
+              }
+            },
+            {
+              "offset": 27,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "name": "expression for mGlobalHeight",
+          "code_unit_offset": 1328,
+          "code_file_offset": 40864,
+          "code_size": 37,
+          "code_sha256": "1bd44ce5582a8b6d23bd1e423bc5c69ce9b9b0f3133fcf9635fe8933ed0e9662",
+          "length": 0,
+          "parameters": [],
+          "locals": [],
+          "return_type": "",
+          "nested_function_index": 4294967295,
+          "registers": 12,
+          "flags": 0,
+          "location": {
+            "line": 38,
+            "column": 5
+          },
+          "line_table": [
+            {
+              "code_offset": 0,
+              "line": 38
+            }
+          ],
+          "label_count": 0,
+          "bytecode": [
+            {
+              "offset": 0,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 10
+              },
+              "references": {
+                "index": "Qt"
+              }
+            },
+            {
+              "offset": 2,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 11
+              },
+              "references": {
+                "index": "platform"
+              }
+            },
+            {
+              "offset": 4,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 12
+              },
+              "references": {
+                "index": "os"
+              }
+            },
+            {
+              "offset": 6,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 7
+              }
+            },
+            {
+              "offset": 8,
+              "size": 2,
+              "opcode": 18,
+              "name": "LoadRuntimeString",
+              "args": {
+                "stringId": 75
+              },
+              "references": {
+                "stringId": "linux"
+              }
+            },
+            {
+              "offset": 10,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 7
+              }
+            },
+            {
+              "offset": 12,
+              "size": 2,
+              "opcode": 76,
+              "name": "JumpFalse",
+              "args": {
+                "offset": 6
+              },
+              "target_offset": 20
+            },
+            {
+              "offset": 14,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 13
+              },
+              "references": {
+                "index": "Screen"
+              }
+            },
+            {
+              "offset": 16,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 14
+              },
+              "references": {
+                "index": "desktopAvailableHeight"
+              }
+            },
+            {
+              "offset": 18,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 14
+              },
+              "target_offset": 34
+            },
+            {
+              "offset": 20,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 15
+              },
+              "references": {
+                "index": "mAvailableHeight"
+              }
+            },
+            {
+              "offset": 22,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 8
+              }
+            },
+            {
+              "offset": 24,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 16
+              },
+              "references": {
+                "index": "mTrucksModel"
+              }
+            },
+            {
+              "offset": 26,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 11
+              }
+            },
+            {
+              "offset": 28,
+              "size": 4,
+              "opcode": 176,
+              "name": "CallQmlContextPropertyLookup",
+              "args": {
+                "index": 17,
+                "argc": 1,
+                "argv": 11
+              },
+              "references": {
+                "index": "Number"
+              }
+            },
+            {
+              "offset": 32,
+              "size": 2,
+              "opcode": 52,
+              "name": "LoadElement",
+              "args": {
+                "base": 8
+              }
+            },
+            {
+              "offset": 34,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 6
+              }
+            },
+            {
+              "offset": 36,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "name": "expression for mSacel",
+          "code_unit_offset": 1560,
+          "code_file_offset": 41096,
+          "code_size": 72,
+          "code_sha256": "078b25cc883a1b6d1862f6d08bb7e8cada3030b0be77f64c43870e05c277755c",
+          "length": 0,
+          "parameters": [],
+          "locals": [],
+          "return_type": "",
+          "nested_function_index": 4294967295,
+          "registers": 17,
+          "flags": 0,
+          "location": {
+            "line": 74,
+            "column": 5
+          },
+          "line_table": [
+            {
+              "code_offset": 0,
+              "line": 75
+            },
+            {
+              "code_offset": 71,
+              "line": 86
+            }
+          ],
+          "label_count": 0,
+          "bytecode": [
+            {
+              "offset": 0,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 18
+              },
+              "references": {
+                "index": "mGlobalHeight"
+              }
+            },
+            {
+              "offset": 2,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 8
+              }
+            },
+            {
+              "offset": 4,
+              "size": 5,
+              "opcode": 17,
+              "name": "LoadInt",
+              "args": {
+                "value": 720
+              }
+            },
+            {
+              "offset": 9,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 8
+              }
+            },
+            {
+              "offset": 11,
+              "size": 2,
+              "opcode": 76,
+              "name": "JumpFalse",
+              "args": {
+                "offset": 4
+              },
+              "target_offset": 17
+            },
+            {
+              "offset": 13,
+              "size": 2,
+              "opcode": 4,
+              "name": "LoadConst",
+              "args": {
+                "index": 5
+              },
+              "references": {
+                "index": 0.7752
+              }
+            },
+            {
+              "offset": 15,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 2
+              },
+              "target_offset": 19
+            },
+            {
+              "offset": 17,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 1
+              }
+            },
+            {
+              "offset": 19,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 7
+              }
+            },
+            {
+              "offset": 21,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 6,
+                "destTemp": 8
+              },
+              "references": {
+                "constIndex": 1
+              }
+            },
+            {
+              "offset": 24,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 6,
+                "destTemp": 9
+              },
+              "references": {
+                "constIndex": 1
+              }
+            },
+            {
+              "offset": 27,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 6,
+                "destTemp": 10
+              },
+              "references": {
+                "constIndex": 1
+              }
+            },
+            {
+              "offset": 30,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 6,
+                "destTemp": 11
+              },
+              "references": {
+                "constIndex": 1
+              }
+            },
+            {
+              "offset": 33,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 19
+              },
+              "references": {
+                "index": "mGlobalHeight"
+              }
+            },
+            {
+              "offset": 35,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 13
+              }
+            },
+            {
+              "offset": 37,
+              "size": 5,
+              "opcode": 17,
+              "name": "LoadInt",
+              "args": {
+                "value": 720
+              }
+            },
+            {
+              "offset": 42,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 13
+              }
+            },
+            {
+              "offset": 44,
+              "size": 2,
+              "opcode": 76,
+              "name": "JumpFalse",
+              "args": {
+                "offset": 4
+              },
+              "target_offset": 50
+            },
+            {
+              "offset": 46,
+              "size": 2,
+              "opcode": 4,
+              "name": "LoadConst",
+              "args": {
+                "index": 7
+              },
+              "references": {
+                "index": 0.8372
+              }
+            },
+            {
+              "offset": 48,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 2
+              },
+              "target_offset": 52
+            },
+            {
+              "offset": 50,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 1
+              }
+            },
+            {
+              "offset": 52,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 12
+              }
+            },
+            {
+              "offset": 54,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 6,
+                "destTemp": 13
+              },
+              "references": {
+                "constIndex": 1
+              }
+            },
+            {
+              "offset": 57,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 6,
+                "destTemp": 14
+              },
+              "references": {
+                "constIndex": 1
+              }
+            },
+            {
+              "offset": 60,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 6,
+                "destTemp": 15
+              },
+              "references": {
+                "constIndex": 1
+              }
+            },
+            {
+              "offset": 63,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 6,
+                "destTemp": 16
+              },
+              "references": {
+                "constIndex": 1
+              }
+            },
+            {
+              "offset": 66,
+              "size": 3,
+              "opcode": 228,
+              "name": "DefineArray",
+              "args": {
+                "argc": 10,
+                "args": 7
+              }
+            },
+            {
+              "offset": 69,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 6
+              }
+            },
+            {
+              "offset": 71,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "name": "expression for mRotation",
+          "code_unit_offset": 1712,
+          "code_file_offset": 41248,
+          "code_size": 110,
+          "code_sha256": "d2b805aa6f10d6ac38733fac058e01b10944413d5d4eaf5f577fce3f3e91cef5",
+          "length": 0,
+          "parameters": [],
+          "locals": [],
+          "return_type": "",
+          "nested_function_index": 4294967295,
+          "registers": 17,
+          "flags": 0,
+          "location": {
+            "line": 101,
+            "column": 5
+          },
+          "line_table": [
+            {
+              "code_offset": 0,
+              "line": 102
+            },
+            {
+              "code_offset": 87,
+              "line": 111
+            },
+            {
+              "code_offset": 109,
+              "line": 113
+            }
+          ],
+          "label_count": 0,
+          "bytecode": [
+            {
+              "offset": 0,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 8,
+                "destTemp": 7
+              },
+              "references": {
+                "constIndex": 0
+              }
+            },
+            {
+              "offset": 3,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 20
+              },
+              "references": {
+                "index": "Qt"
+              }
+            },
+            {
+              "offset": 5,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 21
+              },
+              "references": {
+                "index": "platform"
+              }
+            },
+            {
+              "offset": 7,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 22
+              },
+              "references": {
+                "index": "os"
+              }
+            },
+            {
+              "offset": 9,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 9
+              }
+            },
+            {
+              "offset": 11,
+              "size": 2,
+              "opcode": 18,
+              "name": "LoadRuntimeString",
+              "args": {
+                "stringId": 75
+              },
+              "references": {
+                "stringId": "linux"
+              }
+            },
+            {
+              "offset": 13,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 9
+              }
+            },
+            {
+              "offset": 15,
+              "size": 2,
+              "opcode": 76,
+              "name": "JumpFalse",
+              "args": {
+                "offset": 24
+              },
+              "target_offset": 41
+            },
+            {
+              "offset": 17,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 23
+              },
+              "references": {
+                "index": "mGlobalId"
+              }
+            },
+            {
+              "offset": 19,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 24
+              },
+              "references": {
+                "index": "item"
+              }
+            },
+            {
+              "offset": 21,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 25
+              },
+              "references": {
+                "index": "vehicleModel"
+              }
+            },
+            {
+              "offset": 23,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 10
+              }
+            },
+            {
+              "offset": 25,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 2
+              }
+            },
+            {
+              "offset": 27,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 10
+              }
+            },
+            {
+              "offset": 29,
+              "size": 2,
+              "opcode": 76,
+              "name": "JumpFalse",
+              "args": {
+                "offset": 7
+              },
+              "target_offset": 38
+            },
+            {
+              "offset": 31,
+              "size": 5,
+              "opcode": 17,
+              "name": "LoadInt",
+              "args": {
+                "value": 180
+              }
+            },
+            {
+              "offset": 36,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 1
+              },
+              "target_offset": 39
+            },
+            {
+              "offset": 38,
+              "size": 1,
+              "opcode": 6,
+              "name": "LoadZero",
+              "args": {}
+            },
+            {
+              "offset": 39,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 1
+              },
+              "target_offset": 42
+            },
+            {
+              "offset": 41,
+              "size": 1,
+              "opcode": 6,
+              "name": "LoadZero",
+              "args": {}
+            },
+            {
+              "offset": 42,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 8
+              }
+            },
+            {
+              "offset": 44,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 8,
+                "destTemp": 9
+              },
+              "references": {
+                "constIndex": 0
+              }
+            },
+            {
+              "offset": 47,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 8,
+                "destTemp": 10
+              },
+              "references": {
+                "constIndex": 0
+              }
+            },
+            {
+              "offset": 50,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 8,
+                "destTemp": 11
+              },
+              "references": {
+                "constIndex": 0
+              }
+            },
+            {
+              "offset": 53,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 8,
+                "destTemp": 12
+              },
+              "references": {
+                "constIndex": 0
+              }
+            },
+            {
+              "offset": 56,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 8,
+                "destTemp": 13
+              },
+              "references": {
+                "constIndex": 0
+              }
+            },
+            {
+              "offset": 59,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 26
+              },
+              "references": {
+                "index": "Qt"
+              }
+            },
+            {
+              "offset": 61,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 27
+              },
+              "references": {
+                "index": "platform"
+              }
+            },
+            {
+              "offset": 63,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 28
+              },
+              "references": {
+                "index": "os"
+              }
+            },
+            {
+              "offset": 65,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 15
+              }
+            },
+            {
+              "offset": 67,
+              "size": 2,
+              "opcode": 18,
+              "name": "LoadRuntimeString",
+              "args": {
+                "stringId": 75
+              },
+              "references": {
+                "stringId": "linux"
+              }
+            },
+            {
+              "offset": 69,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 15
+              }
+            },
+            {
+              "offset": 71,
+              "size": 2,
+              "opcode": 76,
+              "name": "JumpFalse",
+              "args": {
+                "offset": 7
+              },
+              "target_offset": 80
+            },
+            {
+              "offset": 73,
+              "size": 5,
+              "opcode": 17,
+              "name": "LoadInt",
+              "args": {
+                "value": 180
+              }
+            },
+            {
+              "offset": 78,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 1
+              },
+              "target_offset": 81
+            },
+            {
+              "offset": 80,
+              "size": 1,
+              "opcode": 6,
+              "name": "LoadZero",
+              "args": {}
+            },
+            {
+              "offset": 81,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 14
+              }
+            },
+            {
+              "offset": 83,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 29
+              },
+              "references": {
+                "index": "mGlobalId"
+              }
+            },
+            {
+              "offset": 85,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 30
+              },
+              "references": {
+                "index": "item"
+              }
+            },
+            {
+              "offset": 87,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 31
+              },
+              "references": {
+                "index": "screenFlipEnabled"
+              }
+            },
+            {
+              "offset": 89,
+              "size": 2,
+              "opcode": 76,
+              "name": "JumpFalse",
+              "args": {
+                "offset": 3
+              },
+              "target_offset": 94
+            },
+            {
+              "offset": 91,
+              "size": 1,
+              "opcode": 6,
+              "name": "LoadZero",
+              "args": {}
+            },
+            {
+              "offset": 92,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 5
+              },
+              "target_offset": 99
+            },
+            {
+              "offset": 94,
+              "size": 5,
+              "opcode": 17,
+              "name": "LoadInt",
+              "args": {
+                "value": 180
+              }
+            },
+            {
+              "offset": 99,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 15
+              }
+            },
+            {
+              "offset": 101,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 8,
+                "destTemp": 16
+              },
+              "references": {
+                "constIndex": 0
+              }
+            },
+            {
+              "offset": 104,
+              "size": 3,
+              "opcode": 228,
+              "name": "DefineArray",
+              "args": {
+                "argc": 10,
+                "args": 7
+              }
+            },
+            {
+              "offset": 107,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 6
+              }
+            },
+            {
+              "offset": 109,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "name": "expression for mTopMargin",
+          "code_unit_offset": 1904,
+          "code_file_offset": 41440,
+          "code_size": 110,
+          "code_sha256": "17ae09501b695b8b566b425500e2796e9b4aaf470d64b2bba5480a9acceb893b",
+          "length": 0,
+          "parameters": [],
+          "locals": [],
+          "return_type": "",
+          "nested_function_index": 4294967295,
+          "registers": 17,
+          "flags": 0,
+          "location": {
+            "line": 114,
+            "column": 5
+          },
+          "line_table": [
+            {
+              "code_offset": 0,
+              "line": 115
+            },
+            {
+              "code_offset": 87,
+              "line": 124
+            },
+            {
+              "code_offset": 109,
+              "line": 126
+            }
+          ],
+          "label_count": 0,
+          "bytecode": [
+            {
+              "offset": 0,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 8,
+                "destTemp": 7
+              },
+              "references": {
+                "constIndex": 0
+              }
+            },
+            {
+              "offset": 3,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 32
+              },
+              "references": {
+                "index": "Qt"
+              }
+            },
+            {
+              "offset": 5,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 33
+              },
+              "references": {
+                "index": "platform"
+              }
+            },
+            {
+              "offset": 7,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 34
+              },
+              "references": {
+                "index": "os"
+              }
+            },
+            {
+              "offset": 9,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 9
+              }
+            },
+            {
+              "offset": 11,
+              "size": 2,
+              "opcode": 18,
+              "name": "LoadRuntimeString",
+              "args": {
+                "stringId": 75
+              },
+              "references": {
+                "stringId": "linux"
+              }
+            },
+            {
+              "offset": 13,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 9
+              }
+            },
+            {
+              "offset": 15,
+              "size": 2,
+              "opcode": 76,
+              "name": "JumpFalse",
+              "args": {
+                "offset": 24
+              },
+              "target_offset": 41
+            },
+            {
+              "offset": 17,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 35
+              },
+              "references": {
+                "index": "mGlobalId"
+              }
+            },
+            {
+              "offset": 19,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 36
+              },
+              "references": {
+                "index": "item"
+              }
+            },
+            {
+              "offset": 21,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 37
+              },
+              "references": {
+                "index": "vehicleModel"
+              }
+            },
+            {
+              "offset": 23,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 10
+              }
+            },
+            {
+              "offset": 25,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 2
+              }
+            },
+            {
+              "offset": 27,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 10
+              }
+            },
+            {
+              "offset": 29,
+              "size": 2,
+              "opcode": 76,
+              "name": "JumpFalse",
+              "args": {
+                "offset": 7
+              },
+              "target_offset": 38
+            },
+            {
+              "offset": 31,
+              "size": 5,
+              "opcode": 17,
+              "name": "LoadInt",
+              "args": {
+                "value": 800
+              }
+            },
+            {
+              "offset": 36,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 1
+              },
+              "target_offset": 39
+            },
+            {
+              "offset": 38,
+              "size": 1,
+              "opcode": 6,
+              "name": "LoadZero",
+              "args": {}
+            },
+            {
+              "offset": 39,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 1
+              },
+              "target_offset": 42
+            },
+            {
+              "offset": 41,
+              "size": 1,
+              "opcode": 6,
+              "name": "LoadZero",
+              "args": {}
+            },
+            {
+              "offset": 42,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 8
+              }
+            },
+            {
+              "offset": 44,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 8,
+                "destTemp": 9
+              },
+              "references": {
+                "constIndex": 0
+              }
+            },
+            {
+              "offset": 47,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 8,
+                "destTemp": 10
+              },
+              "references": {
+                "constIndex": 0
+              }
+            },
+            {
+              "offset": 50,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 8,
+                "destTemp": 11
+              },
+              "references": {
+                "constIndex": 0
+              }
+            },
+            {
+              "offset": 53,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 8,
+                "destTemp": 12
+              },
+              "references": {
+                "constIndex": 0
+              }
+            },
+            {
+              "offset": 56,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 8,
+                "destTemp": 13
+              },
+              "references": {
+                "constIndex": 0
+              }
+            },
+            {
+              "offset": 59,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 38
+              },
+              "references": {
+                "index": "Qt"
+              }
+            },
+            {
+              "offset": 61,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 39
+              },
+              "references": {
+                "index": "platform"
+              }
+            },
+            {
+              "offset": 63,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 40
+              },
+              "references": {
+                "index": "os"
+              }
+            },
+            {
+              "offset": 65,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 15
+              }
+            },
+            {
+              "offset": 67,
+              "size": 2,
+              "opcode": 18,
+              "name": "LoadRuntimeString",
+              "args": {
+                "stringId": 75
+              },
+              "references": {
+                "stringId": "linux"
+              }
+            },
+            {
+              "offset": 69,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 15
+              }
+            },
+            {
+              "offset": 71,
+              "size": 2,
+              "opcode": 76,
+              "name": "JumpFalse",
+              "args": {
+                "offset": 7
+              },
+              "target_offset": 80
+            },
+            {
+              "offset": 73,
+              "size": 5,
+              "opcode": 17,
+              "name": "LoadInt",
+              "args": {
+                "value": 720
+              }
+            },
+            {
+              "offset": 78,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 1
+              },
+              "target_offset": 81
+            },
+            {
+              "offset": 80,
+              "size": 1,
+              "opcode": 6,
+              "name": "LoadZero",
+              "args": {}
+            },
+            {
+              "offset": 81,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 14
+              }
+            },
+            {
+              "offset": 83,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 41
+              },
+              "references": {
+                "index": "mGlobalId"
+              }
+            },
+            {
+              "offset": 85,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 42
+              },
+              "references": {
+                "index": "item"
+              }
+            },
+            {
+              "offset": 87,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 43
+              },
+              "references": {
+                "index": "screenFlipEnabled"
+              }
+            },
+            {
+              "offset": 89,
+              "size": 2,
+              "opcode": 76,
+              "name": "JumpFalse",
+              "args": {
+                "offset": 3
+              },
+              "target_offset": 94
+            },
+            {
+              "offset": 91,
+              "size": 1,
+              "opcode": 6,
+              "name": "LoadZero",
+              "args": {}
+            },
+            {
+              "offset": 92,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 5
+              },
+              "target_offset": 99
+            },
+            {
+              "offset": 94,
+              "size": 5,
+              "opcode": 17,
+              "name": "LoadInt",
+              "args": {
+                "value": 720
+              }
+            },
+            {
+              "offset": 99,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 15
+              }
+            },
+            {
+              "offset": 101,
+              "size": 3,
+              "opcode": 20,
+              "name": "MoveConst",
+              "args": {
+                "constIndex": 8,
+                "destTemp": 16
+              },
+              "references": {
+                "constIndex": 0
+              }
+            },
+            {
+              "offset": 104,
+              "size": 3,
+              "opcode": 228,
+              "name": "DefineArray",
+              "args": {
+                "argc": 10,
+                "args": 7
+              }
+            },
+            {
+              "offset": 107,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 6
+              }
+            },
+            {
+              "offset": 109,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            }
+          ]
+        },
+        {
+          "index": 19,
+          "name": "expression for leftMargin",
+          "code_unit_offset": 2872,
+          "code_file_offset": 42408,
+          "code_size": 38,
+          "code_sha256": "ae688d365f6068ed7a1d53f1dea93bc29569b06e9e8a76d0c1ad888e214a0509",
+          "length": 0,
+          "parameters": [],
+          "locals": [],
+          "return_type": "",
+          "nested_function_index": 4294967295,
+          "registers": 10,
+          "flags": 0,
+          "location": {
+            "line": 134,
+            "column": 9
+          },
+          "line_table": [
+            {
+              "code_offset": 0,
+              "line": 134
+            }
+          ],
+          "label_count": 0,
+          "bytecode": [
+            {
+              "offset": 0,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 69
+              },
+              "references": {
+                "index": "mTrucksModel"
+              }
+            },
+            {
+              "offset": 2,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 9
+              }
+            },
+            {
+              "offset": 4,
+              "size": 4,
+              "opcode": 176,
+              "name": "CallQmlContextPropertyLookup",
+              "args": {
+                "index": 70,
+                "argc": 1,
+                "argv": 9
+              },
+              "references": {
+                "index": "Number"
+              }
+            },
+            {
+              "offset": 8,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 7
+              }
+            },
+            {
+              "offset": 10,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 5
+              }
+            },
+            {
+              "offset": 12,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 7
+              }
+            },
+            {
+              "offset": 14,
+              "size": 2,
+              "opcode": 76,
+              "name": "JumpFalse",
+              "args": {
+                "offset": 18
+              },
+              "target_offset": 34
+            },
+            {
+              "offset": 16,
+              "size": 2,
+              "opcode": 46,
+              "name": "LoadQmlContextPropertyLookup",
+              "args": {
+                "index": 71
+              },
+              "references": {
+                "index": "mGlobalId"
+              }
+            },
+            {
+              "offset": 18,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 72
+              },
+              "references": {
+                "index": "item"
+              }
+            },
+            {
+              "offset": 20,
+              "size": 2,
+              "opcode": 58,
+              "name": "GetLookup",
+              "args": {
+                "index": 73
+              },
+              "references": {
+                "index": "frontTpmsDoorExchange"
+              }
+            },
+            {
+              "offset": 22,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 8
+              }
+            },
+            {
+              "offset": 24,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 1
+              }
+            },
+            {
+              "offset": 26,
+              "size": 2,
+              "opcode": 104,
+              "name": "CmpStrictEqual",
+              "args": {
+                "lhs": 8
+              }
+            },
+            {
+              "offset": 28,
+              "size": 2,
+              "opcode": 76,
+              "name": "JumpFalse",
+              "args": {
+                "offset": 4
+              },
+              "target_offset": 34
+            },
+            {
+              "offset": 30,
+              "size": 2,
+              "opcode": 16,
+              "name": "LoadInt",
+              "args": {
+                "value": 55
+              }
+            },
+            {
+              "offset": 32,
+              "size": 2,
+              "opcode": 72,
+              "name": "Jump",
+              "args": {
+                "offset": 1
+              },
+              "target_offset": 35
+            },
+            {
+              "offset": 34,
+              "size": 1,
+              "opcode": 6,
+              "name": "LoadZero",
+              "args": {}
+            },
+            {
+              "offset": 35,
+              "size": 2,
+              "opcode": 24,
+              "name": "StoreReg",
+              "args": {
+                "reg": 6
+              }
+            },
+            {
+              "offset": 37,
+              "size": 1,
+              "opcode": 2,
+              "name": "Ret",
+              "args": {}
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "fonts": {
+    "default_family": "Konexy Personal Use",
+    "authority": "Installed common/Translation.qml:22",
+    "alternate_observed_family": "BMW Type Global",
+    "assets": [
+      {
+        "path": "assets/fonts/KonexyPersonalUseRegular.ttf",
+        "sha256": "7ecc381a7a4a5f032452d3dcf8eb98b988a53135e8b0a5558840f7c94fde9450",
+        "family": "Konexy Personal Use",
+        "source": "installed/usr/share/fonts/KonexyPersonalUseRegular.ttf",
+        "selection": "Observed font family binding"
+      },
+      {
+        "path": "assets/fonts/BMW.ttf",
+        "sha256": "232217177102dbc57ae06dd2a134a7f00118b211fc3e9b4295de4363a020d9b0",
+        "family": "BMW Type Global",
+        "source": "installed/usr/share/fonts/BMW.ttf",
+        "selection": "Observed font family binding"
+      }
+    ]
+  },
+  "navigation": {
+    "layout_selection": "Trucks/Dashboard.qml mDashboard[mGlobalId.item.dashboard]; indexes 0–5 select ui1–ui6",
+    "menu": "Shared menu Loader: center X; top 220; scale 0.85; active menuBarIndex; 100 ms scale animation",
+    "vehicle_state": "Public visual bindings use mGlobalId.item fields. Preserve field names in each component specification.",
+    "controls": "Dashboard key_back, key_ok, key_left, key_right, key_up, and key_down functions preserve recovered bytecode where present.",
+    "scope": "Public dashboard, common visual components, and assist widgets. Factory, update, credential, and private configuration components excluded."
+  },
+  "cruise_contract": {
+    "acc_component": "Trucks/common/AccLimitedIndicator.qml",
+    "bounds": [
+      90,
+      50
+    ],
+    "generic_alarm": "AlarmIndicator mIndex 31 uses alarmTable[31] > 0",
+    "acc_visibility": "cruiseState; SET uses cruiseSpeedSet; ACC car branch uses cruiseAccInterfaceState",
+    "limiter": "getCruiseLimSpeed() and getCruiseLimSpeedColor(); limiter and cruise use separate state fields",
+    "design_requirement": "Use one shared cruise region across all six styles. Preserve available, engaged, set-speed, ACC, and LIM meanings. Consolidate alarm 31 after the vehicle-state mapping is verified.",
+    "uncertainty": "Native numeric enum meanings and live CAN transitions remain unproved."
+  },
+  "unit_preferences": {
+    "status": "PC source candidate; active loader and vehicle verification remain pending",
+    "speed_distance": {
+      "value_field": "metricSystem",
+      "choices": {
+        "0": "MPH / mi",
+        "1": "km/h / km"
+      },
+      "override_field": "speedUnitOverride",
+      "native_setter_type": 2
+    },
+    "temperature": {
+      "value_field": "temperatureUnit",
+      "choices": {
+        "0": "Fahrenheit",
+        "1": "Celsius"
+      },
+      "override_field": "tempUnitOverride",
+      "native_setter_type": 1
+    },
+    "manual_selection": "Assign the selected Global value, then call mEventHandleId.item.setUnit2(type, value). Preserve the other unit preference.",
+    "mode_display": "Show Manual when the corresponding override flag equals 1. Show Follow vehicle when the flag equals 0.",
+    "reset_action": "Expose mEventHandleId.item.followVehicleUnits() in the ordinary Units menu. The action clears both overrides and adopts cached vehicle units.",
+    "clock": "Retain native RTC unit follow. Unit selection must preserve unrelated settings.",
+    "acceptance": [
+      "Fahrenheit plus MPH",
+      "Fahrenheit plus km/h",
+      "Celsius plus MPH",
+      "Celsius plus km/h",
+      "Both selection orders",
+      "Restart persistence",
+      "Explicit return to vehicle follow",
+      "Unavailable temperature states"
+    ]
+  },
+  "settings_navigation": {
+    "requirement": "Expose supported settings through ordinary menu navigation without credential gates.",
+    "groups": [
+      "Display",
+      "Gauges and units",
+      "Vehicle configuration",
+      "Driver assistance",
+      "Clock",
+      "Connectivity",
+      "Diagnostics",
+      "Advanced settings"
+    ],
+    "factory_inventory": "factory-settings.json contains all 19 recovered configuration rows.",
+    "unsupported_features": "Keep unsupported entries visible with a clear reason. Never fabricate vehicle data or enable an unverified protocol.",
+    "integration_status": "Navigation requirements; the source candidate does not replace the compiled factory menu."
+  },
+  "design_contract": [
+    "Preserve speed, unit, gear, alarm, cruise/limiter, and vehicle data semantics across all styles.",
+    "Use genuine assets through the local manifest. Keep alarm colors and active/inactive distinctions from binding evidence.",
+    "Keep hidden states quiet. Reserve visual emphasis for active warnings.",
+    "Do not infer gauge sweep, tick marks, maximum values, or native enum meanings from schematic rectangles.",
+    "Treat every model branch, visible condition, animation, unit conversion, and menu state as a separate visual acceptance case."
+  ],
+  "render_limits": [
+    "Schematics show constant bounds, not actual screenshots.",
+    "No vehicle sample data or invented gauge geometry appears in the schematics.",
+    "Runtime branches, native custom types, implicit text metrics, loaded data, and state-dependent transforms need reconstruction.",
+    "Asset prefix matches are candidate sets, not proof that every candidate appears simultaneously."
+  ]
+}

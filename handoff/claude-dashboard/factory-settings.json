@@ -1,0 +1,120 @@
+{
+  "status": "Recovered configuration inventory; live capability checks remain required",
+  "settings": [
+    {
+      "index": 0,
+      "key": "frontTpmsDoorExchange",
+      "behavior": "Front wheel/door swap",
+      "persistence": "local"
+    },
+    {
+      "index": 1,
+      "key": "rearTpmsDoorExchange",
+      "behavior": "Rear door swap",
+      "persistence": "local"
+    },
+    {
+      "index": 2,
+      "key": "fuelRefuelingPortPositon",
+      "behavior": "Fuel filler side",
+      "persistence": "local_and_mcu"
+    },
+    {
+      "index": 3,
+      "key": "tpmsInfoEnabled",
+      "behavior": "Tire pressure display",
+      "persistence": "local"
+    },
+    {
+      "index": 4,
+      "key": "reverseAlarmEnabled",
+      "behavior": "Reverse sound",
+      "persistence": "mcu"
+    },
+    {
+      "index": 5,
+      "key": "tachoSpeedMax6000",
+      "behavior": "Tachometer 6000 RPM scale",
+      "persistence": "local"
+    },
+    {
+      "index": 6,
+      "key": "subTankEnabled",
+      "behavior": "Auxiliary fuel tank display",
+      "persistence": "local"
+    },
+    {
+      "index": 7,
+      "key": "mLc76VehicleSpeedMaxIndex",
+      "behavior": "LC76 maximum speed scale",
+      "persistence": "local"
+    },
+    {
+      "index": 8,
+      "key": "angleInfoEnabled",
+      "behavior": "Wheel angle display",
+      "persistence": "local"
+    },
+    {
+      "index": 9,
+      "key": "outSideTempInfoEnabled",
+      "behavior": "Outside temperature display",
+      "persistence": "local"
+    },
+    {
+      "index": 10,
+      "key": "ecoInfoEnabled",
+      "behavior": "ECO display",
+      "persistence": "local"
+    },
+    {
+      "index": 11,
+      "key": "gearInfoEnabled",
+      "behavior": "Gear display",
+      "persistence": "local"
+    },
+    {
+      "index": 12,
+      "key": "oilTempEnabled",
+      "behavior": "Oil temperature display",
+      "persistence": "local"
+    },
+    {
+      "index": 13,
+      "key": "dteEnabled",
+      "behavior": "Range display",
+      "persistence": "local"
+    },
+    {
+      "index": 14,
+      "key": "clockInfoEnabled",
+      "behavior": "Clock display",
+      "persistence": "local"
+    },
+    {
+      "index": 15,
+      "key": "doorInfoEnabled",
+      "behavior": "Door display",
+      "persistence": "local"
+    },
+    {
+      "index": 16,
+      "key": "oilPressureInfoEnabled",
+      "behavior": "Oil pressure display",
+      "persistence": "local"
+    },
+    {
+      "index": 17,
+      "key": "chassisStateEnabled",
+      "behavior": "Chassis height display",
+      "persistence": "local"
+    },
+    {
+      "index": 18,
+      "key": "screenFlipEnabled",
+      "behavior": "Screen flip",
+      "persistence": "local"
+    }
+  ],
+  "credential_values": "Excluded"
+}

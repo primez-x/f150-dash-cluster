@@ -1,0 +1,53 @@
+#! /bin/sh
+
+NAME=mount
+PARTITION=/dev/mmcblk0p6
+
+start(){
+    printf "Mounting mnt"
+    e2fsck -y "$PARTITION"
+    fsck_status=$?
+    case "$fsck_status" in
+        0|1) ;;
+        *)
+            echo "e2fsck failed for $PARTITION with status $fsck_status" >&2
+            return "$fsck_status"
+            ;;
+    esac
+    mkdir -p /mnt || return $?
+    mount "$PARTITION" /mnt
+    mount_status=$?
+    if [ "$mount_status" -ne 0 ]; then
+        echo "Failed to mount $PARTITION on /mnt (status $mount_status)" >&2
+        return "$mount_status"
+    fi
+    rm -rf /mnt/usb
+    rm -rf /mnt/sdcard
+    sync
+}
+
+stop(){
+    printf "umounting mnt"
+}
+
+case "$1" in
+  start)
+    printf "Starting $NAME: "
+    start
+    ;;
+  stop)
+    printf "Stopping $NAME: "
+    stop
+    ;;
+  restart|reload)
+    echo "Restarting $NAME: "
+    stop
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|reload}" >&2
+    exit 1
+    ;;
+esac
+
+exit $?

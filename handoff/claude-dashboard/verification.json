@@ -1,0 +1,33 @@
+{
+  "status": "pass",
+  "command": "python tools/export_layouts.py",
+  "layouts": 6,
+  "json_specs": 6,
+  "svg_schematics": 6,
+  "png_schematics": 6,
+  "component_definitions": 95,
+  "included_assets": 727,
+  "components_per_layout": {
+    "ui1": 57,
+    "ui2": 53,
+    "ui3": 55,
+    "ui4": 55,
+    "ui5": 55,
+    "ui6": 54
+  },
+  "unresolved_asset_literals": 0,
+  "checks": [
+    "Six self-contained layout specifications",
+    "JSON parse",
+    "SVG XML parse",
+    "Asset containment and SHA-256",
+    "All per-layout asset references included",
+    "All child objects and binding functions valid",
+    "Gallery links local and valid",
+    "No asset traversal",
+    "No untracked assets",
+    "No machine paths in text exports",
+    "Allowlisted public visual components and image extensions"
+  ],
+  "failures": []
+}

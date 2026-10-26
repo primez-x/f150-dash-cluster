@@ -1,0 +1,72 @@
+#!/bin/sh
+
+rm -rf /mnt/usb/sd*
+rm -rf /core
+
+# backward compatible old system
+echo 1 > /sys/devices/platform/gpio_sw.6/gpio_sw/PH4/data
+. /etc/modules.sh &
+. /etc/images/splash/splash.sh &
+
+# Start all init scripts in /etc/init.d
+# executing them in numerical order.
+#
+boot_status=0
+for i in /etc/init.d/S??* ;do
+
+     # Ignore dangling symlinks (if any).
+     [ ! -f "$i" ] && continue
+
+     case "$i" in
+	*.sh)
+	    # Source shell script for speed.
+	    (
+		trap - INT QUIT TSTP
+		set start
+		. $i
+	    )
+	    ;;
+	*)
+	    # No sh extension, so fork subprocess.
+	    $i start
+	    ;;
+    esac
+    script_status=$?
+    case "${i##*/}" in
+        S01private|S90mount)
+            if [ "$script_status" -ne 0 ]; then
+                echo "Critical mount setup failed: $i (status $script_status)" >&2
+                boot_status=$script_status
+                break
+            fi
+            ;;
+    esac
+done
+
+echo /sbin/mdev > /proc/sys/kernel/hotplug
+mdev -s &
+mkdir -p /dev/shm
+ifconfig lo 127.0.0.1
+
+if [ -f /usr/bin/tinymix ];then
+	echo "has tinymix"
+	tinymix -D 0 1 0  > /dev/null
+	tinymix -D 0 4 31 > /dev/null
+	tinymix -D 0 5 1  > /dev/null
+	tinymix -D 0 6 1  > /dev/null
+	tinymix -D 0 11 1 > /dev/null
+	tinymix -D 1 1 1  > /dev/null
+	tinymix -D 1 4 1  > /dev/null
+	tinymix -D 1 6 1  > /dev/null
+	tinymix -D 1 13 I2S0_TXDIF    >/dev/null
+	tinymix -D 1 17 APBIF_TXDIF0  >/dev/null
+	tinymix -D 1 18 APBIF_TXDIF2  >/dev/null
+	tinymix -D 0
+	tinymix -D 1
+fi
+
+#. /etc/adb_start.sh &
+sleep 2
+echo usb_host >  /sys/devices/platform/soc/usbc0/otg_role
+
+exit "$boot_status"

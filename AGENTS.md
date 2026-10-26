@@ -1,0 +1,22 @@
+# F150 dashboard cluster
+
+- Read `README.md` before changes.
+- Use this project for both Codex and Claude.
+- Preserve `originals/`, `captures/`, `installed/`, `extracted/`, and `decrypted/` as evidence.
+- Treat `installed/capture-04/rootfs/` as a verified, read-only analysis view.
+- Linux links remain metadata in `installed/capture-04/rootfs-manifest.json`.
+- Preserve case-sensitive names in the extracted Linux tree.
+- Make source changes under `patches/`. Never edit captured firmware or original images.
+- Keep private firmware, settings, credentials, databases, and decoded gate values outside Git.
+- Never execute captured ARM64 programs on the host.
+- Keep vehicle measurements separate from display units, animation, validity, and signal age.
+- Preserve independent speed and temperature preferences across changes and restarts.
+- Keep cruise available, active, set, ACC, and LIM states distinct.
+- Use one consistent cruise display region across all six layouts.
+- Expose supported settings through ordinary menu navigation. Show unsupported controls with a clear reason.
+- Never change CAN calibration, polling rates, GPIO, power controls, or device profiles without verified protocol evidence.
+- Run focused source replay checks after relevant changes.
+- Run `git diff --check` before each scoped commit.
+- Prepare and verify update candidates locally. Obtain explicit approval before installation on the cluster.
+- Report source verification, Qt verification, and vehicle verification separately.
+- Never claim complete physical gauge accuracy from source replay alone.

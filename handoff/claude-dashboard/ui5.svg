@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1040" viewBox="0 0 1920 1040">
+<rect width="1920" height="1040" fill="#111820"/>
+<rect x="1" y="1" width="1918" height="930" fill="#080c11" stroke="#738699"/>
+<text x="24" y="975" fill="white" font-family="sans-serif" font-size="25">UI5 — labelled reconstruction; declared 1920 × 932 coordinates</text>
+<text x="24" y="1014" fill="#b6c4d1" font-family="sans-serif" font-size="20">Constant component bounds only. Runtime geometry, gauges, visibility, and vehicle branches remain in JSON.</text>
+<defs><clipPath id="canvas"><rect width="1920" height="932"/></clipPath></defs><g clip-path="url(#canvas)">
+<rect x="590.0" y="270.0" width="740.0" height="740.0" fill="none" stroke="#5bb4d6" stroke-width="2"/>
+<text x="595.0" y="294.0" fill="#5bb4d6" font-family="sans-serif" font-size="20">mAngleId [12]</text>
+<rect x="0" y="702.0" width="1920.0" height="230.0" fill="none" stroke="#8fc87e" stroke-width="2"/>
+<text x="5" y="726.0" fill="#8fc87e" font-family="sans-serif" font-size="20">mDockId [32]</text>
+<rect x="465" y="670" width="90" height="50" fill="none" stroke="#ffe184" stroke-width="3"/>
+<text x="465" y="660" fill="#ffe184" font-family="sans-serif" font-size="20">ACC / LIM Ford branch 90x50</text>
+</g></svg>
