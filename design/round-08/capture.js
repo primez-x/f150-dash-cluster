@@ -66,5 +66,10 @@ async (page) => {
     await open(`round-07/${name}.html?still=1`, 1920, 932);
     metrics[name].round7 = await measure();
   }
+  // Accent palettes (the firmware accent setting): each A option, towing while braking so the live accent shows.
+  for (const accent of ["teal", "ice", "blue", "slate"]) for (const [name, scene] of [["daily-a-a", "normal"], ["daily-b-a", "normal"], ["tow-a", "braking"]]) {
+    await open(`round-08/${name}.html?scene=${scene}&accent=${accent}&still=1`, 1920, 932);
+    await page.screenshot({ path: `${out}accent-${accent}-${name}.png` });
+  }
   return { errors, metrics };
 }

@@ -11,3 +11,7 @@ TCOL.normal = QUIET;
 // Secondary corner band: quiet grey fill, no head glow. Pass color for a warning state (fuelColor(s, QUIET)).
 const band2 = (o, ring = 0) => band({ color: QUIET, glow: false, ...o }, ring);
 const boostTint = s => s.boost < 0 ? VACUUM : QUIET;
+
+// Slate is the neutral accent. At the round 5 value (148, 163, 184) slate matches the quiet grey, so the primary gauges and
+// live braking lose their lead over the secondary gauges. A lighter slate keeps the accent brighter than the quiet grey.
+ACCENTS.slate = "200, 212, 226";
