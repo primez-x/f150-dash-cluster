@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 8</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+  table { border-collapse: collapse; margin-top: 10px; }
+  td, th { padding: 4px 14px; text-align: right; border-bottom: 1px solid #222a33; color: #c9d1da; }
+  th:first-child, td:first-child { text-align: left; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 8 · One hierarchy</h1>
+<p>In round 7 too many elements competed for attention: bright accent bands in both corners, 104 px corner values, red and amber
+  zones on every temperature gauge at rest, and the average economy in two places. Round 8 keeps the
+  <a href="../round-07/">round 7</a> A and B options for each layout and applies one visual hierarchy to all six.
+  The A or B pick for each layout now comes from this round.</p>
+<ul>
+  <li>Speed is the one hero. Gear stays large beside the speed.</li>
+  <li>The accent colour marks the primary gauges only: the speed and RPM scales, the RPM halo, and the RPM band.
+    Live trailer braking also lights in the accent colour.</li>
+  <li>Secondary gauges (fuel, economy, boost, trailer brake gain, temperatures) fill in quiet grey with no glow.
+    A low fuel level, a warm or hot temperature, or the reserve light still turns the gauge amber or red.</li>
+  <li>Temperature warning zones show as a faint tint at rest. The RPM redline keeps its red band.</li>
+  <li>Corner values drop from 104 px to 80 px and from white to light grey. Read values (38 px) are dimmer than the speed.</li>
+  <li>Chrome is grey: gear number, card title, page dots. 2H, the normal drive state, shows as an outline chip; 4H, 4L, and the locker keep the filled chip.</li>
+  <li>Removed: the average economy in the corners (the card shows the average), the economy and trailer brake end labels,
+    the center divider line on towing, and the repeated "TRAILER" label on the trailer card page (now "DISTANCE").</li>
+</ul>
+
+<h2>Before and after</h2>
+<p>Measured by <code>capture.js</code> at the normal scene. Accent and warning: percent of the canvas in bright accent, or bright red or amber, pixels.
+  Corner use: percent of the corner area with bright content (see <a href="../round-07/">round 7</a>).</p>
+<table>
+  <tr><th>Layout</th><th>Accent r7</th><th>Accent r8</th><th>Warning r7</th><th>Warning r8</th><th>Corner r7 (L / R)</th><th>Corner r8 (L / R)</th></tr>
+  <tr><td>Daily A · A</td><td>1.12</td><td>0.16</td><td>0.08</td><td>0.03</td><td>42 / 36</td><td>25 / 15</td></tr>
+  <tr><td>Daily A · B</td><td>1.17</td><td>0.20</td><td>0.09</td><td>0.04</td><td>27 / 27</td><td>20 / 17</td></tr>
+  <tr><td>Daily B · A</td><td>1.13</td><td>0.16</td><td>0.09</td><td>0.01</td><td>42 / 36</td><td>25 / 15</td></tr>
+  <tr><td>Daily B · B</td><td>0.68</td><td>0.16</td><td>0.02</td><td>0.01</td><td>18 / 42</td><td>18 / 25</td></tr>
+  <tr><td>Towing · A</td><td>0.63</td><td>0.32</td><td>0.10</td><td>0.03</td><td>26 / 9</td><td>25 / 1</td></tr>
+  <tr><td>Towing · B</td><td>0.51</td><td>0.22</td><td>0.11</td><td>0.04</td><td>26 / 8</td><td>26 / 8</td></tr>
+</table>
+<p>The warning colour left at rest is the RPM redline. Corner use falls because the corner content is now dimmer, not smaller:
+  the bands and values are the same, and the measure counts only bright pixels.</p>
+
+<h2>Daily A · pick A or B</h2>
+<div class="grid">
+  <div><h3>A · Corner modules: fuel left, instant economy right</h3><a href="daily-a-a.html"><img src="shots/daily-a-a-normal.png" alt=""></a></div>
+  <div><h3>B · Wings: speed and RPM rise out of the corners; fuel and economy bands under the wing feet</h3><a href="daily-a-b.html"><img src="shots/daily-a-b-normal.png" alt=""></a></div>
+  <div><h3>A · 45 miles to empty</h3><a href="daily-a-a.html?scene=lowfuel"><img src="shots/daily-a-a-lowfuel.png" alt=""></a></div>
+  <div><h3>B · 45 miles to empty</h3><a href="daily-a-b.html?scene=lowfuel"><img src="shots/daily-a-b-lowfuel.png" alt=""></a></div>
+  <div><h3>A · left turn, cruise set</h3><a href="daily-a-a.html?scene=turn"><img src="shots/daily-a-a-turn.png" alt=""></a></div>
+  <div><h3>B · left turn, cruise set</h3><a href="daily-a-b.html?scene=turn"><img src="shots/daily-a-b-turn.png" alt=""></a></div>
+</div>
+
+<h2>Daily B · pick A or B</h2>
+<div class="grid">
+  <div><h3>A · Corner modules: fuel left, instant economy right; temperatures and card keep the upper sides</h3><a href="daily-b-a.html"><img src="shots/daily-b-a-normal.png" alt=""></a></div>
+  <div><h3>B · Temperature fan: coolant, oil, and transmission bands fan out of the left corner; fuel module right</h3><a href="daily-b-b.html"><img src="shots/daily-b-b-normal.png" alt=""></a></div>
+  <div><h3>A · coolant warm</h3><a href="daily-b-a.html?scene=warmcoolant"><img src="shots/daily-b-a-warmcoolant.png" alt=""></a></div>
+  <div><h3>B · coolant warm</h3><a href="daily-b-b.html?scene=warmcoolant"><img src="shots/daily-b-b-warmcoolant.png" alt=""></a></div>
+  <div><h3>A · low-fuel light (reserve)</h3><a href="daily-b-a.html?scene=reserve"><img src="shots/daily-b-a-reserve.png" alt=""></a></div>
+  <div><h3>B · low-fuel light (reserve)</h3><a href="daily-b-b.html?scene=reserve"><img src="shots/daily-b-b-reserve.png" alt=""></a></div>
+</div>
+
+<h2>Towing · pick A or B</h2>
+<div class="grid">
+  <div><h3>A · Corner modules: RPM band with a boost band outside it; trailer brake band (grey range and marker = gain)</h3><a href="tow-a.html"><img src="shots/tow-a-normal.png" alt=""></a></div>
+  <div><h3>B · Corner dials: RPM dial with a boost ring inside; trailer brake dial</h3><a href="tow-b.html"><img src="shots/tow-b-normal.png" alt=""></a></div>
+  <div><h3>A · braking: output 4.0 of gain 5.5 lights in the accent colour</h3><a href="tow-a.html?scene=braking"><img src="shots/tow-a-braking.png" alt=""></a></div>
+  <div><h3>B · braking: output 4.0 of gain 5.5 lights in the accent colour</h3><a href="tow-b.html?scene=braking"><img src="shots/tow-b-braking.png" alt=""></a></div>
+  <div><h3>A · transmission hot, 15 psi boost on a grade</h3><a href="tow-a.html?scene=hottrans"><img src="shots/tow-a-hottrans.png" alt=""></a></div>
+  <div><h3>B · transmission hot, 15 psi boost on a grade</h3><a href="tow-b.html?scene=hottrans"><img src="shots/tow-b-hottrans.png" alt=""></a></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,25 @@
+/* Round 8: one visual hierarchy. Loads after round-07/kit7.css.
+   Tiers: hero (speed, then gear) in bright white; corner values 80 px; read values 38 px; labels and units 20 px.
+   Each tier below the hero is dimmer than the tier above, so a smaller value never outshines a larger one. */
+body { --normal: #c9d1da; }
+.corner { --normal: #b4bac1; }
+.corner.xl .big { font-size: 80px; letter-spacing: -1px; }
+.corner .sub { font-size: var(--small); color: #8a929c; }
+.corner .sub .u { font-size: var(--small); }
+
+/* Chrome stays grey: gear number, card title, page dots. The accent stays on live primary values. */
+.gear4 sup { color: #aab2bb; }
+.card .ttl { color: #8a929c; }
+.card .dots i.on { background: #8a929c; }
+/* 2H is the normal drive state: an outline chip. 4H, 4L, and the locker keep the filled chip. */
+.dchip.d2H { color: #8a929c; background: none; box-shadow: inset 0 0 0 2px #2c343d; }
+
+/* Normal temperatures and fuel: grey fill and a grey knob with no glow. Warm, hot, low, and reserve keep their colours. */
+.normal { --fc: #8a929c; }
+.temp.normal .ztrack i::after, .temp.normal .zcol i::after { background: #8a929c; box-shadow: none; }
+.fuel:not(.low):not(.reserve) .track i { background: linear-gradient(90deg, transparent, #8a929c); }
+.fuel:not(.low):not(.reserve) .track i::after { background: #c9d1da; box-shadow: none; }
+.tp .rv { color: #aab2bb; }
+/* Trailer brake at rest shows the gain setting in grey; live braking lights the value in the accent colour. */
+.corner.idle, .dial.idle { --normal: #8a929c; }
+body { --avail: rgba(138, 146, 156, .2); }

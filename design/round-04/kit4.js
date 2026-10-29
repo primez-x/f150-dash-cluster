@@ -22,6 +22,8 @@ function temp(kind, c) {
   return { ...t, ...zones, kind, c, f, state: c >= t.hot ? "hot" : c >= t.warm ? "warm" : c < t.cold ? "cold" : "normal", pct: frac(f) };
 }
 const TCOL = { cold: "var(--cold)", normal: "var(--accent)", warm: "var(--warm)", hot: "var(--hot)" };
+// Zone tint opacity on every temperature gauge: cold (blue), warm (amber), hot (red). A later kit can lower the tints to quiet the zones at rest.
+const ZONE_TINT = { cold: .2, warm: .32, hot: .45 };
 const tempText = (T, deg = true) => `<span class="rv">${T.f}${deg && T.state !== "nodata" ? `<span class="deg">°F</span>` : ""}</span>`;
 
 // Engine redline for the 3.5 EcoBoost. Ford publishes no tach redline; owner reports put the stock tach marking at
@@ -53,7 +55,7 @@ const LOW_RANGE = 50;
 const fuelLow = s => s.range != null && s.range <= LOW_RANGE;
 const lowPct = s => s.fuel && s.range ? Math.min(100, s.fuel * LOW_RANGE / s.range) : 0;
 const fuelState = s => s.fuel == null ? "nodata" : fuelLight(s) ? "reserve" : fuelLow(s) ? "low" : "";
-const fuelColor = s => ({ reserve: "#ff3b30", low: "#ffb020" })[fuelState(s)] || ACC;
+const fuelColor = (s, normal = ACC) => ({ reserve: "#ff3b30", low: "#ffb020" })[fuelState(s)] || normal;
 const dash = v => v ?? "--";
 
 const BASE = {
@@ -226,7 +228,7 @@ function finish(s) {
 }
 
 const gear = (s, size) => `<div class="gear4" style="font-size:${size}px" data-field="trucksShiftGear getGearNum()">${s.gear}<sup>${s.gearNum}</sup></div>`;
-const chip = s => `<span class="dchip" data-field="getGearAwd()">${s.drive}</span>`;
+const chip = s => `<span class="dchip d${s.drive}" data-field="getGearAwd()">${s.drive}</span>`;
 const fuelLight = s => s.telltales.includes(151);   // alarmTable[151]: truck low-fuel light
 const fuel4 = (s, at) => fuel({ pct: s.fuel, range: s.range, at, light: fuelLight(s), low: fuelLow(s), mark: lowPct(s) });
 
@@ -293,7 +295,7 @@ const PAGES = {
   // Trailer miles: trucksTrailerDistance. Brake type: trucksSetupInfo[17], Light or Heavy electric (vehicle setting).
   // Gain stays on the trailer brake readout only.
   trailer: s => ["TRAILER", "trucksTrailerDistance trucksSetupInfo[17]",
-    `<div class="cells">${cell("TRAILER", s.trailerMi, "mi", "trucksTrailerDistance getTrucksTrailerDistance()")}${cell("BRAKE TYPE", s.brakeType, "", "trucksSetupInfo[17] mTrailerBreakType")}</div>`],
+    `<div class="cells">${cell("DISTANCE", s.trailerMi, "mi", "trucksTrailerDistance getTrucksTrailerDistance()")}${cell("BRAKE TYPE", s.brakeType, "", "trucksSetupInfo[17] mTrailerBreakType")}</div>`],
 };
 
 // Paged card. Alerts appear in the banner under the telltales (frame), so the card always shows the current page.
@@ -310,10 +312,10 @@ function tempArc({ cx, cy, r, from, to, T, w = 8 }) {
   const a = p => from + (to - from) * p;
   const seg = (p0, p1, col, op) => `<path d="${arc(cx, cy, r, Math.min(a(p0), a(p1)), Math.max(a(p0), a(p1)))}" fill="none" stroke="${col}" stroke-opacity="${op}" stroke-width="${w}"/>`;
   const fill = T.state === "nodata" ? "" : `<g opacity="${T.state === "normal" ? .5 : 1}">${tailArc(cx, cy, r, a(0), a(T.pct), w, TCOL[T.state])}</g>`;
-  return `<g data-field="${T.field}">${seg(0, 1, "#ffffff", .05)}${seg(0, T.coldTo, "#a0ccf5", .2)}${seg(T.warmFrom, T.hotFrom, "#ffb020", .32)}${seg(T.hotFrom, 1, "#ff3b30", .45)}${fill}</g>`;
+  return `<g data-field="${T.field}">${seg(0, 1, "#ffffff", .05)}${seg(0, T.coldTo, "#a0ccf5", ZONE_TINT.cold)}${seg(T.warmFrom, T.hotFrom, "#ffb020", ZONE_TINT.warm)}${seg(T.hotFrom, 1, "#ff3b30", ZONE_TINT.hot)}${fill}</g>`;
 }
-const zones = (T, dir) => `linear-gradient(${dir}, rgba(160, 204, 245, .2) 0 ${T.coldTo * 100}%, rgba(255, 255, 255, .05) ${T.coldTo * 100}% ${T.warmFrom * 100}%, ` +
-  `rgba(255, 176, 32, .32) ${T.warmFrom * 100}% ${T.hotFrom * 100}%, rgba(255, 59, 48, .45) ${T.hotFrom * 100}% 100%)`;
+const zones = (T, dir) => `linear-gradient(${dir}, rgba(160, 204, 245, ${ZONE_TINT.cold}) 0 ${T.coldTo * 100}%, rgba(255, 255, 255, .05) ${T.coldTo * 100}% ${T.warmFrom * 100}%, ` +
+  `rgba(255, 176, 32, ${ZONE_TINT.warm}) ${T.warmFrom * 100}% ${T.hotFrom * 100}%, rgba(255, 59, 48, ${ZONE_TINT.hot}) ${T.hotFrom * 100}% 100%)`;
 const tempTrack = T => `<div class="ztrack" style="background:${zones(T, "90deg")}"><i style="width:${T.pct * 100}%"></i></div>`;
 const tempCol = (T, h) => `<div class="zcol" style="height:${h}px;background:${zones(T, "0deg")}"><i style="height:${T.pct * 100}%"></i></div>`;
 const tIcon = (T, h = 34) => T.icon ? `<img class="tic" src="${ICON(T.icon)}" style="height:${h}px" alt="">` : `<span class="k" style="letter-spacing:2px">DIFF</span>`;

@@ -20,15 +20,15 @@ function shroudRail(x0, x1, n, d) {
 // Segment gauge that follows the shroud edge. The first segment sits at the corner; the value grows toward the center.
 // value, from, redFrom, warnTo, avail, and mark are fractions of the scale. Segments light from `from` to value in either
 // direction (a center-zero scale sets from). warnTo tints the low band amber; avail lights a dim range.
-// pts replaces the shroud path with other points (x, y, outward normal nx, ny), for example a dial.
-function rail({ side = "l", x0 = 190, x1 = 640, n, value, from = 0, color = ACC, redFrom = null, warnTo = 0, avail = 0, mark = null, ends = null, d = 30, len = 24, w = 7, pts = null, field }) {
+// pts replaces the shroud path with other points (x, y, outward normal nx, ny), for example a dial. glow false drops the glow on the head segment.
+function rail({ side = "l", x0 = 190, x1 = 640, n, value, from = 0, color = ACC, redFrom = null, warnTo = 0, avail = 0, mark = null, ends = null, d = 30, len = 24, w = 7, pts = null, glow = true, field }) {
   pts = pts || shroudRail(x0, x1, n, d);
   const fx = x => side === "r" ? 1920 - x : x, span = Math.abs(value - from);
   let g = `<g data-field="${field}">`;
   pts.forEach((p, i) => {
     const t = (i + .5) / n, lit = t >= Math.min(from, value) && t <= Math.max(from, value), red = redFrom != null && t >= redFrom;
-    const col = lit ? (red ? "#ff3b30" : color) : red ? "#3a1814" : t < warnTo ? "#3a2e12" : t <= avail ? "var(--accent-dim)" : "#1d252e";
-    const op = lit ? .25 + .75 * Math.pow(Math.min(1, (Math.abs(t - from) + .5 / n) / span), 1.4) : 1, head = lit && Math.abs(value - t) < 1.5 / n;
+    const col = lit ? (red ? "#ff3b30" : color) : red ? "#3a1814" : t < warnTo ? "#3a2e12" : t <= avail ? "var(--avail, var(--accent-dim))" : "#1d252e";
+    const op = lit ? .25 + .75 * Math.pow(Math.min(1, (Math.abs(t - from) + .5 / n) / span), 1.4) : 1, head = glow && lit && Math.abs(value - t) < 1.5 / n;
     g += line(fx(p.x), p.y, fx(p.x + p.nx * len), p.y + p.ny * len, col, w, `stroke-linecap="round" stroke-opacity="${op.toFixed(2)}"${head ? ' filter="url(#glow)"' : ""}`);
   });
   if (mark != null) {
