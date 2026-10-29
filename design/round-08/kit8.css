@@ -1,11 +1,10 @@
 /* Round 8: one visual hierarchy. Loads after round-07/kit7.css.
-   Tiers: hero (speed, then gear) in bright white; corner values 80 px; read values 38 px; labels and units 20 px.
+   Tiers: hero (speed, then gear) in bright white; corner values 80 px; read values 38 px; corner sub lines 24 px; labels and units 20 px.
    Each tier below the hero is dimmer than the tier above, so a smaller value never outshines a larger one. */
 body { --normal: #c9d1da; }
 .corner { --normal: #b4bac1; }
 .corner.xl .big { font-size: 80px; letter-spacing: -1px; }
-.corner .sub { font-size: var(--small); color: #8a929c; }
-.corner .sub .u { font-size: var(--small); }
+.corner .sub { color: #8a929c; }
 
 /* Chrome stays grey: gear number, card title, page dots. The accent stays on live primary values. */
 .gear4 sup { color: #aab2bb; }
