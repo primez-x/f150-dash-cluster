@@ -59,7 +59,7 @@ function rowHtml(r, i, { focus, path }) {
   if (focus && sc.done) { cls += " done"; val = "Reset sent"; }
   return `<div class="${cls}"><span class="t">${t}</span><span class="v">${val}</span>${extra}</div>`;
 }
-const hint = () => `<div class="hint"><span><b>▲ ▼</b>Select</span><span><b>OK</b>${sc.arm !== undefined && C === "b" ? "Hold to confirm" : "Open or change"}</span><span><b>◀</b>Back</span><span><b>Hold MODE</b>Close menu</span></div>`;
+const hint = () => `<div class="hint"><span><b>▲ ▼</b>Select</span><span><b>OK</b>${sc.arm !== undefined && C === "b" ? "Hold to confirm" : "Open or change"}</span><span><b>◀</b>Back</span><span><b>Hold BACK</b>Close menu</span></div>`;
 
 function columnsMenu() {
   const widths = ["340px", "470px"];

@@ -24,7 +24,7 @@ Towing A frame (top bar, telltales, cruise region). The menu takes the center ar
 <ul>
   <li>Rows and pages follow the firmware for the 2011-2014 F150 profile. Values on the Driver assist page are sample values; the truck sends the real values.</li>
   <li>Focus: the accent tint, an accent bar on the left, and white text. Other rows stay quiet. The open path keeps an accent title in each parent column (A) or in the side list (B).</li>
-  <li>Key hints sit under the menu. The close key follows the stock key routing from the audit.</li>
+  <li>Key hints sit under the menu. Hold BACK closes the menu; hold MODE acts as OK, as on the stock menu.</li>
 </ul>
 <h2>Pick 1 · Layout</h2>
 <p>A · Columns: every open level stays on screen, left to right, as the stock menu does. The deepest column has the focus; parent columns fade to the path.
@@ -48,7 +48,8 @@ B · Controls: switches for on and off, segments for a short choice, and a meter
 </div>
 <h2>Pick 3 · Confirm for resets</h2>
 <p>The stock menu resets on one press of OK, so one bump of the wheel key can clear a trip or the oil life. Both options add a confirm step to the reset rows and the factory reset.
-A · Press twice: the first OK arms the row for 5 seconds (the bar runs down); a second OK sends the reset. B · Hold: hold OK for 1.5 seconds (the bar fills); a short press does nothing.</p>
+A · Press twice: the first OK arms the row for 5 seconds (the bar runs down); a second OK sends the reset. B · Hold: hold OK until the wheel hold registers; a short press does nothing.</p>
+<p><strong>Key limit found after this round:</strong> the wheel sends a press and a hold, but most likely no release after a hold. The menu cannot see when the finger lifts, so B cannot run a timed 1.5 s bar: the hold time is the wheel's own hold threshold, and the bar is a guess. A uses two separate presses and works with the known key events. The recommendation for pick 3 is now <strong>A</strong>.</p>
 <div class="grid two">
   <div><h3>A · armed</h3><a href="menu.html?confirm=a&scene=confirm"><img src="shots/confirm-a-confirm.png" alt=""></a></div>
   <div><h3>B · holding</h3><a href="menu.html?confirm=b&scene=confirm"><img src="shots/confirm-b-confirm.png" alt=""></a></div>
