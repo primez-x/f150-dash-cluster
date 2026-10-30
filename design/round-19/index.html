@@ -16,7 +16,8 @@
 </head>
 <body>
 <h1>F150 cluster · Design round 19 · Drive modes, speed scale, and cruise on Towing A</h1>
-<p>Towing A is locked as the center axis layout from <a href="../round-18/">round 18</a> (option B). Round 19 adds the drive modes, a speed scale, and the cruise states. Pick A or B for the speed scale.</p>
+<p>Towing A is locked as the center axis layout from <a href="../round-18/">round 18</a> (option B). Round 19 adds the drive modes, a speed scale, and the cruise states. </p>
+<p><strong>Picked: A · Ruler.</strong> The speed scale is a straight bar under the speed digits, with ticks every 10 mph and the cruise mark.</p>
 <ul>
   <li>Drive mode: the chip under the gear. 2H is a grey outline; 4A, 4H, and 4L fill. The rear locker adds an amber chip with a padlock. Field: getGearAwd() (mFord4wd); rear locker: alarmTable[76], pending verification on the truck.</li>
   <li>Cruise: the stock readout at top center, above the speed. The cruise symbol and the set speed only (no SET, ACC, or MPH text); the limiter keeps the LIM tag.
