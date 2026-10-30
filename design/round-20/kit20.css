@@ -1,10 +1,25 @@
-/* Round 20: steering angle, level page, and compass. Loads after round-19/kit19.css. */
+/* Round 20: steering angle, level page, compass, and altitude. Loads after round-19/kit19.css. */
 /* Level page: two values, spread like the trailer page. Roll takes the caution or hot colour past the tilt limits. */
 .card.sec.level .cells { justify-content: space-around; }
-.card.sec .icell.warm .rv, .card.sec .icell.warm .sym, .card.sec .icell.warm .tart { color: var(--caution); }
-.card.sec .icell.hot .rv, .card.sec .icell.hot .sym, .card.sec .icell.hot .tart { color: var(--hot); }
-/* Option B truck outlines. */
-.card.sec .icell.art { gap: 18px; }
-.tart { color: #c9d1da; overflow: visible; }
-/* Compass heading beside the clock, in the quiet grey. */
-.hdg { left: 176px; color: #8a929c; }
+.card.sec .icell.warm .rv, .card.sec .icell.warm .sym { color: var(--caution); }
+.card.sec .icell.hot .rv, .card.sec .icell.hot .sym { color: var(--hot); }
+/* Option B: the stock Ford truck images. The 460 px images also carry dial ticks, a red line, and a label; clip-path keeps the
+   truck only (measured: side view x 70 to 386, y 174 to 288; rear view x 148 to 311, y 153 to 287). The clip turns with the
+   image. Each truck turns about the point under the wheels, over a dashed level line. */
+.card.sec .icell.art { gap: 14px; }
+.tpic { position: relative; height: 96px; }
+.tpic img { position: absolute; transform-origin: 50% 62.2%; }
+.tpic.pitch { width: 150px; }
+.tpic.pitch img { left: -20px; top: -48px; width: 190px; height: 190px; clip-path: inset(37.8% 16.1% 37.4% 15.2%); }
+.tpic.roll { width: 120px; }
+.tpic.roll img { left: -60px; top: -79px; width: 240px; height: 240px; clip-path: inset(33.3% 32.4% 37.6% 32.2%); }
+.tpic .lvl { position: absolute; left: -10px; right: -10px; top: 70px; border-top: 2px dashed #4a525c; }
+/* The tilt glow sits on the wrapper: the clip-path would cut a glow on the image. */
+.tpic.warm { filter: drop-shadow(0 0 10px var(--caution)); }
+.tpic.hot { filter: drop-shadow(0 0 10px var(--hot)); }
+/* Heading tape beside the clock, altitude beside the outside temperature. */
+.hdgtape { -webkit-mask: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); mask: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); }
+.hdgtape text { font: 22px "BMW Type Global"; fill: #8a929c; text-anchor: middle; }
+.hdgtape text.card { font-weight: 600; fill: #c9d1da; }
+.hdgtape.held { opacity: .4; }
+.alt { right: 178px; color: #8a929c; }

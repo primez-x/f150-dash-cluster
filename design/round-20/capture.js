@@ -1,4 +1,4 @@
-// Capture the round 20 Towing A options: steering angle, level page, and compass heading.
+// Capture the round 20 Towing A options: wheel angle, level page, compass heading, and altitude.
 // Serve the repository root first: python -m http.server 8731 --bind 127.0.0.1
 // Then run this file through the Playwright MCP browser_run_code_unsafe tool (filename argument).
 // The result lists page errors and any content inside the shroud or screen-edge margin (an empty errors list passes).
@@ -13,8 +13,8 @@ async (page) => {
     await page.goto(root + url);
     await page.evaluate(() => document.fonts.ready);
   };
-  const shots = [["normal", "scene=normal"], ["crawl", "scene=crawl&page=2"], ["backing", "scene=backing"], ["tilt", "scene=tilt"],
-    ["tilthot", "scene=tilthot"], ["tiltstack", "scene=tiltstack"], ["d4l", "scene=d4l"], ["locker", "scene=locker"]];
+  const shots = [["normal", "scene=normal"], ["level", "scene=normal&page=3"], ["pass", "scene=pass"], ["crawl", "scene=crawl"],
+    ["backing", "scene=backing"], ["tilt", "scene=tilt"], ["tilthot", "scene=tilthot"], ["tiltstack", "scene=tiltstack"], ["d4l", "scene=d4l"]];
   for (const name of ["tow-a", "tow-b"]) {
     for (const [tag, q] of shots) {
       await open(`round-20/${name}.html?${q}&still=1`, 1920, 932);

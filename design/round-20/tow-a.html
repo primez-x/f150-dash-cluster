@@ -46,14 +46,14 @@
 <script src="../round-19/kit19.js"></script>
 <script src="kit20.js"></script>
 <script>
-// Round 20 option A, numbers: the locked Towing A (round 19 A) with steering angle, roll, and compass heading.
-// At crawl speed (8 mph and under) or in reverse: the steering bar takes the place of the speed scale, and the level page
-// (grade and roll) takes the place of the engine page. A roll past 10 degrees at crawl speed jumps the panel to the level page.
-// Level page: the grade and the roll as numbers with symbols, as on every other page.
-// Compass: the heading in letters beside the clock, above 5 mph.
+// Round 20 option A, numbers: the locked Towing A (round 19 A) with wheel angle, grade and roll, compass heading, and altitude.
+// At crawl speed (8 mph and under) or in reverse, the steering bar takes the place of the speed scale.
+// Level page (a fifth page, at every speed): the grade and the roll as numbers with symbols, as on every other page.
+// The engine page keeps rpm and boost; the grade moves to the level page. Climb, descent, and a roll past 10 degrees at
+// crawl speed jump the panel to the level page.
+// Top bar: a heading tape with no seam beside the clock (?turn=1 runs a live turn through north), and the altitude beside the outside temperature.
 const s = state("tow"), F = focusOf(s);
 if (params.has("cruise")) s.cruise = params.get("cruise");
-applyCrawl(s);
 const allT = F === "temps" || F === "warmup";
 document.body.classList.add(`focus-${F}`);
 frame(s);
@@ -64,7 +64,7 @@ layer(
   band({ side: "r", x1: CORNER_X1, n: 20, value: s.braking ? s.output / 10 : 0, avail: s.gain / 10, mark: s.gain / 10, field: "trailer brake output" })
 );
 place(`
-  ${compass(s)}
+  ${compass(s)}${altitude(s)}
   <div class="abs big speed" data-field="speed">${digits(s.speed)}</div>
   <div class="abs sunit" data-field="vehicleSpeedUnit">MPH</div>
   <div class="abs gblk">${gear(s, GEAR_SIZE)}<div class="drow">${driveChip(s)}</div></div>
@@ -75,6 +75,7 @@ place(`
   <div class="abs corner r ${s.braking ? "on" : "idle"}" style="right:48px;top:640px" data-field="${BRAKE_FIELD}"><span class="k">${s.braking ? `<span class="state">BRAKING</span>` : ""}${sym("trailerBrake", 44)}</span></div>
   ${fuelCenter(s, { level: false, quarters: true })}
 `);
+if (params.has("turn")) turnDemo(s);
 finish(s);
 </script>
 </body>
