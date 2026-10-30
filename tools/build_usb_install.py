@@ -89,7 +89,7 @@ def main():
         member.parent.mkdir()
         member.write_bytes(script)
         member.chmod(0o755)
-        subprocess.run([str(ZIP_TOOL), "-q", "-9", "-X", "-P", password, "encrypt.zip", "encrypt/encrypt.sh"],
+        subprocess.run([str(ZIP_TOOL), "-q", "-9", "-P", password, "encrypt.zip", "encrypt/encrypt.sh"],
                        cwd=staging, check=True, timeout=60)
         archive_bytes = (staging / "encrypt.zip").read_bytes()
         with zipfile.ZipFile(staging / "encrypt.zip") as archive:

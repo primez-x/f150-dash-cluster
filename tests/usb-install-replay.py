@@ -340,7 +340,8 @@ def main():
             c.unmark()
             c.marker("log")
             c.run()
-            return [c.status(), c.device(), c.starts(), (c.out / "Launcher.log").exists(), (c.out / "installed-sha256.txt").exists()]
+            return [c.status(), c.device(), c.starts(), (c.out / "Launcher.log").exists(),
+                    "Launcher check: running" in (c.out / "installed-sha256.txt").read_text()]
         check("log-changes-nothing", 9, ["LOGGED", "candidate", 1, True, True], log_only)
     finally:
         for path in Path(base).rglob("*"):

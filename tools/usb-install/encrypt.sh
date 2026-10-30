@@ -317,6 +317,9 @@ do_log() {
         done
         date
         cat "$R/proc/uptime"
+        # The install health check decides on these two results.
+        if launcher_running; then echo "Launcher check: running"; else echo "Launcher check: not running"; fi
+        df -k "$R/usr/bin"
         ps
     } > "$out/installed-sha256.txt" 2>&1
     finish LOGGED
