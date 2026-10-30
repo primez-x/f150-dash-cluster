@@ -56,17 +56,19 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - The cache decoder maps all 198 units and validates objects, bindings, functions, and bytecode spans.
 - The source candidate corrects pressure conversion, low-RPM updates, DPC assignments, and idle fuel units.
 - The candidate keeps temperature and speed preferences independent. Separate saved overrides prevent native unit snapshots from changing manual choices.
-- Both source replays pass: 616 gauge cases and 194 unit-state cases. Earlier independent review covered the original unit and persistence changes.
+- Both source replays pass: 632 gauge cases and 194 unit-state cases. Earlier independent review covered the original unit and persistence changes.
 - The TOW telltale (alarm 90) selects the towing layout (`towDashboard`, now stock UI2). Tow/Haul off returns to the saved driver layout. The tow replay passes 11 cases, and host Qt compiles the source.
 - The MCU source of alarm 90 on this truck is not yet verified. Confirm on the vehicle that the stock TOW telltale lights with Tow/Haul.
 - The GPS clock sets the MCU clock from GPS UTC (NMEA RMC) with the time zone from the GPS position and US and Canada daylight saving time. The MCU clock loses the time when the relay cuts power.
 - The clock replay passes 39 cases. The zone grid matches Python zoneinfo for 45 test cities. Host Qt compiles the source.
-- Until the first clock write after power-up (GPS or the Date and time menu), the dashboard clock shows dashes, unless the MCU date is plausible. GPS auto time is on by default; the stock Date and time menu still turns GPS auto time off.
+- Until the first clock write after power-up (GPS or the Date and time menu), the dashboard clock shows dashes, unless the MCU date is plausible. GPS auto time is on by default. No stock menu turns GPS auto time off: the stock Date and time menu hides the set-clock row while GPS auto time is on.
 - Source formatters distinguish L/h fuel flow from distance consumption. Raw consumption values no longer animate through unavailable sentinels.
 - The compiled FuelInfo and MpgInfo pages label the instant consumption with the distance unit (MPG, L/100km, km/l). In flow mode (L/h) those pages now show 0, not an L/h number under an MPG label.
 - Travel and idle times show minutes with two digits (`1:05`, not `1:5`).
 - The oil-life trip on the OilLifeinfo page now follows the distance unit. The adapter field is 16 bits; the page shows `---` until the first trailer frame and for 0xFFFF. The field was matched by storage order, and the km unit is an inference. The logger records `trucksOilLifeTripRaw` with `odo`, so one drive confirms the unit.
 - Vehicle > Reset loads the owned page `/etc/vnR.qml`. The rows, keys, and commands follow the captured page. The captured page removes Oil Life for every Ford. The 2011-2014 F150 profile (truck model 1, vehicle model 1) now keeps the row.
+- The door and radar popup no longer takes key presses while the menu is open. The compiled Dashboard gave the first key release after a door change, and every release while radar data arrived, to the hidden popup. Factory > Doors info now turns the door popup off.
+- System > Version shows the compiled launcher version `FORD@20250714 r36582`. The owned Global came from the older source text and showed `RAM@20240401 r26971`.
 - Oil Life reset on the 2011-2014 F150 sends `setFordSetup(14, 8, 100)`: the same Ford setup command that the vendor sends from Vehicle > Assist row 59 for this profile. Other profiles keep the vendor command. The effect on the truck is not yet verified; a record drive with Debug logging: UART transmit shows the frame.
 - The native trip reset command sends only for some CAN box vendors. By the vendor enum order, the JLY box is vendor 1, which is one of them. Reset Trip A and Trip B therefore most likely send on this truck.
 - The native decoder raises the fuel notification on every fuel frame (0x06), with no change check. The compiled fuel gauges draw `fuelPercentage`, `mainTankPercentage`, and `subTankPercentage` directly.

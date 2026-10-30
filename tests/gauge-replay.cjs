@@ -236,6 +236,17 @@ for (const [model, vehicle, expected] of [[1, 1, [['ford', 14, 8, 100]]], [8, 0,
   check(`oil-life-reset/model${model}/vehicle${vehicle}/command`, expected, () => { oilContext.resetOilLife(); return sent; });
   check(`oil-life-reset/model${model}/vehicle${vehicle}/shown-value`, model === 1 && vehicle === 1 ? 100 : 30, () => item.fordSetupInfo[59]);
 }
+// The compiled Dashboard (023 fn 11) takes the next key release while doorInfo is set, before the menu gets the key.
+// The popup Loader (023 fn 17) is active for doorInfo && !menuBarIndex. The menu must keep every key; the popup must not change.
+bind('doorInfo');
+for (const [menu, enabled, door, radar] of [[0, 1, 0, 0], [0, 1, 4, 0], [0, 1, 0, 2], [1, 1, 4, 0], [1, 1, 0, 2], [1, 1, 4, 2], [0, 0, 4, 0], [0, 0, 0, 2]]) {
+  Object.assign(context, {menuBarIndex: menu, doorInfoEnabled: enabled, doorLeftFront: door, doorRightFront: 0, doorLeftRear: 0,
+    doorRightRear: 0, doorHood: 0, doorTrunk: 0, radarEnabled: radar});
+  const popup = !menu && ((enabled && door) || radar);
+  const name = `door-popup/menu${menu}/enabled${enabled}/door${door}/radar${radar}`;
+  check(name + '/popup', Boolean(popup), () => Boolean(context.doorInfo && !context.menuBarIndex));
+  check(name + '/key-taken-by-popup', Boolean(popup), () => Boolean(context.doorInfo));
+}
 const transitions = [];
 for (const [from, to] of [[12.3, 32767], [32767, 5], [12.3, 32766], [32766, 5]]) {
   context.consumptionUnit = 0;

@@ -85,7 +85,7 @@ Item {
     property int mVehicleEventVendor: 1     // 0: none, 1: jly, 2: dsxw, 3: tesla
     property int mVehicleEventUart: mVehicleEventUartNum[Number(mPlatform)]
     property int mVehicleEventUartBaud: 115200
-    property string launcherVersion: "RAM@20240401 r26971"
+    property string launcherVersion: "FORD@20250714 r36582" // compiled Global value; the source text on the device still reads RAM@20240401
     property string pluginsVersion: "plugins@2023"
     property string linkEventVersion: "plugins@2023"
     property string btVersion: "bt@2023"
@@ -323,7 +323,7 @@ Item {
         return -1
     }
 
-    // Local time in the MCU clock format: "yyyy-MM-dd hh:mm:ss" (as the Date and time menu writes the clock).
+    // Local time in the MCU clock format: "yyyy-MM-dd hh:mm:ss".
     function gpsClockText(ms){
         var d=new Date(ms)
         return d.getUTCFullYear()+"-"+Funcs.prefixInteger(d.getUTCMonth()+1, 2)+"-"+Funcs.prefixInteger(d.getUTCDate(), 2)+" "
@@ -2559,7 +2559,10 @@ Item {
     // 【0x0B】车门 doorInfoNotify
     // mGlobalId.item.getDoorState()
     ////////////////////////////////
-    property int doorInfo: doorLeftFront|doorRightFront|doorLeftRear|doorRightRear|doorHood|doorTrunk|radarEnabled
+    // The compiled Dashboard shows the door and radar popup while doorInfo is set and the menu is closed, and the popup takes the
+    // next key release. The menu hides the popup, so doorInfo is 0 while the menu is open and the menu keeps every key.
+    // Factory > Doors info turns the door part of the popup off.
+    property int doorInfo: menuBarIndex?0:((doorInfoEnabled?doorLeftFront|doorRightFront|doorLeftRear|doorRightRear|doorHood|doorTrunk:0)|radarEnabled)
     property int doorLeftFront: 0
     property int doorRightFront: 0
     property int doorLeftRear: 0
