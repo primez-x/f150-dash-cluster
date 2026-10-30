@@ -17,25 +17,24 @@ HEALTH_WAIT=90
 SETTLE_WAIT=20
 LOG_WAIT=180
 
-# Captured original Launcher (capture-04) and the ui-candidate-trip-units-v1 files.
+# Captured original Launcher (capture-04) and the ui-candidate-menu-v1 files.
 ORIGINAL_SHA256=2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b
-CANDIDATE_SHA256=3eba51863cb158ec24cd119662f031ee9e7afc198ec8c78820c4cf96113c8ed4
-ETC_FILES="vnB.qml vnF.qml vnG.qml vnR.qml vnU.qml vnV.qml"
+CANDIDATE_SHA256=3aee8242a8cb167069750bb721f34b5ab66e48cf634fe7c3fcb81b75abd49d8a
+ETC_FILES="vnB.qml vnF.qml vnG.qml vnM.qml vnV.qml"
 etc_sha256() {
     case "$1" in
-        vnB.qml) echo 02e74078b79bb0e7b33fff1b0f0e7182d0e940b1fca951b405528d6b2e72758c ;;
+        vnB.qml) echo cf4c014945f604b5a0da27d70ec0849a54fb57c972bd9ca55c3f0effd8504aee ;;
         vnF.qml) echo b9db48d55d04d3dc941d32142a6c435cfa89d9f184029bab5ea9b63621879f84 ;;
-        vnG.qml) echo 0cf5a2cea48a6142f0f4b506fddd20b3e5ed2ee42ab69555a32d2aaf4c1185dd ;;
-        vnR.qml) echo ea3330ebac065193722f89651ba91a584aff7c23e4aa66320560214f6f9601f0 ;;
-        vnU.qml) echo 10aec2382811d6120f70d88c1640ce8009c2a867c4ae473e878b217beddada80 ;;
-        vnV.qml) echo 2e83a44174a549b13e5fa45a0ba46d2fd21b18b9950826034e97b6b5fd1e9c55 ;;
+        vnG.qml) echo bf45cee20d9cfd3d1cfbe8c2461522968e8c2ba1d4104d0323d2eb37e64dbfde ;;
+        vnM.qml) echo 36c36b51286cede7f84879a3a9d18190fb9fe95326f65e46f584b021cd842bcf ;;
+        vnV.qml) echo ef6d29dae3b736fa8239930c62cb582abc5c302441d47e35ac0f8c18634829c1 ;;
     esac
 }
 
 MARKERS="VIKNAV-UI-INSTALL.txt VIKNAV-UI-ROLLBACK.txt VIKNAV-UI-LOG.txt VIKNAV-UI-RECORD.txt"
 marker_token() {
     case "$1" in
-        VIKNAV-UI-INSTALL.txt) echo VIKNAV_UI_INSTALL_TRIP_UNITS_V1 ;;
+        VIKNAV-UI-INSTALL.txt) echo VIKNAV_UI_INSTALL_MENU_V1 ;;
         VIKNAV-UI-ROLLBACK.txt) echo VIKNAV_UI_ROLLBACK_CAPTURE04 ;;
         VIKNAV-UI-LOG.txt) echo VIKNAV_UI_LOG ;;
         VIKNAV-UI-RECORD.txt) echo VIKNAV_UI_RECORD ;;

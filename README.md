@@ -61,12 +61,17 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - The MCU source of alarm 90 on this truck is not yet verified. Confirm on the vehicle that the stock TOW telltale lights with Tow/Haul.
 - The GPS clock sets the MCU clock from GPS UTC (NMEA RMC) with the time zone from the GPS position and US and Canada daylight saving time. The MCU clock loses the time when the relay cuts power.
 - The clock replay passes 39 cases. The zone grid matches Python zoneinfo for 45 test cities. Host Qt compiles the source.
-- Until the first clock write after power-up (GPS or the Date and time menu), the dashboard clock shows dashes, unless the MCU date is plausible. GPS auto time is on by default. No stock menu turns GPS auto time off: the stock Date and time menu hides the set-clock row while GPS auto time is on.
+- Until the first clock write after power-up (GPS or the Date and time menu), the dashboard clock shows dashes, unless the MCU date is plausible. GPS auto time is on by default. System > Date and time > GPS sets the clock turns GPS auto time on and off. While GPS auto time is on, the manual set row shows the reason and does not open.
 - Source formatters distinguish L/h fuel flow from distance consumption. Raw consumption values no longer animate through unavailable sentinels.
 - The compiled FuelInfo and MpgInfo pages label the instant consumption with the distance unit (MPG, L/100km, km/l). In flow mode (L/h) those pages now show 0, not an L/h number under an MPG label.
 - Travel and idle times show minutes with two digits (`1:05`, not `1:5`).
 - The oil-life trip on the OilLifeinfo page now follows the distance unit. The adapter field is 16 bits; the page shows `---` until the first trailer frame and for 0xFFFF. The field was matched by storage order, and the km unit is an inference. The logger records `trucksOilLifeTripRaw` with `odo`, so one drive confirms the unit.
-- Vehicle > Reset loads the owned page `/etc/vnR.qml`. The rows, keys, and commands follow the captured page. The captured page removes Oil Life for every Ford. The 2011-2014 F150 profile (truck model 1, vehicle model 1) now keeps the row.
+- The settings menu is the owned page `/etc/vnM.qml`. MenuPage loads vnM in place of the compiled menu list, so vnM owns Vehicle, System, and Service. G-force (compiled) and Factory (`/etc/vnF.qml`) open inside vnM. The menu audit is in `analysis/capture-04/menu-audit/` (private).
+- Menu keys act on release. Up and Down wrap; Left goes back; Right and OK open or change; Modes steps down; a Modes hold acts as OK; a Back hold closes the menu. The release after a hold is ignored. Each page opens on the first row and drops any unfinished edit.
+- Settings with more than two values open an editor: Up and Down change the value, OK sends the value once, and Back cancels. Oil life start value stays between 10% and 100%. The off-road camera never sends the camera fault value. Ford settings show "Waiting for truck" until the first settings frame, and 500 ms after a change the menu reads the settings back once.
+- Reset rows and service resets need a second OK within 5 seconds. Reset keeps the rows, titles, and commands of the captured Reset page; the 2011-2014 F150 profile (truck model 1, vehicle model 1) keeps Oil Life, which the captured page removed for every Ford.
+- Pages send their inquiry when the page opens, not when the cursor passes the row. Rows that do nothing on this truck show the reason. Service shows "No data from adapter" when the adapter sends no maintenance data.
+- The menu labels are English. The Language setting still changes the rest of the UI.
 - The door and radar popup no longer takes key presses while the menu is open. The compiled Dashboard gave the first key release after a door change, and every release while radar data arrived, to the hidden popup. Factory > Doors info now turns the door popup off.
 - System > Version shows the compiled launcher version `FORD@20250714 r36582`. The owned Global came from the older source text and showed `RAM@20240401 r26971`.
 - Oil Life reset on the 2011-2014 F150 sends `setFordSetup(14, 8, 100)`: the same Ford setup command that the vendor sends from Vehicle > Assist row 59 for this profile. Other profiles keep the vendor command. The effect on the truck is not yet verified; a record drive with Debug logging: UART transmit shows the frame.
@@ -81,9 +86,9 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - Boot candidates remove automatic formatting after mount failure and stop later init scripts after critical mount failures.
 - Private-data migration restores the original directory after a failed mount. If rollback fails, the data remains in `/private-move`.
 - A failed copy preserves the migration backup. Independent review approved the boot candidates for a local commit.
-- General settings and Units pass 1,062 source assertions. The catalog, General settings, and Units pass 120 host Qt checks.
-- Thirteen additional Qt checks execute the patched System Settings cache and verify route creation, removal, and recreation.
-- Native Qt fixture previews cover all three pages at 1920×932 and 1920×720. Real vehicle rendering remains unverified.
+- The settings menu, the Factory catalog, and General settings pass 258 host Qt checks; 162 of the checks cover the settings menu.
+- Eight additional Qt checks execute the patched MenuPage cache. The checks verify that MenuPage loads `/etc/vnM.qml` and passes the keys.
+- Native Qt fixture previews cover General settings and the Factory catalog at 1920×932 and 1920×720, and two settings menu states. Real vehicle rendering remains unverified.
 - The candidate clears all 13 vendor factory-menu code records and exposes labeled settings and diagnostic entries.
 - All six layouts have detailed specifications, coordinate schematics, and genuine assets under `handoff/claude-dashboard/`.
 
@@ -146,8 +151,8 @@ wsl.exe -d Ubuntu --exec /mnt/c/f150-dash-cluster/tools/qt-host/venv/bin/python 
 
 The Qt probe requires the local Launcher, recovered resources, and decoded metadata under `analysis/capture-04/qml-cache/`.
 The Qt probe uses fixture components and a mocked native type. The probe never loads the captured ARM program or native plugins.
-The host accepts original and redirected caches for the main and System Settings routes.
-Global and VehicleEvent wrappers compile in isolated directories. Factory and Units pages run with safe context stubs.
+The host accepts original and redirected caches for the main and MenuPage routes.
+Global and VehicleEvent wrappers compile in isolated directories. The settings menu, Factory, and General pages run with safe context stubs.
 Wrapper startup and vehicle behavior remain unverified.
 
 Decode the installed Launcher metadata:
@@ -197,16 +202,16 @@ Do not put `dashboard.zip`, `Ford.zip`, `factory.zip`, or a `dashboard_backup` f
 
 Source replay verifies selected math and state transitions. Source replay does not verify Qt rendering, CAN interpretation, sensor calibration, or live vehicle behavior.
 
-The UI candidate redirects four compiled loaders and includes five source files.
+The UI candidate redirects three compiled loaders and includes five source files.
 The generator clears 13 code records in the old factory gate. The generator preserves native code, ELF geometry, and the other 195 cache units.
 No custom dashboard update has been installed. Device-fork cache acceptance and wrapper startup remain unverified.
 
-The new Units page shows independent Manual/Follow state and exposes `followVehicleUnits()`. Host tests verify the controls with recorded native-call stubs.
+System > Units shows independent Manual/Follow state and exposes `followVehicleUnits()`. Host tests verify the controls with recorded native-call stubs.
 
 Factory opens a labeled menu without a code prompt. The menu exposes General, Advanced, tank, vehicle-profile, odometer, and service-command pages.
 The menu also exposes the existing USB debug, log mode, image preview, and model-option actions. Actions require explicit activation.
 The catalog preserves the vendor service-list query after 300 ms. General settings preserve the separate status query after 50 ms.
-General settings retain all 19 controls. Back returns to the catalog.
+General settings show all 19 controls. Seven controls that no compiled page or native code reads (sub tank, eco, gear, oil temperature, range, oil pressure, chassis state) show "No effect in this firmware" and do not change. Back returns to the catalog.
 Back returns to the menu where the page opened. Pages opened from Advanced return to Advanced.
 The old factory gate has no route from System Settings. All 13 former code literals are empty in the copied Launcher.
 Linux login credentials, keys, service defaults, and captured backups remain unchanged.

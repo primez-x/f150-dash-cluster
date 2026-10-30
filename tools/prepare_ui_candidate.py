@@ -16,7 +16,7 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parents[1]
 DECODER_PATH = BASE / "tools" / "decode_qml_units.py"
 SOURCE_DEFAULT = BASE / "installed" / "capture-04" / "rootfs" / "usr" / "bin" / "Launcher"
-OUTPUT_DEFAULT = BASE / "analysis" / "capture-04" / "ui-candidate-trip-units-v1"
+OUTPUT_DEFAULT = BASE / "analysis" / "capture-04" / "ui-candidate-menu-v1"
 ANALYSIS_ROOT = (BASE / "analysis").resolve()
 SCHEMA_PATH = BASE / "evidence" / "qt-5.14.2" / "qv4instr_moth_p.h"
 LAYOUT_PATH = BASE / "evidence" / "fixtures" / "capture-04" / "launcher-layout.json"
@@ -39,31 +39,18 @@ PATCHES = (
         "source_path": BASE / "patches" / "capture-04" / "etc" / "common" / "Global.qml",
     },
     {
-        "unit_qrc_path": "Trucks/menu/system/MenuSystemSettings.qml",
-        "old_string": "qrc:/Trucks/menu/system/MenuSystemUnits.qml",
-        "new_string": "file:/etc/vnU.qml",
-        "record_file_offset": 4660016,
-        "destination": "etc/vnU.qml",
-        "source_path": BASE / "patches" / "capture-04" / "etc" / "vnU.qml",
-    },
-    {
-        "unit_qrc_path": "Trucks/menu/system/MenuSystemSettings.qml",
-        "old_string": "qrc:/Trucks/menu/system/MenuSystemFactory.qml",
-        "new_string": "file:/etc/vnF.qml",
-        "record_file_offset": 4660368,
-        "destination": "etc/vnF.qml",
-        "source_path": BASE / "patches" / "capture-04" / "etc" / "vnF.qml",
-    },
-    {
-        "unit_qrc_path": "Trucks/menu/vehicle/MenuVehicleSettings.qml",
-        "old_string": "qrc:/Trucks/menu/vehicle/MenuVehicleResetSettings.qml",
-        "new_string": "file:/etc/vnR.qml",
-        "record_file_offset": 5011520,
-        "destination": "etc/vnR.qml",
-        "source_path": BASE / "patches" / "capture-04" / "etc" / "vnR.qml",
+        # MenuPage (cache 024) Loader mMenuListId. The owned menu vnM replaces the compiled list and every page under the list.
+        "unit_qrc_path": "Trucks/menu/MenuPage.qml",
+        "old_string": "qrc:/Trucks/menu/MenuItemsList.qml",
+        "new_string": "file:/etc/vnM.qml",
+        "record_file_offset": 4002512,
+        "destination": "etc/vnM.qml",
+        "source_path": BASE / "patches" / "capture-04" / "etc" / "vnM.qml",
     },
 )
 SOURCE_FILES = {item["destination"]: item["source_path"] for item in PATCHES}
+# vnM hosts the Factory menu vnF, and vnF opens vnB. Both load by file URL, with no cache redirect.
+SOURCE_FILES["etc/vnF.qml"] = BASE / "patches/capture-04/etc/vnF.qml"
 SOURCE_FILES["etc/vnB.qml"] = BASE / "patches/capture-04/etc/vnB.qml"
 ELF_HEADER = struct.Struct("<16sHHIQQQIHHHHHH")
 
@@ -181,7 +168,7 @@ def patch_strings(binary: bytes, units: dict[str, dict[str, object]]) -> tuple[b
             }
         )
     changed = {index for index, (left, right) in enumerate(zip(binary, candidate)) if left != right}
-    require(changed and changed <= permitted_offsets, "binary changes escaped the five permitted string records")
+    require(changed and changed <= permitted_offsets, "binary changes escaped the permitted string records")
     return bytes(candidate), patch_rows, permitted_offsets
 
 
@@ -263,8 +250,8 @@ def build_candidate(source: Path, output: Path) -> dict[str, object]:
     before_units, before_spans, before_registry = decode_binary(decoder, source_bytes, schema)
     gate = json.loads(GATE_FIXTURE.read_text(encoding="utf-8"))
     modified_units = {item["unit_qrc_path"] for item in PATCHES} | {gate["unit_qrc_path"]}
-    require(modified_units == {"main.qml", "Trucks/menu/system/MenuSystemSettings.qml", "Trucks/menu/system/MenuSystemFactory.qml",
-                               "Trucks/menu/vehicle/MenuVehicleSettings.qml"}, "unexpected affected cache unit set")
+    require(modified_units == {"main.qml", "Trucks/menu/MenuPage.qml", "Trucks/menu/system/MenuSystemFactory.qml"},
+            "unexpected affected cache unit set")
     for path in modified_units:
         require(path in before_units, f"affected cache unit missing: {path}")
         start, size = before_spans[path]

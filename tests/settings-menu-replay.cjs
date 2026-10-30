@@ -12,18 +12,12 @@ const pages = path.join(base, 'patches/capture-04/etc');
 const expected = [
   'Factory rows forward all 19 indexes to the existing setter.',
   'General settings Back, Left, and the Back row return to the factory catalog on release.',
-  'Factory and Units Up/Down wrap without changes on press or hold.',
+  'Factory Up/Down wraps without changes on press or hold.',
   'Factory source contains no gate, odometer, shell, or update route.',
-  'Models zero through eight preserve vendor unit assignments and native calls.',
-  'Distance changes preserve temperature. Temperature changes preserve distance.',
-  'Each independent unit row shows Manual or Follow from the saved override.',
-  'The Follow row calls followVehicleUnits once and sends no extra CAN command.',
-  'Unsupported models show a reason and cannot change units.',
-  'Units Back and the Back row return to System Settings.',
   'Mode release advances selection. Mode hold activates the selected row.',
   'Repeated mode hold events preserve vendor repeated activation and release advance.',
   'Page completion selects the first row after Repeater creates the controls.',
-  'Factory completion starts the original 50 ms one-shot system inquiry. Units completion sends no query.'
+  'Factory completion starts the original 50 ms one-shot system inquiry.'
 ];
 const report = {schema_version: 2, authority: 'PC source and reduced decoded vendor metadata replay',
   command: 'node tests/settings-menu-replay.cjs', expected_cases: expected,
@@ -39,14 +33,8 @@ const report = {schema_version: 2, authority: 'PC source and reduced decoded ven
       return: 'menuSettingsSubPageItemSetup=0',
       context: ['mGlobalId', 'mTranslationId'],
       navigation: 'Back now resets the subpage index and returns to the direct catalog.'},
-    units: {base: 'qrc:/Trucks/common/ItemInfo.qml', width: 600, height: 510,
-      controls: ['Consumption', 'Distance', 'Temperature', 'Pressure', 'Follow vehicle units', 'Back'],
-      context: ['mGlobalId', 'mTranslationId', 'mEventHandleId', 'mTrucksModel'],
-      supported_models: '0 through 8', unsupported: 'Visible reason plus Back',
-      manual_state: 'Independent saved speedUnitOverride and tempUnitOverride',
-      follow: 'mEventHandleId.item.followVehicleUnits()'},
     keys: 'Inherited ItemInfo.key(key,state) dispatches overridden key_back/up/down/left/right/enter/modes methods.',
-    states: 'General and Units preserve vendor state behavior. The catalog activates a mode hold once and consumes the matching release.'
+    states: 'General preserves vendor state behavior. The catalog activates a mode hold once and consumes the matching release.'
   }, limitations: [
     'Source replay does not prove QML component rendering or native context lookup.',
     'Loader offsets and identities come from reduced metadata fixtures. This replay does not verify native binary bytes.',
@@ -85,24 +73,9 @@ function handler(text, marker) {
   const wrapper = declaration('function callback() ' + suffix, 'callback');
   return wrapper.slice(wrapper.indexOf('{') + 1, -1);
 }
-function unitScope(model = 1, follow = 1) {
-  const state = {consumptionUnit: 0, metricSystem: 1, temperatureUnit: 1, pressureUnit: 0,
-    speedUnitOverride: 0, tempUnitOverride: 0, followUnit: follow, menuSettingsPageIndex: 1,
-    swcHome: 2, swcBack: 3, swcUp: 19, swcDown: 20, swcLeft: 21, swcRight: 22,
-    swcEnter: 23, swcModes: 26};
-  const calls = [];
-  const scope = {Number, mTrucksModel: model, mPressed: 0, mGlobalId: {item: state},
-    mSystemUnitId: {currentIndex: 0, count: 6, itemAt(index) { return {mIndex: index}; }},
-    mMenuBackId: {mIndex: 5}, calls,
-    mTranslationId: {item: {getSystemUnit(index) { return ['L/100km', 'km', 'C', 'kPa'][index]; }}},
-    mEventHandleId: {item: {setUnit2(type, data) { calls.push({type, data: Number(data)}); },
-      followVehicleUnits() { calls.push({follow: true}); }}}};
-  return scope;
-}
 try {
   const provenance = JSON.parse(fs.readFileSync(path.join(fixtures, 'manifest.json')));
-  report.fixtures = ['menu-system-units-key-enter.json', 'factory-generic-key-enter.json',
-    'system-settings-loaders.json'].map(name => {
+  report.fixtures = ['factory-generic-key-enter.json'].map(name => {
     const bytes = fs.readFileSync(path.join(fixtures, name));
     const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
     const record = provenance.files.find(record => record.path === name);
@@ -115,7 +88,6 @@ try {
   check(catalogText.includes('mFactoryMenu'), 'Factory entry exposes a direct settings catalog');
   check(!/mFactoryPasswd|mPasswdSelect|PasswdTumber|key_enter_hold/.test(catalogText), 'Direct catalog contains no vendor code gate');
   const factoryText = fs.readFileSync(path.join(pages, 'vnB.qml'), 'utf8');
-  const unitText = fs.readFileSync(path.join(pages, 'vnU.qml'), 'utf8');
   const lifecycleBytes = fs.readFileSync(path.join(fixtures, 'settings-page-lifecycle.json'));
   const lifecycleHash = crypto.createHash('sha256').update(lifecycleBytes).digest('hex');
   check(lifecycleHash === '624ca9646190d349c685a6244bd237894cbfbe31c4dd26835c6a762f10c0bba6', 'Lifecycle fixture SHA-256');
@@ -128,7 +100,6 @@ try {
       source_sha256: 'f6efb07133345d7aa9b4bc9bfe3a51db345719d9c3d0742debd5f1994e71ea33'}]};
   const lifecycle = JSON.parse(lifecycleBytes);
   const factoryLifecycle = lifecycle.units.find(unit => unit.qrc_path.endsWith('/FactoryGenericSetup.qml'));
-  const unitLifecycle = lifecycle.units.find(unit => unit.qrc_path.endsWith('/MenuSystemUnits.qml'));
   const originalTimer = factoryLifecycle.timers[0];
   check(originalTimer.id === 'mPostActionTimerId', 'Original factory query timer identity');
   check(originalTimer.bindings.find(binding => binding.property === 'interval').value.value === 50, 'Original query delay');
@@ -140,21 +111,18 @@ try {
   const rootCode = factoryLifecycle.functions.find(fn => fn.index === factoryLifecycle.root_completion_function).bytecode;
   check(rootCode.some(op => op.references && op.references.index === 'mPostActionTimerId') &&
     rootCode.some(op => op.name === 'CallPropertyLookup' && op.references.lookupIndex === 'restart' && op.args.argc === 0), 'Original completion starts the timer');
-  check(unitLifecycle.timer_count === 0 && !unitLifecycle.functions.find(fn =>
-    fn.index === unitLifecycle.root_completion_function).bytecode.some(op => op.name.startsWith('Call')), 'Original Units completion sends no query');
   report.lifecycle_contract = {factory: {delay_ms: 50, repeat: false,
     start: 'Root Component.onCompleted calls mPostActionTimerId.restart()',
     target: 'mEventHandleId.item.systemInquire()', arguments: [],
     timer_anchor: 'qrc:/Trucks/menu/system/factory/FactoryGenericSetup.qml:381',
     call_anchor: 'qrc:/Trucks/menu/system/factory/FactoryGenericSetup.qml:385',
     start_anchor: 'qrc:/Trucks/menu/system/factory/FactoryGenericSetup.qml:391'},
-    units: {timer_count: 0, root_completion: 'No operation',
-      view_completion: 'Set preferredHighlightBegin=1, preferredHighlightEnd=0.1, mCompleted=1, and currentIndex=0.',
-      anchor: 'qrc:/Trucks/menu/system/MenuSystemUnits.qml:232'},
     boundary: 'Source callback replay verifies the command target and schedule request. Qt owns actual timer scheduling.'};
   const queryCalls = [];
   let queryStarts = 0;
-  const factory = methods(factoryText, {mPressed: 0,
+  // Rows that no compiled page or native code reads show a reason and change nothing.
+  const noEffect = [6, 10, 11, 12, 13, 16, 17];
+  const factory = methods(factoryText, {mPressed: 0, mNoEffect: noEffect,
     mFactoryRows: {currentIndex: 0, count: 20},
     mGlobalId: {item: {menuSettingsPageIndex: 1, menuSettingsSubPageItemSetup:5, setFactory(index) { factory.calls.push(index); }}},
     mPostActionTimerId: {restart() { queryStarts++; }},
@@ -171,12 +139,15 @@ try {
   check(queryStarts === 1 && queryCalls.length === 0, 'Factory completion schedules one delayed query');
   vm.runInContext(handler(timerBlock, 'onTriggered:'), factory);
   check(queryCalls.length === 1 && queryCalls[0].length === 0, 'Factory timer calls the original inquiry without arguments');
+  check(/mNoEffect:\s*\[6, 10, 11, 12, 13, 16, 17\]/.test(factoryText), 'Factory rows with no effect');
   for (let index = 0; index < 19; index++) {
     factory.mFactoryRows.currentIndex = index;
+    const before = factory.calls.length;
     factory.key_enter(1); factory.key_enter(2);
-    check(factory.calls.length === index, 'Factory press/hold must not change a value');
+    check(factory.calls.length === before, 'Factory press/hold must not change a value');
     factory.key_enter(0);
-    check(factory.calls[index] === index, 'Factory index ' + index);
+    if (noEffect.includes(index)) check(factory.calls.length === before, 'Factory row with no effect ' + index);
+    else check(factory.calls[factory.calls.length - 1] === index, 'Factory index ' + index);
   }
   factory.mFactoryRows.currentIndex = 19;
   factory.key_enter(0);
@@ -197,9 +168,6 @@ try {
 
   // Reuse the existing decoded-instruction runner, without replaying unrelated cases.
   const runnerText = fs.readFileSync(path.join(base, 'tests/unit-state-replay.cjs'), 'utf8');
-  const vendorMenu = JSON.parse(fs.readFileSync(path.join(fixtures, 'menu-system-units-key-enter.json')));
-  const vendorEnter = vm.runInNewContext('(' + declaration(runnerText, 'enter') + ')', {
-    menu: vendorMenu.functions.find(fn => fn.name === 'key_enter'), Number});
   const vendorFactory = JSON.parse(fs.readFileSync(path.join(fixtures, 'factory-generic-key-enter.json')));
   const originalFactoryEnter = vm.runInNewContext('(' + declaration(runnerText, 'enter') + ')', {
     menu: vendorFactory.functions.find(fn => fn.name === 'key_enter'), Number});
@@ -209,8 +177,9 @@ try {
       setFactory(index) { originalFactory.calls.push(index); }}}};
   for (let index = 0; index < 19; index++) {
     originalFactory.mMenuFuncId.currentIndex = index; originalFactoryEnter(originalFactory);
-    check(originalFactory.calls[index] === factory.calls[index], 'Vendor factory setter parity');
   }
+  check(JSON.stringify(originalFactory.calls.filter(index => !noEffect.includes(index))) === JSON.stringify(factory.calls),
+    'Vendor factory setter parity for rows with an effect');
   originalFactory.mMenuFuncId.currentIndex = 19; originalFactoryEnter(originalFactory);
   check(originalFactory.mGlobalId.item.menuSettingsPageIndex === 1 &&
     originalFactory.mGlobalId.item.menuSettingsSubPageItemSetup === 0, 'Original factory Back keeps the gate parent page');
@@ -224,55 +193,47 @@ try {
   const modeSequences = [[0], [1, 0], [1, 2, 0], [1, 2, 2, 0], [1, 2, 2, 2, 0],
     [1, 2, 2, 2, 2, 0], [1, 2, 3, 0], [1, 2, 2, 0, 1, 0]];
   report.mode_key_replay = [];
-  for (const kind of ['factory', 'units']) {
-    const unit = modeFixture.units.find(unit => unit.qrc_path ===
-      (kind === 'factory' ? vendorFactory.qrc_path : vendorMenu.qrc_path));
-    check(Boolean(unit), 'Mode unit identity ' + kind);
-    check(unit.compiled_unit_sha256 === (kind === 'factory' ? vendorFactory : vendorMenu).compiled_unit_sha256,
-      'Mode unit matches the Enter fixture');
-    const runMode = vm.runInNewContext('(' + modeRunnerSource + ')', {menu: unit.functions[0]});
-    for (const sequence of modeSequences) {
-      const actions = [];
-      const vendorActions = [];
-      const candidate = kind === 'factory' ? methods(factoryText, {
-        mPressed: 0, calls: [], value: false, mFactoryRows: {currentIndex: 0, count: 20},
-        mGlobalId: {item: {setFactory(index) { candidate.calls.push(index); candidate.value = !candidate.value; }}}
-      }) : methods(unitText, unitScope());
-      const vendor = kind === 'factory' ? {
-        Number, mPressed: 0, calls: [], value: false, mMenuBackId: {mIndex: 100},
-        mMenuFuncId: {currentIndex: 0, count: 20, itemAt(index) { return {mIndex: index}; }},
-        mGlobalId: {item: {setFactory(index) { vendor.calls.push(index); vendor.value = !vendor.value; }}}
-      } : unitScope();
-      const view = kind === 'factory' ? candidate.mFactoryRows : candidate.mSystemUnitId;
-      const vendorView = kind === 'factory' ? vendor.mMenuFuncId : vendor.mSystemUnitId;
-      view.currentIndex = vendorView.currentIndex = kind === 'factory' ? 0 : 1;
-      const enterMethod = candidate.key_enter;
-      const downMethod = candidate.key_down;
-      candidate.key_enter = state => { actions.push(['enter', state, view.currentIndex]); return enterMethod(state); };
-      candidate.key_down = state => { actions.push(['down', state, view.currentIndex]); return downMethod(state); };
-      vendor.key_enter = state => {
-        vendorActions.push(['enter', state, vendorView.currentIndex]);
-        return (kind === 'factory' ? originalFactoryEnter : vendorEnter)(vendor);
-      };
-      vendor.key_down = state => {
-        vendorActions.push(['down', state, vendorView.currentIndex]);
-        if (state === 0) vendorView.currentIndex = (vendorView.currentIndex + 1) % vendorView.count;
-        return state === 0 ? 1 : 0;
-      };
-      for (const state of sequence) {
-        candidate.key_modes(state); vendor.replayState = state; runMode(vendor);
-        check(JSON.stringify(actions) === JSON.stringify(vendorActions), 'Mode action parity ' + kind);
-        check(view.currentIndex === vendorView.currentIndex, 'Mode selection parity ' + kind);
-        check(JSON.stringify(candidate.calls) === JSON.stringify(vendor.calls), 'Mode mutation parity ' + kind);
-        if (kind === 'factory') check(candidate.value === vendor.value, 'Factory repeated toggle parity');
-        else for (const key of ['metricSystem', 'temperatureUnit']) {
-          check(Number(candidate.mGlobalId.item[key]) === Number(vendor.mGlobalId.item[key]), 'Units repeated toggle parity');
-        }
-      }
-      report.mode_key_replay.push({page: kind, sequence, parity: 'passed',
-        activations: actions.filter(action => action[0] === 'enter').length,
-        advances: actions.filter(action => action[0] === 'down').length});
+  const modeUnit = modeFixture.units.find(unit => unit.qrc_path === vendorFactory.qrc_path);
+  check(Boolean(modeUnit), 'Mode unit identity factory');
+  check(modeUnit.compiled_unit_sha256 === vendorFactory.compiled_unit_sha256, 'Mode unit matches the Enter fixture');
+  const runMode = vm.runInNewContext('(' + modeRunnerSource + ')', {menu: modeUnit.functions[0]});
+  for (const sequence of modeSequences) {
+    const actions = [];
+    const vendorActions = [];
+    const candidate = methods(factoryText, {
+      mPressed: 0, mNoEffect: noEffect, calls: [], value: false, mFactoryRows: {currentIndex: 0, count: 20},
+      mGlobalId: {item: {setFactory(index) { candidate.calls.push(index); candidate.value = !candidate.value; }}}
+    });
+    const vendor = {
+      Number, mPressed: 0, calls: [], value: false, mMenuBackId: {mIndex: 100},
+      mMenuFuncId: {currentIndex: 0, count: 20, itemAt(index) { return {mIndex: index}; }},
+      mGlobalId: {item: {setFactory(index) { vendor.calls.push(index); vendor.value = !vendor.value; }}}
+    };
+    const view = candidate.mFactoryRows;
+    const vendorView = vendor.mMenuFuncId;
+    const enterMethod = candidate.key_enter;
+    const downMethod = candidate.key_down;
+    candidate.key_enter = state => { actions.push(['enter', state, view.currentIndex]); return enterMethod(state); };
+    candidate.key_down = state => { actions.push(['down', state, view.currentIndex]); return downMethod(state); };
+    vendor.key_enter = state => {
+      vendorActions.push(['enter', state, vendorView.currentIndex]);
+      return originalFactoryEnter(vendor);
+    };
+    vendor.key_down = state => {
+      vendorActions.push(['down', state, vendorView.currentIndex]);
+      if (state === 0) vendorView.currentIndex = (vendorView.currentIndex + 1) % vendorView.count;
+      return state === 0 ? 1 : 0;
+    };
+    for (const state of sequence) {
+      candidate.key_modes(state); vendor.replayState = state; runMode(vendor);
+      check(JSON.stringify(actions) === JSON.stringify(vendorActions), 'Mode action parity factory');
+      check(view.currentIndex === vendorView.currentIndex, 'Mode selection parity factory');
+      check(JSON.stringify(candidate.calls) === JSON.stringify(vendor.calls), 'Mode mutation parity factory');
+      check(candidate.value === vendor.value, 'Factory repeated toggle parity');
     }
+    report.mode_key_replay.push({page: 'factory', sequence, parity: 'passed',
+      activations: actions.filter(action => action[0] === 'enter').length,
+      advances: actions.filter(action => action[0] === 'down').length});
   }
   report.mode_key_fixture = {path: 'evidence/fixtures/capture-04/mode-key-functions.json',
     export_bytes: modeBytes.length, export_sha256: modeHash,
@@ -310,101 +271,13 @@ try {
     differences: ['Candidate uses 19 MenuSetupButton controls instead of 18 switches and one selector. Current boolean values use ON/OFF text.'],
     startup_query: 'The candidate preserves the original delayed, one-shot systemInquire call. Source lifecycle replay checks the target, empty arguments, delay, and completion trigger.',
     regression_result: 'No setting-count, model-filter, row-seven-label, or startup-query regression found. The widget presentation difference remains explicit.'};
-  for (let model = 0; model < 9; model++) {
-    for (let row = 0; row < 4; row++) {
-      for (let value = 0; value < (row === 3 ? 4 : row === 0 ? 3 : 2); value++) {
-        const source = methods(unitText, unitScope(model));
-        const vendor = unitScope(model);
-        const key = ['consumptionUnit', 'metricSystem', 'temperatureUnit', 'pressureUnit'][row];
-        source.mGlobalId.item[key] = vendor.mGlobalId.item[key] = value;
-        source.mSystemUnitId.currentIndex = vendor.mSystemUnitId.currentIndex = row;
-        source.key_enter(1); source.key_enter(2);
-        check(source.calls.length === 0 && source.mGlobalId.item[key] === value, 'No unit press/hold mutation');
-        source.key_enter(0); vendorEnter(vendor);
-        for (const stateKey of ['consumptionUnit', 'metricSystem', 'temperatureUnit', 'pressureUnit']) {
-          check(Number(source.mGlobalId.item[stateKey]) === Number(vendor.mGlobalId.item[stateKey]), 'Vendor parity ' + stateKey);
-        }
-        check(JSON.stringify(source.calls) === JSON.stringify(vendor.calls), 'Native call parity');
-        if (row === 1 || row === 2) {
-          check(source.mGlobalId.item[row === 1 ? 'speedUnitOverride' : 'tempUnitOverride'] === 1, 'Manual before native command');
-        }
-      }
-    }
-  }
-  const units = methods(unitText, unitScope());
-  check(!/\bTimer\s*\{/.test(unitText), 'Units preserves the original timer-free startup');
-  check(unitText.includes('Component.onCompleted:'), 'Units completion selection hook');
-  units.mSystemUnitId.currentIndex = 5;
-  vm.runInContext(handler(unitText, 'Component.onCompleted:'), units);
-  check(units.mSystemUnitId.currentIndex === 0, 'Units opens on the first setting');
-  check(units.unitData(1).endsWith('Follow') && units.unitData(2).endsWith('Follow'), 'Initial Follow state');
-  units.mSystemUnitId.currentIndex = 1; units.key_enter(0);
-  check(units.unitData(1).endsWith('Manual') && units.unitData(2).endsWith('Follow'), 'Independent distance state');
-  units.mSystemUnitId.currentIndex = 2; units.key_enter(0);
-  check(units.unitData(1).endsWith('Manual') && units.unitData(2).endsWith('Manual'), 'Independent temperature state');
-  const eventText = fs.readFileSync(path.join(pages, 'common/VehicleEvent.qml'), 'utf8');
-  const nativeWrites = [];
-  const eventScope = methods(eventText.slice(eventText.indexOf('function followVehicleUnits()'),
-    eventText.indexOf('function setVehicleColor(')), {mGlobalId: units.mGlobalId,
-    mHandleId: {getTripUnit: () => 0, getTempUnit: () => 1, getTime24h: () => 0,
-      setUnit2(...args) { nativeWrites.push(args); }}});
-  let follows = 0;
-  units.mEventHandleId.item.followVehicleUnits = () => { follows++; eventScope.followVehicleUnits(); };
-  units.mSystemUnitId.currentIndex = 4; units.key_enter(0);
-  check(follows === 1 && nativeWrites.length === 0, 'Follow uses one wrapper call without native writes');
-  check(units.mGlobalId.item.metricSystem === 0 && units.mGlobalId.item.temperatureUnit === 1,
-    'Follow restores native values');
-  check(units.unitData(1).endsWith('Follow') && units.unitData(2).endsWith('Follow'), 'Follow state restored');
-  const local = methods(unitText, unitScope(1, 0));
-  for (let row = 0; row < 5; row++) { local.mSystemUnitId.currentIndex = row; local.key_enter(0); }
-  check(local.calls.length === 0, 'No native calls when vehicle unit sync is absent');
-  check(local.unitData(1).endsWith('Manual') && local.unitData(2).endsWith('Manual'), 'No false Follow state');
-  for (const model of [-1, 9, 10, 'unsupported']) {
-    const source = methods(unitText, unitScope(model));
-    check(!source.supportedModel(), 'Unsupported model ' + model);
-    for (let row = 0; row < 5; row++) { source.mSystemUnitId.currentIndex = row; source.key_enter(0); }
-    check(source.calls.length === 0, 'Unsupported model sends no commands');
-  }
-  units.mSystemUnitId.currentIndex = 0; units.key_up(0);
-  check(units.mSystemUnitId.currentIndex === 5, 'Units wrap up');
-  units.key_down(0);
-  check(units.mSystemUnitId.currentIndex === 0, 'Units wrap down');
-  units.mSystemUnitId.currentIndex = 5; units.key_enter(0);
-  check(units.mGlobalId.item.menuSettingsPageIndex === 0, 'Units Back row');
-  for (const name of ['key_back', 'key_left']) {
-    units.mGlobalId.item.menuSettingsPageIndex = 1;
-    units[name](1); units[name](2);
-    check(units.mGlobalId.item.menuSettingsPageIndex === 1, 'Units press/hold stays open');
-    units[name](0);
-    check(units.mGlobalId.item.menuSettingsPageIndex === 0, 'Units return on release');
-  }
-  for (const page of [factory, units]) {
-    const view = page === factory ? page.mFactoryRows : page.mSystemUnitId;
-    view.currentIndex = 0; page.key_modes(0);
-    check(view.currentIndex === 1, 'Modes release advances');
-    const before = page.calls.length;
-    page.key_modes(2);
-    check(page.calls.length === before + 1, 'Modes hold activates');
-  }
-  check(unitText.includes('Unit controls unavailable for this vehicle model'), 'Unsupported reason visible');
-  check(unitText.includes('Follow vehicle units') && unitText.includes('MenuSetupButton'), 'Follow action uses vendor style');
-  const system = JSON.parse(fs.readFileSync(path.join(fixtures, 'system-settings-loaders.json')));
-  report.integration = [
-    ['qrc:/Trucks/menu/system/MenuSystemFactory.qml', 'file:/etc/vnF.qml'],
-    ['qrc:/Trucks/menu/system/MenuSystemUnits.qml', 'file:/etc/vnU.qml']
-  ].map(([original, replacement]) => {
-    const record = system.strings.find(record => record.value === original);
-    check(Boolean(record), 'Decoded loader metadata record');
-    check(replacement.length === 17, 'Written loader URI has 17 UTF-16 units');
-    return {unit: system.qrc_path, string_index: record.index, record_file_offset: record.file_offset,
-      verification: 'Reduced decoded metadata only; original Launcher bytes are not checked here.',
-      length_file_offset: record.file_offset + 4, text_file_offset: record.file_offset + 24, original, replacement,
-      replacement_length_utf16_units: replacement.length,
-      replacement_utf16_hex: Buffer.from(replacement, 'utf16le').toString('hex'),
-      replacement_utf16_bytes: Buffer.from(replacement, 'utf16le').length,
-      original_utf16_bytes: Buffer.from(original, 'utf16le').length};
-  });
-  report.pages = ['vnF.qml', 'vnB.qml', 'vnU.qml'].map(name => ({path: 'patches/capture-04/etc/' + name,
+  factory.mFactoryRows.currentIndex = 0; factory.key_modes(0);
+  check(factory.mFactoryRows.currentIndex === 1, 'Modes release advances');
+  const modeCallsBefore = factory.calls.length;
+  factory.key_modes(2);
+  check(factory.calls.length === modeCallsBefore + 1, 'Modes hold activates');
+  // vnM hosts vnF directly (file:/etc/vnF.qml); the System Settings loader redirect is retired.
+  report.pages = ['vnF.qml', 'vnB.qml'].map(name => ({path: 'patches/capture-04/etc/' + name,
     sha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(pages, name))).digest('hex')}));
   report.source_verification = 'passed';
 } catch (error) {

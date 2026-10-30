@@ -7,6 +7,9 @@ ItemInfo {
     width: 820
     height: 510
     property int mPressed: 0
+    // No compiled page or native code reads these settings in this firmware (Global.setFactory cases).
+    // The rows stay visible with the reason, and OK changes nothing.
+    readonly property var mNoEffect: [6, 10, 11, 12, 13, 16, 17]
     Component.onCompleted: {
         mFactoryRows.currentIndex=0
         mPostActionTimerId.restart()
@@ -51,6 +54,8 @@ ItemInfo {
             return 0
         if(mFactoryRows.currentIndex===mFactoryRows.count-1)
             return key_back(state)
+        if(mNoEffect.indexOf(mFactoryRows.currentIndex)>=0)
+            return 1
         mGlobalId.item.setFactory(mFactoryRows.currentIndex)
         return 1
     }
@@ -74,7 +79,8 @@ ItemInfo {
                 width: mFactoryRows.width
                 mIndex: index
                 mTitle: mTranslationId.item.mFactoryItems[index]
-                mData: index===7?
+                mData: mNoEffect.indexOf(index)>=0?"No effect in this firmware":
+                       index===7?
                            ["200", "210", "240", "260", "290"][mTranslationId.item.mFactoryItemsState[index]]:
                            (mTranslationId.item.mFactoryItemsState[index]?"ON":"OFF")
                 mChecked: mFactoryRows.currentIndex===mIndex

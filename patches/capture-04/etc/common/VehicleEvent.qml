@@ -1153,6 +1153,7 @@ Item {
             }
             //console.log("fordSetupInfo[79]="+mGlobalId.item.fordSetupInfo[79])
             mGlobalId.item.fordSetupInfo[84]=1 // MyKey狀態是一直顯示
+            mGlobalId.item.fordSetupKnown=true
             mGlobalId.item.fordSetupInfoChanged=!mGlobalId.item.fordSetupInfoChanged
         }
         ////////////////////////////////

@@ -39,8 +39,7 @@
 !/patches/capture-04/etc/init.d/rcS
 !/patches/capture-04/etc/vnF.qml
 !/patches/capture-04/etc/vnB.qml
-!/patches/capture-04/etc/vnR.qml
-!/patches/capture-04/etc/vnU.qml
+!/patches/capture-04/etc/vnM.qml
 !/handoff/claude-dashboard/**
 !/design/**
 

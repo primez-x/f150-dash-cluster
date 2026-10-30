@@ -134,12 +134,10 @@ def child(phase, fixture, candidate_dir=None):
     ui_units = {}
     if phase in ("settings-pages", "patched-settings-redirects"):
         allowed = ["ItemInfo.qml", "MenuSetupButton.qml", "MenuItemButton.qml",
-                   "MenuItemSelectButton.qml", "GlowImage.qml", "GlowText.qml",
-                   "FuelConsumptionUnit.qml", "TripUnit.qml", "TemperatureUnit.qml", "PressureUnit.qml"]
+                   "MenuItemSelectButton.qml", "GlowImage.qml", "GlowText.qml"]
         if phase == "patched-settings-redirects":
-            require(original_digest == "3eba51863cb158ec24cd119662f031ee9e7afc198ec8c78820c4cf96113c8ed4", "Direct factory candidate identity mismatch")
-            allowed = [name for name in allowed if name not in ("FuelConsumptionUnit.qml", "TripUnit.qml", "TemperatureUnit.qml", "PressureUnit.qml", "MenuItemSelectButton.qml")]
-            allowed.append("MenuListProgressbar.qml")
+            require(original_digest == "3aee8242a8cb167069750bb721f34b5ab66e48cf634fe7c3fcb81b75abd49d8a", "Menu candidate identity mismatch")
+            allowed.remove("MenuItemSelectButton.qml")
         for name in allowed:
             metadata = next((ROOT / "analysis/capture-04/qml-cache").glob("*" + name + ".json"))
             decoded = json.loads(metadata.read_text())
@@ -153,21 +151,23 @@ def child(phase, fixture, candidate_dir=None):
             ui_units["qrc:/" + decoded["qrc_path"]] = payload
             files[decoded["qrc_path"]] = ""
         if phase == "patched-settings-redirects":
-            start, size = 4644064, 22704
-            settings_unit = bytearray(original[start:start+size])
-            for length_start, payload_start, capacity, value in (
-                    (4660020, 4660040, 88, "file:/etc/vnU.qml"),
-                    (4660372, 4660392, 92, "file:/etc/vnF.qml")):
+            # MenuPage (cache 024): the original unit plus the one reviewed Loader redirect must equal the candidate unit.
+            start, size = 3998016, 8652
+            menu_unit = bytearray(original[start:start+size])
+            for length_start, payload_start, capacity, value in ((4002516, 4002536, 72, "file:/etc/vnM.qml"),):
                 encoded = value.encode("utf-16le")
-                struct.pack_into("<I", settings_unit, length_start-start, len(value))
+                struct.pack_into("<I", menu_unit, length_start-start, len(value))
                 relative = payload_start-start
-                settings_unit[relative:relative+capacity] = encoded + bytes(capacity-len(encoded))
-            require(raw[start:start+size] == settings_unit, "Settings unit differs beyond two reviewed redirects")
-            ui_units["qrc:/Trucks/menu/system/MenuSystemSettings.qml"] = bytes(settings_unit)
-            files["Trucks/menu/system/MenuSystemSettings.qml"] = ""
-            for name in ("MenuSystemLanguage", "MenuSystemDateTime", "MenuSystemGeneric", "MenuSystemVersion"):
-                files["Trucks/menu/system/" + name + ".qml"] = marker("safe-" + name)
-            result["settings_unit_reconstruction_validated"] = True
+                menu_unit[relative:relative+capacity] = encoded + bytes(capacity-len(encoded))
+            require(raw[start:start+size] == menu_unit, "MenuPage unit differs beyond the reviewed redirect")
+            ui_units["qrc:/Trucks/menu/MenuPage.qml"] = bytes(menu_unit)
+            files["Trucks/menu/MenuPage.qml"] = ""
+            # Safe stand-in for the compiled trip overlay that MenuPage declares.
+            files["Trucks/common/Trip.qml"] = marker("safe-Trip", "property int mIndex: 0")
+            # MenuPage imports these directories; each needs one file to exist in the fixture resources.
+            files["Trucks/menu/vehicle/SafeVehicle.qml"] = marker("safe-vehicle-directory")
+            files["Trucks/common/text/SafeText.qml"] = marker("safe-text-directory")
+            result["menu_unit_reconstruction_validated"] = True
         for name in ("check", "right_h", "select_h", "select_n"):
             alias = "Trucks/images/menu/" + name + ".png"
             target = fixture / alias
@@ -181,6 +181,11 @@ def child(phase, fixture, candidate_dir=None):
             files["Trucks/menu/system/factory/"+name+".qml"] = ('import QtQuick 2.12\nItem { objectName: "vendor-page-'+str(index)+'"; '
                 'function key(code,state) { if(state===0 && (code===mGlobalId.item.swcBack || code===mGlobalId.item.swcLeft)) '
                 '{ mGlobalId.item.menuSettingsSubPageItemSetup='+str(back)+'; return 1 } return 0 } }')
+        # The compiled G-force page needs PitchInfo/RollInfo units outside the allowlist. The stub keeps the
+        # compiled Back contract (key_back release sets menuSettingsPageIndex=0) and records each forwarded key.
+        files["Trucks/menu/vehicle/MenuVehicleGForce.qml"] = ('import QtQuick 2.12\nItem { objectName: "gforce-stub"; property var keys: []; '
+            'function key(code,state) { keys=keys.concat([[code,state]]); if(state===0 && (code===mGlobalId.item.swcBack || code===mGlobalId.item.swcLeft)) '
+            '{ mGlobalId.item.menuSettingsPageIndex=0; return 1 } return 0 } }')
     for name, text in files.items():
         (fixture / name).parent.mkdir(parents=True, exist_ok=True)
         if text is None:
@@ -192,13 +197,13 @@ def child(phase, fixture, candidate_dir=None):
     external["file:///etc/vnV.qml"].write_text(marker("external-vehicle"))
     if phase == "settings-pages":
         external["file:///etc/vnB.qml"] = fixture / "Factory.qml"
+        external["file:///etc/vnF.qml"] = fixture / "Catalog.qml"
         external["file:///etc/qmldir"] = fixture / "isolated-etc-qmldir"
         external["file:///etc/qmldir"].write_text("")
     if phase == "patched-settings-redirects":
-        external["file:///etc/vnU.qml"] = fixture / "RouteUnits.qml"
-        external["file:///etc/vnF.qml"] = fixture / "RouteFactory.qml"
-        external["file:///etc/vnU.qml"].write_text(marker("route-units"))
-        external["file:///etc/vnF.qml"].write_text('import QtQuick 2.12\nItem { objectName: "route-factory"; Component.onCompleted: mGlobalId.item.factoryRouteCreations++ }')
+        external["file:///etc/vnM.qml"] = fixture / "RouteMenu.qml"
+        external["file:///etc/vnM.qml"].write_text('import QtQuick 2.12\nItem { objectName: "route-menu"; property var keys: []; '
+                                                   'function key(code,state) { keys=keys.concat([[code,state]]); return 1 } }')
         external["file:///etc/qmldir"] = fixture / "isolated-etc-qmldir"
         external["file:///etc/qmldir"].write_text("")
         result["safe_directory_probe_mapping"] = {"file:///etc/qmldir": str(external["file:///etc/qmldir"])}
@@ -341,7 +346,7 @@ def child(phase, fixture, candidate_dir=None):
 
 
 def settings_pages(fixture, result, app, engine, callbacks, intercepted, denied, ui_units):
-    from PyQt5 import QtCore, QtGui, QtQml, QtQuick, QtTest
+    from PyQt5 import QtCore, QtGui, QtQml, QtQuick, QtTest, sip
     titles = ["Front TPMS side exchange", "Rear TPMS side exchange", "Fuel filler side", "Tyre pressure",
               "Reverse alarm", "Tachometer range", "Sub tank", "Maximum speed", "Vehicle angle",
               "Outside temperature", "Eco information", "Gear information", "Oil temperature", "Range",
@@ -354,7 +359,7 @@ def settings_pages(fixture, result, app, engine, callbacks, intercepted, denied,
     result["precompiled_ui_dependencies"] = precompiled
     require(all((entry['ready'] for entry in precompiled)), precompiled)
     pages = []
-    for name, alias in (("vnB.qml", "Factory.qml"), ("vnU.qml", "Units.qml"), ("vnF.qml", "Catalog.qml"), ("vnR.qml", "Reset.qml")):
+    for name, alias in (("vnB.qml", "Factory.qml"), ("vnF.qml", "Catalog.qml"), ("vnM.qml", "Menu.qml")):
         source = ROOT / "patches/capture-04/etc" / name
         content = source.read_bytes()
         copy = fixture / alias
@@ -386,7 +391,6 @@ Window {
     property alias globalState: g
     property alias eventState: e
     property int mCompleted: 0
-    function setProbeIndex(index) { probeSwipe.currentIndex=index }
     QtObject {
         id: mGlobalId
         property QtObject item: QtObject {
@@ -411,10 +415,71 @@ Window {
             property int tempUnitOverride: 0
             property int vehicleModel: 1
             property var fordSetupInfo: []
-            function f150_11_14_param_id(index) { return index===59?8:index }
+            property bool fordSetupKnown: false
+            // Store a JS array, as Global does, so in-place element writes persist.
+            function assign(name, values) { g[name]=values.slice() }
+            property int fordSetupInfoChanged: 0
+            // Global.qml f150_11_14_param_id (linux branch).
+            function f150_11_14_param_id(index) {
+                return ({2:2, 5:5, 6:6, 13:11, 50:0, 51:0, 52:1, 56:3, 57:4, 58:7, 59:8, 60:9, 61:10,
+                         62:12, 63:13, 64:14, 65:15, 66:16, 70:17})[index]
+            }
+            property int menuBarIndex: 1
+            property int dashboard: 0
+            property int tripType: 0
+            property int gpsAutoSetRtcEnabled: 1
+            property int rtc24h: 1
+            property string rtcTime: "12:00"
+            property int lightBrightness: 125
+            property int darkBrightness: 0
+            function getBrightnessLevel(dark) { return Math.floor(Math.floor(dark?darkBrightness:lightBrightness)/25) }
+            property int overSpeedWarningEnabled: 0
+            property int overSpeedWarningSpeed: 0
+            property real tripFactor: metricSystem?1:0.62137
+            property string tripUnit: metricSystem?"km":"mi"
+            property string vehicleSpeedUnit: metricSystem?"km/h":"MPH"
+            function getOverSpeedWaningSpeed(unit) {
+                return (overSpeedWarningSpeed===0?"---":(overSpeedWarningSpeed*tripFactor).toFixed(0))+(!unit?"":" "+vehicleSpeedUnit)
+            }
+            property string pluginsVersion: "plugins@fixture"
+            property string mcuVersion: "mcu@fixture"
+            property var mTpmsUnit: [" kPa", " bar", " kg/cm2", " psi"]
+            // Maintenance state and text helpers copied from Global.qml.
+            property int mainTentChanged: 0
+            property int mainTentCustomize1: 0
+            property int mainTentCustomize2: 0
+            property var mainTentState: [0, 1, 2, 0, 4, 5, 0, 0, 0, 0]
+            property var mainTentMileage: [16777215, 16777215, 16777215, 16777215, 16777215, 16777215, 16777215, 16777215, 16777215, 16777215]
+            property var mainTentReminder: [16777215, 16777215, 16777215, 16777215, 16777215, 16777215, 16777215, 16777215, 16777215, 16777215]
+            property var mainTentYear: [255, 255, 255, 255, 255, 255, 255, 255, 255, 255]
+            property var mainTentMonth: [255, 255, 255, 255, 255, 255, 255, 255, 255, 255]
+            property var mainTentDay: [255, 255, 255, 255, 255, 255, 255, 255, 255, 255]
+            function getMaintentStateColor(id) {
+                var color
+                switch(mainTentState[id]) {
+                case 1: case 4: color="orange"; break
+                case 2: case 5: color="red"; break
+                default: color="white"
+                }
+                return mainTentChanged?color:color
+            }
+            function getMaintentMileage(id) {
+                var mileage=(mainTentMileage[id]===0xFFFFFF?"----":(mainTentMileage[id]*tripFactor).toFixed(0))+" "+tripUnit
+                return mainTentChanged?mileage:mileage
+            }
+            function getMaintentDate(id) {
+                var year=(mainTentYear[id]===0xFF || mainTentYear[id]<=0)?"----":(mainTentYear[id]+2000)
+                var month=(mainTentMonth[id]<1||mainTentMonth[id]>12)?"--":(mainTentMonth[id])
+                var day=(mainTentDay[id]<1||mainTentDay[id]>31)?"--":(mainTentDay[id])
+                var date=metricSystem?(year+"/"+month+"/"+day):(month+"/"+day+"/"+year)
+                return mainTentChanged?date:date
+            }
+            function getMaintentReminder(id) {
+                var reminder=(mainTentReminder[id]===0xFFFFFF?"----":(mainTentReminder[id]*tripFactor).toFixed(0))+" "+tripUnit
+                return mainTentChanged?reminder:reminder
+            }
             property var mFuelUnit: ["L/100km", "km/L", "MPG"]
             property var factoryCalls: []
-            property int factoryRouteCreations: 0
             property var factoryStates: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
             property int swcHome: 16777232
             property int swcBack: 16777216
@@ -442,21 +507,39 @@ Window {
             property var queryCalls: []
             property var shellQueries: []
             property var adbCalls: []
-            function systemInquire() { queryCalls=queryCalls.concat(["systemInquire"]) }
-            function shellCmdInquire() { shellQueries=shellQueries.concat(["shellCmdInquire"]) }
-            function adb(value) { adbCalls=adbCalls.concat([value]) }
-            function setUnit2(type, value) { calls=calls.concat([[type,value]]) }
+            // Every native call in order, for exact send checks.
+            property var log: []
+            function note(entry) { log=log.concat([entry]) }
+            function systemInquire() { queryCalls=queryCalls.concat(["systemInquire"]); note(["systemInquire"]) }
+            function shellCmdInquire() { shellQueries=shellQueries.concat(["shellCmdInquire"]); note(["shellCmdInquire"]) }
+            function adb(value) { adbCalls=adbCalls.concat([value]); note(["adb",value]) }
+            function setUnit2(type, value) { calls=calls.concat([[type,value]]); note(["unit2",type,value]) }
             property var resetCalls: []
-            function resetTrip(trip) { resetCalls=resetCalls.concat([["trip",trip]]) }
-            function resetSinceReset() { resetCalls=resetCalls.concat([["since"]]) }
-            function tpmsReset() { resetCalls=resetCalls.concat([["tpms"]]) }
-            function setFordSetup(vehicle, id, data) { resetCalls=resetCalls.concat([["ford",vehicle,id,data]]) }
-            function resetOilLife() { resetCalls=resetCalls.concat([["oil"]]) }
+            function resetTrip(trip) { resetCalls=resetCalls.concat([["trip",trip]]); note(["trip",trip]) }
+            function resetSinceReset() { resetCalls=resetCalls.concat([["since"]]); note(["since"]) }
+            function tpmsReset() { resetCalls=resetCalls.concat([["tpms"]]); note(["tpms"]) }
+            function setFordSetup(vehicle, id, data) { resetCalls=resetCalls.concat([["ford",vehicle,id,data]]); note(["ford",vehicle,id,data]) }
+            function resetOilLife() { resetCalls=resetCalls.concat([["oil"]]); note(["oil"]) }
             function followVehicleUnits() {
-                calls=calls.concat([["follow"]])
+                calls=calls.concat([["follow"]]); note(["follow"])
                 g.speedUnitOverride=0; g.tempUnitOverride=0
                 g.metricSystem=1; g.temperatureUnit=1
             }
+            function seniorF150_11_14_SetupInquire() { note(["fordInquire"]) }
+            function maintenacneInquire() { note(["serviceInquire"]) }
+            function versionInquire() { note(["versionInquire"]) }
+            function setRtc(rtc) { note(["setRtc",rtc]) }
+            function setBright(dark, bright) {
+                note(["setBright",dark,bright])
+                if(dark) g.darkBrightness=Math.floor(bright/25)*25
+                else g.lightBrightness=Math.floor(bright/25)*25
+            }
+            function setOverSpeedWarningEnabled(on) { note(["warnEnabled",on]) }
+            function setOverSpeedWarningSpeed(speed) { note(["warnSpeed",speed]) }
+            function setMaintentCustomId(id, item) { note(["svcItem",id,item]) }
+            function setMaintentMileage(id, mileage) { note(["svcMileage",id,mileage]) }
+            function setMaintentDate(id, date) { note(["svcDate",id,date]) }
+            function setMaintentReset(id) { note(["svcReset",id]) }
         }
     }
     QtObject {
@@ -466,7 +549,13 @@ Window {
             property var mFactoryItemsState: g.factoryStates
             property string mBack: "Back"
             property string mSystemLangSetup: "Language"
-            property var mSystemLanguages: ["Fixture", "English"]
+            property var mSystemLanguages: ["Chinese", "English", "Japanese", "Traditional Chinese", "Russian", "Arabic",
+                                            "Spanish", "German", "Turkish", "Korean", "French", "Italian", "Portuguese", "Hindi"]
+            property var mSystemLangPickUp: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            property var mServiceDefaultItems: ["Oil & Oil filter", "Front brake", "Inspection", "Brake fluid", "Rear brake",
+                                                "Filter", "Individual 1", "Individual 2"]
+            property var mServiceIndividual1Items: ["Individual 1"].concat(SERVICE_CUSTOM)
+            property var mServiceIndividual2Items: ["Individual 2"].concat(SERVICE_CUSTOM)
             property string mSystemDateTime: "Date and time"
             property string mSystemUnits: "Units"
             property string mSystemGeneric: "Display"
@@ -502,7 +591,9 @@ Window {
                text: "Captured UI components; safe context stubs; no vehicle connection." }
     }
 }
-""".replace("FACTORY_TITLES", json.dumps(titles)))
+""".replace("FACTORY_TITLES", json.dumps(titles)).replace("SERVICE_CUSTOM", json.dumps(
+        ["Air filter element", "spark plug", "Wiper", "Tire", "Battery", "Antifreeze", "Throttle", "Shock Absorber",
+         "Air conditioning filter element", "Clutch"])))
     engine.load(QtCore.QUrl.fromLocalFile(str(harness)))
     roots = engine.rootObjects()
     require(roots, result['messages'])
@@ -532,12 +623,24 @@ Window {
     def release(key):
         app.postEvent(window, QtGui.QKeyEvent(QtCore.QEvent.KeyRelease, key, QtCore.Qt.NoModifier))
         advance()
+    def capture():
+        image = window.grabWindow()
+        if not image.isNull():
+            return image, "QQuickWindow.grabWindow"
+        grab = window.contentItem().grabToImage()
+        if grab is not None:
+            loop = QtCore.QEventLoop()
+            grab.ready.connect(loop.quit)
+            QtCore.QTimer.singleShot(2000, loop.quit)
+            loop.exec_()
+            image = grab.image()
+        return image, "QQuickItem.grabToImage"
     def select_page(index):
         window.setProperty("pageUrl", QtCore.QUrl.fromLocalFile(pages[index]["copy"]).toString())
         advance()
         page = window.property("page")
         verify("page instantiated: " + pages[index]["source"], page is not None)
-        count = (20,6,16,7)[index]
+        count = (20,16)[index]
         candidates = [obj for obj in page.findChildren(QtCore.QObject)
                       if obj.metaObject().className().startswith("SwipeView") and obj.property("count") == count]
         if not candidates:
@@ -553,62 +656,52 @@ Window {
     global_state = window.property("globalState")
     event_state = window.property("eventState")
     if result["phase"] == "patched-settings-redirects":
-        for url in ["qrc:/Trucks/menu/system/MenuSystem" + name + ".qml" for name in ("Language", "DateTime", "Generic", "Version")]:
-            prepared = QtQml.QQmlComponent(engine, QtCore.QUrl(url))
-            require(prepared.status() == QtQml.QQmlComponent.Ready, "Safe route marker compile failed")
-        for path in (fixture/"RouteUnits.qml", fixture/"RouteFactory.qml"):
-            prepared = QtQml.QQmlComponent(engine, QtCore.QUrl.fromLocalFile(str(path)))
-            require(prepared.status() == QtQml.QQmlComponent.Ready, "External route marker compile failed")
-        global_state.setProperty("menuSettingsPageIndex", 0)
-        window.setProperty("pageUrl", "qrc:/Trucks/menu/system/MenuSystemSettings.qml")
+        prepared = QtQml.QQmlComponent(engine, QtCore.QUrl.fromLocalFile(str(fixture/"RouteMenu.qml")))
+        require(prepared.status() == QtQml.QQmlComponent.Ready, "External route marker compile failed")
+        verify("menu route absent before MenuPage loads", "file:///etc/vnM.qml" not in intercepted)
+        global_state.setProperty("menuBarIndex", 1)
+        window.setProperty("pageUrl", "qrc:/Trucks/menu/MenuPage.qml")
         advance()
         page = window.property("page")
-        verify("captured settings component instantiated", page is not None)
-        urls = value(page, "mSystemSettingsItems")
-        verify("patched unit URL evaluates", urls[2] == "file:/etc/vnU.qml")
-        verify("patched factory URL evaluates", urls[5] == "file:/etc/vnF.qml")
-        verify("factory route absent before selection", page.findChild(QtCore.QObject, "route-factory") is None
-               and value(global_state, "factoryRouteCreations") == 0)
-        swipe = next(obj for obj in page.findChildren(QtCore.QObject) if obj.metaObject().className().startswith("SwipeView"))
-        engine.rootContext().setContextProperty("probeSwipe", swipe)
-        route_lifecycle = []
-        for index, marker_name, requested in ((2,"route-units","file:///etc/vnU.qml"),
-                                               (5,"route-factory","file:///etc/vnF.qml"),
-                                               (6,"route-factory",None),
-                                               (5,"route-factory","file:///etc/vnF.qml")):
-            QtCore.QMetaObject.invokeMethod(window, "setProbeIndex", QtCore.Qt.QueuedConnection, QtCore.Q_ARG("QVariant", index))
-            loop = QtCore.QEventLoop()
-            completed = QtCore.QTimer()
-            completed.setInterval(10)
-            completed.timeout.connect(lambda: loop.quit() if (page.findChild(QtCore.QObject, marker_name) is not None) == (requested is not None) else None)
-            completed.start()
-            QtCore.QTimer.singleShot(1000, loop.quit)
-            loop.exec_()
-            completed.stop()
-            if requested is None:
-                verify("factory route removed on Back selection", page.findChild(QtCore.QObject, marker_name) is None)
-            else:
-                verify("nested loader requested " + requested, requested in intercepted)
-                verify("nested loader created " + marker_name, page.findChild(QtCore.QObject, marker_name) is not None)
-            route_lifecycle.append(dict(index=index, factory_instances=value(global_state,"factoryRouteCreations")))
-        verify("factory route recreated on reselection", value(global_state,"factoryRouteCreations") == 2)
-        metadata = json.loads(next((ROOT/"analysis/capture-04/qml-cache").glob("*MenuSystemSettings.qml.json")).read_text())
-        binding = next(entry for entry in metadata["functions"] if entry["name"] == "expression for mSystemSettingsItems")
-        loader_fixture = json.loads((ROOT/"evidence/fixtures/capture-04/system-settings-loaders.json").read_text())
-        redirect_indices = {row["index"] for row in loader_fixture["strings"]}
-        redirect_uses = [entry for entry in binding["bytecode"] if entry.get("args",{}).get("stringId") in redirect_indices]
-        verify("loader string indices match source array bytecode", len(redirect_uses) == 2 and
-               {entry["args"]["stringId"] for entry in redirect_uses} == redirect_indices)
-        result["source_array_bytecode"] = dict(function_index=binding["index"], source_line=binding["location"]["line"],
-                                              code_sha256=binding["code_sha256"],
-                                              redirect_uses=redirect_uses)
+        verify("captured MenuPage component instantiated", page is not None)
+        loaders = [obj for obj in page.findChildren(QtCore.QObject) if obj.metaObject().className() == "QQuickLoader"]
+        sources = [obj.property("source") for obj in loaders]
+        # The URL interceptor maps file:///etc/vnM.qml to the fixture marker, so the Loader holds the mapped URL.
+        verify("patched MenuPage Loader source evaluates to file:/etc/vnM.qml",
+               QtCore.QUrl.fromLocalFile(str(fixture/"RouteMenu.qml")) in sources and
+               intercepted.count("file:///etc/vnM.qml") >= 1 and "qrc:/Trucks/menu/MenuItemsList.qml" not in intercepted)
+        loop = QtCore.QEventLoop()
+        completed = QtCore.QTimer()
+        completed.setInterval(10)
+        completed.timeout.connect(lambda: loop.quit() if page.findChild(QtCore.QObject, "route-menu") is not None else None)
+        completed.start()
+        QtCore.QTimer.singleShot(1000, loop.quit)
+        loop.exec_()
+        completed.stop()
+        route = page.findChild(QtCore.QObject, "route-menu")
+        verify("nested loader requested file:///etc/vnM.qml", "file:///etc/vnM.qml" in intercepted)
+        verify("nested loader created route-menu", route is not None)
+        verify("compiled MenuItemsList never requested", not any("MenuItemsList" in url for url in intercepted + callbacks))
+        QtCore.QMetaObject.invokeMethod(page, "key", QtCore.Qt.QueuedConnection,
+            QtCore.Q_ARG("QVariant", value(global_state, "swcDown")), QtCore.Q_ARG("QVariant", 0))
+        advance()
+        verify("MenuPage forwards keys to vnM", value(route, "keys") == [[value(global_state, "swcDown"), 0]])
+        metadata = json.loads(next((ROOT/"analysis/capture-04/qml-cache").glob("024-*MenuPage.qml.json")).read_text())
+        loader = next(entry for entry in metadata["objects"] if entry.get("id") == "mMenuListId")
+        binding = next(entry for entry in loader["bindings"] if entry["property"] == "source")
+        record = metadata["strings"][binding["string_index"]]
+        verify("MenuPage source binding uses the redirected string record",
+               binding["type"] == "String" and binding["string_index"] == 41 and record["file_offset"] == 4002512 and
+               record["value"] == "qrc:/Trucks/menu/MenuItemsList.qml")
+        result["menu_loader_binding"] = dict(object_index=loader["index"], string_index=binding["string_index"],
+                                             record_file_offset=record["file_offset"], original=record["value"],
+                                             replacement="file:/etc/vnM.qml")
         errors = [message for message in result["messages"] if "TypeError" in message or "ReferenceError" in message]
         result.update(passed=all(entry["passed"] for entry in checks) and not errors and not denied,
-                      redirect_checks=checks, evaluated_source_array=urls, qml_errors=errors,
-                      factory_route_lifecycle=route_lifecycle,
+                      redirect_checks=checks, evaluated_loader_sources=[url.toString() for url in sources], qml_errors=errors,
                       cache_callbacks=callbacks, intercepted_urls=intercepted, denied_urls=denied,
                       native_writes=False,
-                      proof_scope="Patched MenuSystemSettings source array and nested marker loaders. No dashboard or native vehicle plugin.")
+                      proof_scope="Patched MenuPage Loader and a nested marker for vnM. No dashboard or native vehicle plugin.")
         window.setProperty("visible", False)
         print(json.dumps(result), flush=True)
         return 0 if result["passed"] else 1
@@ -642,71 +735,14 @@ Window {
     for index in range(1,19):
         press(QtCore.Qt.Key_Down)
         press(QtCore.Qt.Key_Return)
-    verify("all nineteen factory actions", value(global_state,"factoryCalls") == list(range(19)))
+    no_effect = [6, 10, 11, 12, 13, 16, 17]
+    verify("factory actions skip rows with no effect", value(global_state,"factoryCalls") == [i for i in range(19) if i not in no_effect])
+    verify("rows with no effect show the reason", all(value(rows[i],"mData") == "No effect in this firmware" for i in no_effect)
+           and value(rows[0],"mData") in ("ON","OFF"))
     press(QtCore.Qt.Key_Down)
     press(QtCore.Qt.Key_Return)
-    verify("general Back returns to catalog", value(global_state,"menuSettingsSubPageItemSetup") == 0 and len(value(global_state,"factoryCalls")) == 19)
-    global_state.setProperty("menuSettingsPageIndex", 6)
-    page, swipe, rows = select_page(1)
-    QtTest.QTest.qWait(80)
-    result["startup_query_observations"]["after_units_count"] = len(value(event_state,"queryCalls"))
-    result["startup_query_observations"]["unit_page_delta"] = len(value(event_state,"queryCalls"))-result["startup_query_observations"]["first_factory_count"]
-    verify("units sends no startup query", value(event_state,"queryCalls") == ["systemInquire"])
-    verify("unit titles Follow and Back", [value(row,"mTitle") for row in rows] == ["Fuel economy","Speed and distance","Temperature","Tyre pressure","Follow vehicle units","Back"])
-    press(QtCore.Qt.Key_Down)
-    press(QtCore.Qt.Key_Return)
-    verify("speed manual override", value(global_state,"speedUnitOverride") == 1 and value(global_state,"metricSystem") == 0)
-    verify("speed setter record only", value(event_state,"calls") == [[2,0]])
-    press(QtCore.Qt.Key_Down)
-    press(QtCore.Qt.Key_Return)
-    verify("temperature manual override", value(global_state,"tempUnitOverride") == 1 and value(global_state,"temperatureUnit") == 0)
-    verify("temperature setter record only", value(event_state,"calls") == [[2,0],[1,0]])
-    verify("manual status text", "Manual" in value(rows[1],"mData") and "Manual" in value(rows[2],"mData"))
-    press(QtCore.Qt.Key_Down)
-    press(QtCore.Qt.Key_Down)
-    press(QtCore.Qt.Key_Return)
-    verify("Follow clears manual state", value(global_state,"speedUnitOverride") == 0 and value(global_state,"tempUnitOverride") == 0)
-    verify("Follow records one call", value(event_state,"calls") == [[2,0],[1,0],["follow"]])
-    verify("Follow status text", "Follow" in value(rows[1],"mData") and "Follow" in value(rows[2],"mData"))
-    press(QtCore.Qt.Key_Down)
-    press(QtCore.Qt.Key_Return)
-    verify("units Back route", value(global_state,"menuSettingsPageIndex") == 0)
-    # Vehicle > Reset for the fixture profile (truck model 1, vehicle model 1: 2011-2014 F150).
-    global_state.setProperty("menuSettingsPageIndex", 6)
-    reset_page, reset_swipe, reset_rows = select_page(3)
-    verify("reset rows keep vendor Ford rows and add Oil Life", [value(row,"mTitle") for row in reset_rows] ==
-           ["Reset TripA","Reset TripB","Reset trip info","Reset TPMS","Factory reset","Oil Life","Back"])
-    press(QtCore.Qt.Key_Up)
-    verify("reset Up wraps to Back", value(reset_swipe,"currentIndex") == 6)
-    press(QtCore.Qt.Key_Down)
-    verify("reset Down wraps to first", value(reset_swipe,"currentIndex") == 0)
-    press(QtCore.Qt.Key_Return, False)
-    verify("reset Enter press sends nothing", value(event_state,"resetCalls") == [] and value(reset_page,"mPressed") == 1)
-    release(QtCore.Qt.Key_Return)
-    verify("reset Enter release resets Trip A", value(event_state,"resetCalls") == [["trip",0]] and value(reset_page,"mPressed") == 0)
-    for unused in range(4):
-        press(QtCore.Qt.Key_Down)
-        press(QtCore.Qt.Key_Return)
-    press(QtCore.Qt.Key_Down)
-    press(QtCore.Qt.Key_Return)
-    verify("reset actions match vendor commands and reach oil life", value(event_state,"resetCalls") ==
-           [["trip",0],["trip",1],["since"],["tpms"],["ford",14,18,1],["oil"]])
-    press(QtCore.Qt.Key_Down)
-    press(QtCore.Qt.Key_Return)
-    verify("reset Back returns to Vehicle settings", value(global_state,"menuSettingsPageIndex") == 0 and len(value(event_state,"resetCalls")) == 6)
-    for vehicle, expected in ((0, ["Reset TripA","Reset TripB","Reset trip info","Reset TPMS","Back"]),
-                              (2, ["Reset TripA","Reset TripB","Reset trip info","Reset TPMS","Factory reset","Learn key","Reset TPMS","Calibrate compass","Back"])):
-        global_state.setProperty("vehicleModel", vehicle)
-        window.setProperty("pageUrl", "")
-        advance()
-        window.setProperty("pageUrl", QtCore.QUrl.fromLocalFile(pages[3]["copy"]).toString())
-        advance()
-        other = window.property("page")
-        other_swipe = next(obj for obj in other.findChildren(QtCore.QObject) if obj.metaObject().className().startswith("SwipeView"))
-        other_rows = QtQml.QQmlListReference(other_swipe, b"contentChildren", engine)
-        verify("reset rows for Ford vehicle model " + str(vehicle), [value(other_rows.at(i),"mTitle") for i in range(other_rows.count())] == expected)
-    global_state.setProperty("vehicleModel", 1)
-    catalog, menu, catalog_rows = select_page(2)
+    verify("general Back returns to catalog", value(global_state,"menuSettingsSubPageItemSetup") == 0 and len(value(global_state,"factoryCalls")) == 12)
+    catalog, menu, catalog_rows = select_page(1)
     QtTest.QTest.qWait(350)
     verify("catalog startup query preserves vendor schedule", value(event_state,"shellQueries") == ["shellCmdInquire"])
     verify("catalog startup leaves diagnostic settings unchanged", value(event_state,"adbCalls") == [] and
@@ -787,8 +823,603 @@ Window {
     press(QtCore.Qt.Key_Return)
     verify("catalog Back reaches System Settings", value(global_state,"menuSettingsPageIndex") == 0)
     result["factory_catalog_scope"] = "Actual catalog and General candidate. Other vendor pages use safe markers with recorded Back contracts. Diagnostic methods record arguments only."
+    # Settings menu engine (vnM). Failure modes, each with a check below:
+    # - Keys: action on press; no wrap; Left/Right/Modes mapped wrong; Back skips or stays at the top; Back hold leaves the menu open;
+    #   a release after a hold acts again; repeated hold events act twice; a held key eats the next real tap; state 3 acts.
+    # - Pages: re-entry resumes an old cursor or edit; Back loses the parent row; an inquiry runs on highlight or twice per entry.
+    # - Ford: plausible values or sends before truck data; oil life sends >100 or <10, sends while editing or on cancel;
+    #   camera sends Fault (2); off-list lamp value sticks or sends without a change; read-back missing, early, or repeated.
+    # - Actions: one OK sends; an armed row survives another key, the 5 s timeout, or leaving the page; wrong Reset command.
+    # - Clock: set row editable while GPS sets the clock; Feb day accepted past the month end; unpadded string; cancel sends.
+    # - Display, Units, Service: wrong commit value; unit side effects; no-data text; wrong custom name; reset without confirm.
+    # - Hosted pages: keys not forwarded; no return on menuSettingsPageIndex 0; a Modes hold leaves the hosted guard stuck.
+    menu_url = QtCore.QUrl.fromLocalFile(pages[2]["copy"]).toString()
+    menu_state = {}
+    def load_menu():
+        window.setProperty("pageUrl", "")
+        advance()
+        window.setProperty("pageUrl", menu_url)
+        advance()
+        menu_state["page"] = window.property("page")
+        return menu_state["page"]
+    def swc(name, state):
+        QtCore.QMetaObject.invokeMethod(menu_state["page"], "key", QtCore.Qt.QueuedConnection,
+            QtCore.Q_ARG("QVariant", value(global_state, "swc" + name)), QtCore.Q_ARG("QVariant", state))
+        advance()
+    def tap(name, count=1):
+        for unused in range(count):
+            swc(name, 1)
+            swc(name, 0)
+    def m(name):
+        return value(menu_state["page"], name)
+    def rows():
+        return m("mRows")
+    def titles():
+        return [row["title"] for row in rows()]
+    def values():
+        return [row["value"] for row in rows()]
+    def row(title):
+        return next(entry for entry in rows() if entry["title"] == title)
+    def focus(title):
+        index = titles().index(title)
+        for unused in range(len(rows())):
+            if m("mCursor") == index:
+                return
+            tap("Down")
+        require(m("mCursor") == index, "menu focus failed: " + title)
+    def open_path(*names):
+        for name in names:
+            focus(name)
+            tap("Enter")
+    def log():
+        return value(event_state, "log")
+    def calls_since(mark):
+        return log()[mark:]
+    def sends(mark):
+        return [entry for entry in calls_since(mark) if not str(entry[0]).endswith("Inquire")]
+    def inquiries(mark, name):
+        return [entry for entry in calls_since(mark) if entry[0] == name]
+    def hosted_catalog():
+        return [obj for obj in menu_state["page"].findChildren(QtCore.QObject)
+                if obj.metaObject().className().startswith("SwipeView") and obj.property("count") == 16]
+    def wait_until(predicate, limit_ms):
+        # QML Timers follow the animation clock, which can lag real time in the offscreen harness. Poll up to a bound.
+        start = time.monotonic()
+        while not predicate() and (time.monotonic() - start) * 1000 < limit_ms:
+            QtTest.QTest.qWait(20)
+        return predicate()
+    def assign(name, array):
+        QtCore.QMetaObject.invokeMethod(global_state, "assign", QtCore.Qt.DirectConnection,
+                                        QtCore.Q_ARG("QVariant", name), QtCore.Q_ARG("QVariant", array))
+    swc_code = {name: value(global_state, "swc" + name) for name in ("Back", "Down", "Enter", "Modes")}
+    global_state.setProperty("vehicleModel", 1)
+    global_state.setProperty("menuBarIndex", 1)
+    global_state.setProperty("menuBarItemIndex", 1)
+    global_state.setProperty("menuSettingsPageIndex", 3)
+    global_state.setProperty("menuSettingsSubPageItemSetup", 0)
+    menu = load_menu()
+    verify("menu instantiated", menu is not None)
+    verify("menu open resets the list indexes", value(global_state, "menuBarItemIndex") == 0 and value(global_state, "menuSettingsPageIndex") == 0)
+    verify("menu root fits the MenuPage slot", menu.property("width") == 1720 and menu.property("height") == 511)
+    verify("menu top rows", titles() == ["Vehicle", "System", "Service"] and m("mPath") == ["home"] and m("mCursor") == 0)
+    mark = len(log())
+    swc("Down", 1)
+    verify("menu Down press keeps the cursor and shows the press", m("mCursor") == 0 and m("mPressed"))
+    swc("Down", 0)
+    verify("menu Down release moves the cursor", m("mCursor") == 1 and not m("mPressed"))
+    tap("Down", 2)
+    verify("menu Down wraps to the first row", m("mCursor") == 0)
+    tap("Up")
+    verify("menu Up wraps to the last row", m("mCursor") == 2)
+    tap("Modes")
+    verify("menu Modes release moves down", m("mCursor") == 0)
+    verify("menu highlight sends nothing", calls_since(mark) == [])
+    tap("Right")
+    verify("menu Right opens Vehicle at row 0", m("mPath") == ["home", "vehicle"] and m("mCursor") == 0)
+    verify("menu Vehicle rows", titles() == ["Lighting", "Locks", "Driver assist", "Remote start", "Reset", "G-force"])
+    verify("menu Vehicle entry runs one setup inquiry", calls_since(mark) == [["fordInquire"]])
+    tap("Down", 2)
+    tap("Left")
+    verify("menu Left returns to the parent row", m("mPath") == ["home"] and m("mCursor") == 0)
+    tap("Enter")
+    verify("menu re-entry starts at row 0", m("mPath") == ["home", "vehicle"] and m("mCursor") == 0)
+    verify("menu each Vehicle entry runs one inquiry", inquiries(mark, "fordInquire") == [["fordInquire"]] * 2)
+    open_path("Locks")
+    tap("Back")
+    verify("menu Back keeps the parent row and sends no inquiry", m("mPath") == ["home", "vehicle"] and m("mCursor") == 1 and
+           len(calls_since(mark)) == 2)
+    # Ford rows before and after truck data.
+    mark = len(log())
+    open_path("Driver assist")
+    verify("menu assist rows", titles() == ["Trailer brake mode", "Trailer sway control", "Range calculation",
+                                            "Easy entry and exit", "Oil life start value", "Off-road camera"])
+    verify("menu Ford rows wait for truck data", all(entry["value"] == "Waiting for truck" for entry in rows()))
+    for unused in range(6):
+        tap("Enter")
+        tap("Down")
+    verify("menu Ford rows send nothing before data", calls_since(mark) == [] and not m("mEditing"))
+    info = [0] * 85
+    info[2], info[5], info[6], info[58] = 50, 3, 1, 1
+    info[51], info[52], info[56], info[57], info[59], info[70] = 0, 1, 1, 0, 95, 2
+    info[63], info[64], info[84] = 0, 1, 1
+    assign("fordSetupInfo", info)
+    global_state.setProperty("fordSetupKnown", True)
+    global_state.setProperty("fordSetupInfoChanged", 1)
+    advance()
+    verify("menu Ford values after data", values() == ["Electric", "On", "Towing", "Off", "95%", "Fault"])
+    focus("Trailer sway control")
+    tap("Enter")
+    verify("menu toggle sends the other value", calls_since(mark) == [["ford", 14, 1, 0]] and row("Trailer sway control")["value"] == "Off")
+    QtTest.QTest.qWait(300)
+    verify("menu no read-back before 500 ms", calls_since(mark) == [["ford", 14, 1, 0]])
+    verify("menu one read-back after a Ford send", wait_until(lambda: len(calls_since(mark)) >= 2, 4000) and
+           calls_since(mark) == [["ford", 14, 1, 0], ["fordInquire"]])
+    QtTest.QTest.qWait(600)
+    verify("menu read-back runs once", len(calls_since(mark)) == 2)
+    mark = len(log())
+    focus("Oil life start value")
+    tap("Enter")
+    verify("menu oil life edit starts at the rounded value", m("mEditing") and m("mEditValue") == 100)
+    tap("Down")
+    verify("menu oil life edit stops at 100", m("mEditValue") == 100)
+    tap("Up", 12)
+    verify("menu oil life edit stops at 10", m("mEditValue") == 10)
+    tap("Modes")
+    verify("menu Modes release is the next value in an edit", m("mEditValue") == 20)
+    verify("menu nothing sent while editing", sends(mark) == [])
+    tap("Enter")
+    verify("menu oil life commits once", sends(mark) == [["ford", 14, 8, 20]] and not m("mEditing") and
+           row("Oil life start value")["value"] == "20%")
+    tap("Enter")
+    tap("Down")
+    tap("Left")
+    verify("menu Left cancels an edit and stays on the page", sends(mark) == [["ford", 14, 8, 20]] and not m("mEditing") and
+           m("mPath")[-1] == "assist" and row("Oil life start value")["value"] == "20%")
+    tap("Enter")
+    tap("Down")
+    tap("Back")
+    verify("menu Back cancels an edit and stays on the page", sends(mark) == [["ford", 14, 8, 20]] and not m("mEditing") and
+           m("mPath")[-1] == "assist")
+    tap("Enter")
+    tap("Down")
+    tap("Right")
+    verify("menu Right commits an edit", sends(mark) == [["ford", 14, 8, 20], ["ford", 14, 8, 30]])
+    for raw, start in ((3, 10), (250, 100)):
+        info[59] = raw
+        assign("fordSetupInfo", info)
+        global_state.setProperty("fordSetupInfoChanged", value(global_state, "fordSetupInfoChanged") + 1)
+        advance()
+        tap("Enter")
+        verify("menu oil life edit start clamps " + str(raw), m("mEditValue") == start)
+        tap("Back")
+    verify("menu oil life never sends outside 10..100", all(10 <= entry[3] <= 100 for entry in sends(mark) if entry[2] == 8))
+    wait_until(lambda: calls_since(mark)[-1] == ["fordInquire"], 4000)
+    mark = len(log())
+    focus("Off-road camera")
+    tap("Enter", 3)
+    verify("menu camera never sends Fault", sends(mark) == [["ford", 14, 17, 0], ["ford", 14, 17, 1], ["ford", 14, 17, 0]])
+    wait_until(lambda: inquiries(mark, "fordInquire"), 4000)
+    QtTest.QTest.qWait(600)
+    verify("menu one read-back after several sends", inquiries(mark, "fordInquire") == [["fordInquire"]])
+    mark = len(log())
+    tap("Back")
+    open_path("Lighting")
+    verify("menu lamp off-list value shows seconds", values() == ["50 s"])
+    tap("Enter")
+    verify("menu lamp edit starts at the nearest step", m("mEditValue") == 60)
+    tap("Enter")
+    verify("menu unchanged commit sends nothing", sends(mark) == [] and not m("mEditing"))
+    tap("Enter")
+    tap("Down")
+    tap("Enter")
+    verify("menu lamp commit sends the chosen step", sends(mark) == [["ford", 14, 2, 90]] and values() == ["90 s"])
+    tap("Enter")
+    tap("Up", 5)
+    tap("Enter")
+    verify("menu lamp Off", sends(mark)[-1] == ["ford", 14, 2, 0] and values() == ["Off"])
+    tap("Back")
+    open_path("Locks")
+    verify("menu lock values", titles() == ["Auto lock", "Auto unlock", "Remote unlock"] and values() == ["Value 3", "On", "Two stage"])
+    tap("Enter")
+    verify("menu generic toggle sends 0 from an unknown value", sends(mark)[-1] == ["ford", 14, 5, 0] and values()[0] == "Off")
+    tap("Back")
+    open_path("Remote start")
+    verify("menu remote start rows", titles() == ["Front defrost", "Rear defrost", "Passenger seat", "Climate", "Run time",
+                                                  "Silent start", "Windshield wiper"])
+    focus("Run time")
+    verify("menu run time label", row("Run time")["value"] == "5 min")
+    tap("Enter")
+    tap("Down")
+    tap("Enter")
+    verify("menu run time commit", sends(mark)[-1] == ["ford", 14, 14, 2] and row("Run time")["value"] == "10 min")
+    focus("Climate")
+    tap("Enter")
+    verify("menu climate toggle", sends(mark)[-1] == ["ford", 14, 13, 1] and row("Climate")["value"] == "Automatic")
+    tap("Back")
+    # Reset: press-twice confirm with the captured Reset page commands.
+    open_path("Reset")
+    verify("menu reset rows follow the captured Reset page", titles() == ["Reset TripA", "Reset TripB", "Reset trip info", "Reset TPMS", "Factory reset", "Oil Life"])
+    mark = len(log())
+    tap("Enter")
+    verify("menu one OK arms and sends nothing", sends(mark) == [] and m("mArmedRow") == 0 and
+           rows()[0]["value"] == "Press OK again to reset")
+    tap("Enter")
+    verify("menu second OK sends the Reset command", sends(mark) == [["trip", 0]] and m("mArmedRow") == -1 and
+           rows()[0]["value"] == "Reset sent")
+    QtTest.QTest.qWait(1000)
+    verify("menu Reset sent stays for at least 1 s", rows()[0]["value"] == "Reset sent")
+    verify("menu Reset sent clears after 2 s", wait_until(lambda: rows()[0]["value"] == "", 6000))
+    tap("Enter")
+    tap("Down")
+    verify("menu another key disarms and still moves", m("mArmedRow") == -1 and m("mCursor") == 1 and sends(mark) == [["trip", 0]])
+    tap("Enter")
+    QtTest.QTest.qWait(3500)
+    verify("menu armed row holds for at least 3.5 s", m("mArmedRow") == 1)
+    verify("menu arm times out after 5 s", wait_until(lambda: m("mArmedRow") == -1, 10000) and rows()[1]["value"] == "")
+    tap("Enter")
+    verify("menu OK after the timeout arms again", m("mArmedRow") == 1 and sends(mark) == [["trip", 0]])
+    tap("Enter")
+    for unused in range(4):
+        tap("Down")
+        tap("Enter")
+        tap("Enter")
+    verify("menu reset commands match the captured Reset page", sends(mark) == [["trip", 0], ["trip", 1], ["since"], ["tpms"], ["ford", 14, 18, 1], ["oil"]])
+    tap("Enter")
+    tap("Back")
+    open_path("Reset")
+    verify("menu leaving drops the armed row", m("mArmedRow") == -1 and m("mCursor") == 0 and len(sends(mark)) == 6)
+    tap("Back")
+    for vehicle, expected in ((0, ["Reset TripA", "Reset TripB", "Reset trip info", "Reset TPMS"]),
+                              (2, ["Reset TripA", "Reset TripB", "Reset trip info", "Reset TPMS", "Factory reset", "Learn key",
+                                   "Reset TPMS", "Calibrate compass"])):
+        global_state.setProperty("vehicleModel", vehicle)
+        tap("Back")
+        mark = len(log())
+        tap("Enter")
+        verify("menu other profile sends no F150 inquiry " + str(vehicle), calls_since(mark) == [])
+        verify("menu other profile Ford pages unavailable " + str(vehicle),
+               [(entry["kind"], entry["value"]) for entry in rows()[:4]] == [("unavailable", "Not set up for this vehicle profile")] * 4)
+        tap("Enter")
+        verify("menu unavailable row does nothing " + str(vehicle), m("mPath") == ["home", "vehicle"] and calls_since(mark) == [])
+        open_path("Reset")
+        verify("menu reset rows for Ford vehicle model " + str(vehicle), titles() == expected)
+        tap("Back")
+    global_state.setProperty("vehicleModel", 1)
+    # Hosted G-force.
+    open_path("G-force")
+    stub = menu.findChild(QtCore.QObject, "gforce-stub")
+    verify("menu G-force hosted on entry", stub is not None and value(global_state, "menuSettingsPageIndex") == 1 and
+           m("mPath") == ["home", "vehicle", "gforce"])
+    tap("Down")
+    verify("menu keys forward to the hosted page", value(stub, "keys") == [[swc_code["Down"], 1], [swc_code["Down"], 0]])
+    tap("Back")
+    QtTest.QTest.qWait(20)
+    verify("menu hosted Back returns to the G-force row", m("mPath") == ["home", "vehicle"] and m("mCursor") == 5 and
+           menu.findChild(QtCore.QObject, "gforce-stub") is None)
+    tap("Enter")
+    stub = menu.findChild(QtCore.QObject, "gforce-stub")
+    swc("Back", 1)
+    swc("Back", 2)
+    verify("menu Back hold closes the menu from a hosted page", value(global_state, "menuBarIndex") == 0)
+    swc("Back", 0)
+    verify("menu release after the Back hold is swallowed", m("mPath")[-1] == "gforce" and
+           [swc_code["Back"], 0] not in value(stub, "keys"))
+    # Holds, swallowed releases, and state 3.
+    global_state.setProperty("menuBarIndex", 1)
+    menu = load_menu()
+    verify("menu reopen starts at the top", m("mPath") == ["home"] and m("mCursor") == 0 and
+           value(global_state, "menuSettingsPageIndex") == 0)
+    swc("Modes", 1)
+    swc("Modes", 2)
+    swc("Modes", 2)
+    swc("Modes", 2)
+    verify("menu Modes hold opens the focus row once", m("mPath") == ["home", "vehicle"] and m("mCursor") == 0)
+    swc("Modes", 0)
+    verify("menu release after the Modes hold is swallowed", m("mCursor") == 0)
+    swc("Modes", 1)
+    swc("Modes", 2)
+    verify("menu second Modes hold opens Lighting", m("mPath") == ["home", "vehicle", "lighting"])
+    tap("Back")
+    tap("Modes")
+    verify("menu a held key does not eat the next tap", m("mPath") == ["home", "vehicle"] and m("mCursor") == 1)
+    swc("Enter", 1)
+    swc("Enter", 2)
+    swc("Enter", 0)
+    verify("menu Enter hold does nothing and the release is swallowed", m("mPath") == ["home", "vehicle"] and m("mCursor") == 1)
+    swc("Down", 1)
+    swc("Down", 2)
+    swc("Down", 0)
+    verify("menu Down hold does nothing", m("mCursor") == 1)
+    swc("Down", 3)
+    swc("Enter", 3)
+    swc("Back", 3)
+    verify("menu state 3 is ignored", m("mPath") == ["home", "vehicle"] and m("mCursor") == 1)
+    tap("Back")
+    tap("Back")
+    verify("menu Back at the top closes the menu", value(global_state, "menuBarIndex") == 0)
+    # System: hosted Factory, Version, Language, Date and time, Units, Display.
+    global_state.setProperty("menuBarIndex", 1)
+    menu = load_menu()
+    mark = len(log())
+    open_path("System")
+    verify("menu System rows", titles() == ["Language", "Date and time", "Units", "Display", "Version", "Factory"])
+    tap("Down", 5)
+    verify("menu Version and Factory highlight sends nothing", calls_since(mark) == [])
+    tap("Enter")
+    catalog_views = hosted_catalog()
+    verify("menu Factory hosts the owned catalog", len(catalog_views) == 1 and value(global_state, "menuSettingsPageIndex") == 1)
+    tap("Down")
+    verify("menu keys forward to Factory", catalog_views[0].property("currentIndex") == 1)
+    tap("Up")
+    swc("Modes", 1)
+    swc("Modes", 2)
+    verify("menu Modes hold enters the Factory row", value(global_state, "menuSettingsSubPageItemSetup") == 5)
+    swc("Modes", 0)
+    tap("Back")
+    verify("menu Factory sub page Back", value(global_state, "menuSettingsSubPageItemSetup") == 0)
+    tap("Modes")
+    verify("menu Factory Modes tap still moves after a hold", hosted_catalog()[0].property("currentIndex") == 1)
+    tap("Back")
+    QtTest.QTest.qWait(20)
+    verify("menu Factory Back returns to the Factory row", m("mPath") == ["home", "system"] and m("mCursor") == 5 and not hosted_catalog())
+    mark = len(log())
+    focus("Version")
+    tap("Enter")
+    verify("menu Version rows", titles() == ["App", "Plugins", "Protocol"] and
+           values() == ["Safe Qt fixture", "plugins@fixture", "mcu@fixture"])
+    verify("menu Version entry runs one inquiry", calls_since(mark) == [["versionInquire"]])
+    tap("Enter")
+    verify("menu info rows do nothing", m("mPath")[-1] == "version" and calls_since(mark) == [["versionInquire"]])
+    tap("Back")
+    focus("Language")
+    verify("menu Language row shows the current language", row("Language")["value"] == "English")
+    tap("Enter")
+    verify("menu language rows follow the region list", titles() == ["Chinese", "English", "Japanese", "Traditional Chinese",
+           "Russian", "Arabic", "Spanish", "German", "Turkish", "Korean", "French", "Italian", "Portuguese"] and
+           rows()[1]["value"] == "Selected" and m("mCursor") == 0)
+    tap("Down", 2)
+    tap("Enter")
+    verify("menu Enter sets the language", value(global_state, "language") == 2 and rows()[2]["value"] == "Selected")
+    tap("Up")
+    tap("Enter")
+    verify("menu language restored", value(global_state, "language") == 1)
+    tap("Back")
+    mark = len(log())
+    open_path("Date and time")
+    verify("menu clock rows", titles() == ["GPS sets the clock", "Set date and time", "Time format"])
+    verify("menu set row unavailable while GPS sets the clock",
+           (row("Set date and time")["kind"], row("Set date and time")["value"]) == ("unavailable", "Off while GPS sets the clock"))
+    focus("Set date and time")
+    tap("Enter")
+    verify("menu unavailable clock row does nothing", not m("mEditing") and sends(mark) == [])
+    focus("GPS sets the clock")
+    verify("menu GPS clock On", row("GPS sets the clock")["value"] == "On")
+    tap("Enter")
+    verify("menu GPS clock toggle", value(global_state, "gpsAutoSetRtcEnabled") == 0 and row("GPS sets the clock")["value"] == "Off"
+           and row("Set date and time")["kind"] == "date")
+    global_state.setProperty("rtcDate", "2028-01-31")
+    global_state.setProperty("rtcTime", "07:05")
+    focus("Set date and time")
+    tap("Enter")
+    verify("menu clock editor starts from the clock", m("mEditing") and m("mEditFields") == [2028, 1, 31, 7, 5] and m("mEditField") == 0)
+    tap("Enter")
+    tap("Down")
+    verify("menu Feb 2028 clamps the day to 29", m("mEditFields") == [2028, 2, 29, 7, 5] and m("mEditField") == 1)
+    tap("Enter")
+    tap("Down")
+    verify("menu day wraps after Feb 29", m("mEditFields")[2] == 1)
+    tap("Up")
+    verify("menu day wraps back to Feb 29", m("mEditFields")[2] == 29)
+    tap("Back")
+    verify("menu Back cancels the clock edit", not m("mEditing") and sends(mark) == [])
+    global_state.setProperty("rtcDate", "2027-01-30")
+    tap("Enter")
+    verify("menu clock re-edit starts fresh", m("mEditFields") == [2027, 1, 30, 7, 5] and m("mEditField") == 0)
+    tap("Enter")
+    tap("Down")
+    verify("menu Feb 2027 clamps the day to 28", m("mEditFields")[2] == 28)
+    tap("Enter", 3)
+    verify("menu clock sends nothing before the last field", sends(mark) == [] and m("mEditField") == 4)
+    tap("Enter")
+    verify("menu clock commits a padded string once", sends(mark) == [["setRtc", "2027-02-28 07:05:00"]] and not m("mEditing"))
+    global_state.setProperty("rtcDate", "2020-05-05")
+    tap("Enter")
+    verify("menu clock year starts inside 2024..2099", m("mEditFields")[0] == 2024)
+    tap("Up")
+    verify("menu clock year wraps to 2099", m("mEditFields")[0] == 2099)
+    tap("Left")
+    focus("Time format")
+    verify("menu time format 24 h", row("Time format")["value"] == "24 h")
+    tap("Enter")
+    verify("menu time format toggle", value(global_state, "rtc24h") == 0 and row("Time format")["value"] == "12 h" and
+           sends(mark)[-1] == ["unit2", 5, 0])
+    tap("Back")
+    for name, flag in (("metricSystem", 1), ("temperatureUnit", 1), ("speedUnitOverride", 0), ("tempUnitOverride", 0),
+                       ("followUnit", 1), ("consumptionUnit", 0), ("pressureUnit", 0)):
+        global_state.setProperty(name, flag)
+    mark = len(log())
+    open_path("Units")
+    verify("menu unit titles keep the Units page rows", titles() == ["Fuel economy", "Speed and distance", "Temperature", "Tyre pressure",
+                                                       "Follow vehicle units"])
+    focus("Speed and distance")
+    tap("Enter")
+    verify("menu speed manual override", value(global_state, "speedUnitOverride") == 1 and value(global_state, "metricSystem") == 0
+           and sends(mark) == [["unit2", 2, 0]])
+    focus("Temperature")
+    tap("Enter")
+    verify("menu temperature manual override", value(global_state, "tempUnitOverride") == 1 and value(global_state, "temperatureUnit") == 0
+           and sends(mark) == [["unit2", 2, 0], ["unit2", 1, 0]])
+    verify("menu manual status text", "Manual" in row("Speed and distance")["value"] and "Manual" in row("Temperature")["value"])
+    focus("Follow vehicle units")
+    tap("Enter")
+    verify("menu Follow clears manual state", value(global_state, "speedUnitOverride") == 0 and
+           value(global_state, "tempUnitOverride") == 0 and sends(mark)[-1] == ["follow"])
+    verify("menu Follow status text", "Follow" in row("Speed and distance")["value"] and "Follow" in row("Temperature")["value"])
+    focus("Fuel economy")
+    tap("Enter")
+    tap("Down")
+    verify("menu fuel economy edit is local", value(global_state, "consumptionUnit") == 0)
+    tap("Enter")
+    verify("menu fuel economy commit", value(global_state, "consumptionUnit") == 1 and row("Fuel economy")["value"] == "km/L")
+    focus("Tyre pressure")
+    tap("Enter")
+    tap("Up")
+    tap("Enter")
+    verify("menu tyre pressure choice wraps", value(global_state, "pressureUnit") == 3 and len(sends(mark)) == 3)
+    tap("Back")
+    mark = len(log())
+    open_path("Display")
+    verify("menu display rows", titles() == ["Day brightness", "Night brightness", "Speed warning", "Speed warning at"] and
+           values()[:3] == ["50%", "0%", "Off"])
+    tap("Enter")
+    verify("menu day brightness edit starts at the level", m("mEditValue") == 50)
+    tap("Down")
+    tap("Enter")
+    verify("menu day brightness commit", sends(mark) == [["setBright", 0, 150]] and row("Day brightness")["value"] == "60%")
+    focus("Night brightness")
+    tap("Enter")
+    tap("Up")
+    verify("menu night brightness starts at 10", m("mEditValue") == 10)
+    tap("Enter")
+    tap("Enter")
+    tap("Down")
+    tap("Enter")
+    verify("menu night brightness commit", sends(mark) == [["setBright", 0, 150], ["setBright", 1, 50]])
+    verify("menu speed warning value unavailable while off",
+           (row("Speed warning at")["kind"], row("Speed warning at")["value"]) == ("unavailable", "Turn on the speed warning first"))
+    focus("Speed warning at")
+    tap("Enter")
+    verify("menu unavailable speed row does nothing", not m("mEditing") and len(sends(mark)) == 2)
+    focus("Speed warning")
+    tap("Enter")
+    verify("menu speed warning toggle", value(global_state, "overSpeedWarningEnabled") == 1 and sends(mark)[-1] == ["warnEnabled", 1])
+    focus("Speed warning at")
+    tap("Enter")
+    tap("Up")
+    verify("menu speed warning edit starts at 20", m("mEditValue") == 20)
+    tap("Down")
+    tap("Enter")
+    verify("menu speed warning commit", sends(mark)[-1] == ["warnSpeed", 25])
+    global_state.setProperty("overSpeedWarningSpeed", 199)
+    tap("Enter")
+    tap("Down")
+    verify("menu speed warning stops at 200", m("mEditValue") == 200)
+    tap("Back")
+    tap("Back")
+    tap("Back")
+    # Service.
+    global_state.setProperty("mainTentCustomize1", 2)
+    mark = len(log())
+    open_path("Service")
+    verify("menu Service entry runs one inquiry", calls_since(mark) == [["serviceInquire"]])
+    verify("menu service titles", titles() == ["Oil & Oil filter", "Front brake", "Inspection", "Brake fluid", "Rear brake",
+                                               "Filter", "spark plug", "Individual 2"])
+    verify("menu service no-data text", all(entry == "No data from adapter" for entry in values()))
+    verify("menu service colours", [entry["color"] for entry in rows()] ==
+           ["white", "orange", "red", "white", "orange", "red", "white", "white"])
+    for name, data in (("mainTentReminder", 1000), ("mainTentMileage", 8000), ("mainTentYear", 27), ("mainTentMonth", 3), ("mainTentDay", 15)):
+        array = value(global_state, name)
+        array[0] = data
+        assign(name, array)
+    global_state.setProperty("mainTentChanged", 1)
+    advance()
+    verify("menu service reminder text", values()[0] == "1000 km")
+    open_path("Oil & Oil filter")
+    verify("menu service item rows", titles() == ["Next service date", "Service interval", "Reset"] and
+           values() == ["2027/3/15", "8000 km", ""])
+    tap("Enter")
+    verify("menu service date starts from the stored date", m("mEditFields") == [2027, 3, 15])
+    tap("Enter")
+    tap("Down")
+    tap("Enter")
+    verify("menu service date waits for the last field", sends(mark) == [])
+    tap("Enter")
+    verify("menu service date commit", sends(mark) == [["svcDate", 0, "2027-4-15"]])
+    QtTest.QTest.qWait(300)
+    verify("menu no service read-back before 500 ms", inquiries(mark, "serviceInquire") == [["serviceInquire"]])
+    verify("menu one service read-back", wait_until(lambda: len(inquiries(mark, "serviceInquire")) >= 2, 4000) and
+           inquiries(mark, "serviceInquire") == [["serviceInquire"]] * 2)
+    focus("Service interval")
+    tap("Enter")
+    verify("menu interval edit starts from the stored interval", m("mEditValue") == 8000)
+    tap("Down")
+    tap("Enter")
+    verify("menu interval commit", sends(mark)[-1] == ["svcMileage", 0, 8500])
+    focus("Reset")
+    tap("Enter")
+    verify("menu service reset arms", m("mArmedRow") == 2 and sends(mark)[-1] == ["svcMileage", 0, 8500])
+    tap("Enter")
+    verify("menu service reset sends", sends(mark)[-1] == ["svcReset", 0])
+    wait_until(lambda: len(inquiries(mark, "serviceInquire")) >= 3, 4000)
+    QtTest.QTest.qWait(600)
+    verify("menu service read-back once per burst", len(inquiries(mark, "serviceInquire")) == 3)
+    tap("Back")
+    focus("Rear brake")
+    tap("Enter")
+    focus("Next service date")
+    tap("Enter")
+    today = time.localtime()
+    verify("menu service date without data starts today", m("mEditFields") == [max(2024, today.tm_year), today.tm_mon, today.tm_mday])
+    tap("Back")
+    tap("Back")
+    open_path("spark plug")
+    verify("menu custom rows", titles() == ["Item", "Next service date", "Service interval", "Reset"] and values()[0] == "spark plug")
+    tap("Enter")
+    tap("Down")
+    tap("Enter")
+    verify("menu custom item commit", value(global_state, "mainTentCustomize1") == 3 and sends(mark)[-1] == ["svcItem", 6, 3] and
+           values()[0] == "Wiper")
+    focus("Service interval")
+    tap("Enter")
+    tap("Up")
+    verify("menu interval without data starts at 0", m("mEditValue") == 0)
+    tap("Down")
+    tap("Enter")
+    verify("menu custom interval commit", sends(mark)[-1] == ["svcMileage", 6, 500])
+    tap("Back")
+    verify("menu custom name in the service list", titles()[6] == "Wiper")
+    # Temporary view: the path line and the focus row read the engine state.
+    global_state.setProperty("menuBarIndex", 1)
+    menu = load_menu()
+    open_path("Vehicle", "Driver assist")
+    focus("Oil life start value")
+    tap("Enter")
+    # Repeater rows are visual children only, so walk the item tree.
+    def item_texts(item):
+        found = set()
+        for child in item.childItems():
+            if child.isVisible() and child.property("text") is not None:
+                found.add(child.property("text"))
+            found |= item_texts(child)
+        return found
+    texts = item_texts(sip.cast(menu_state["page"], QtQuick.QQuickItem))
+    verify("menu view shows the path line", "Settings › Vehicle › Driver assist" in texts)
+    verify("menu view shows rows and the edit value", "Trailer brake mode" in texts and "‹ 100% ›" in texts)
+    window.setProperty("previewTitle", "Host Qt fixture preview - settings menu")
+    window.resize(1920, 932)
+    window.show()
+    QtTest.QTest.qWait(100)
+    image, render_method = capture()
+    target = fixture / "preview-menu-assist-edit.png"
+    verify("menu preview saved", not image.isNull() and image.save(str(target)))
+    renders.append(dict(path=str(target), method=render_method, sha256=hashlib.sha256(target.read_bytes()).hexdigest(),
+                        width=image.width(), height=image.height(), label="vnM temporary view; Driver assist with an oil life edit."))
+    tap("Back")
+    tap("Back")
+    open_path("Reset")
+    tap("Enter")
+    QtTest.QTest.qWait(50)
+    image, render_method = capture()
+    target = fixture / "preview-menu-reset-armed.png"
+    verify("menu armed preview saved", not image.isNull() and image.save(str(target)))
+    renders.append(dict(path=str(target), method=render_method, sha256=hashlib.sha256(target.read_bytes()).hexdigest(),
+                        width=image.width(), height=image.height(), label="vnM temporary view; Reset with Trip A armed."))
+    window.setProperty("pageUrl", "")
+    advance()
+    result["menu_scope"] = ("vnM engine on host Qt with safe stubs. G-force uses a stub with the compiled Back contract; "
+                            "Factory hosts the owned vnF copy. Native calls record arguments only.")
     # Capture fixture previews with actual cached component geometry and safe state.
-    for page_index, title in ((0,"General settings"),(1,"Unit settings"),(2,"Factory menu")):
+    for page_index, title in ((0,"General settings"),(1,"Factory menu")):
         page, swipe, rows = select_page(page_index)
         window.setProperty("previewTitle", "Host Qt fixture preview - " + title)
         verify("preview row0 checked and released", value(rows[0],"mChecked") and not value(rows[0],"mClicked"))
@@ -801,17 +1432,7 @@ Window {
                 if not content.property("moving") and abs(content.property("contentY") - content.property("originY")) < 0.5:
                     break
             verify("preview selected row settled", abs(content.property("contentY") - content.property("originY")) < 0.5)
-            image = window.grabWindow()
-            render_method = "QQuickWindow.grabWindow"
-            if image.isNull():
-                grab = window.contentItem().grabToImage()
-                if grab is not None:
-                    loop = QtCore.QEventLoop()
-                    grab.ready.connect(loop.quit)
-                    QtCore.QTimer.singleShot(2000, loop.quit)
-                    loop.exec_()
-                    image = grab.image()
-                    render_method = "QQuickItem.grabToImage"
+            image, render_method = capture()
             if image.isNull():
                 result.update(passed=False, runtime_checks=checks,
                               render_gap="Window and content-item captures returned null on offscreen QPA.",
@@ -848,7 +1469,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--child", choices=PHASES)
     parser.add_argument("--fixture")
-    parser.add_argument("--candidate-dir", default=str(ROOT / "analysis/capture-04/ui-candidate-trip-units-v1"))
+    parser.add_argument("--candidate-dir", default=str(ROOT / "analysis/capture-04/ui-candidate-menu-v1"))
     args = parser.parse_args()
     if args.child:
         return child(args.child, Path(args.fixture), args.candidate_dir)
@@ -907,7 +1528,7 @@ def main():
     fixture = Path(tempfile.mkdtemp(prefix="settings-", dir=HOST))
     page_command = [sys.executable, str(Path(__file__).resolve()), "--child", "settings-pages", "--fixture", str(fixture)]
     try:
-        process = subprocess.run(page_command, capture_output=True, text=True, timeout=50)
+        process = subprocess.run(page_command, capture_output=True, text=True, timeout=150)
         page_record = dict(command=page_command, exit_code=process.returncode, stderr=process.stderr)
         try:
             page_record["result"] = json.loads(process.stdout.strip().splitlines()[-1])

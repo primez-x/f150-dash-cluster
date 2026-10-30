@@ -4237,6 +4237,8 @@ Item {
         1,                                                 // 84 MyKey->MyKey 状态
     ]
     property int fordSetupInfoChanged: 0
+    // True after the first fordInfoNotify. Until then the fordSetupInfo values are defaults, not truck values (settings menu vnM).
+    property bool fordSetupKnown: false
 
     // 將應用的順序轉換成實際協議的id編號
     function mykey_param_id(index){

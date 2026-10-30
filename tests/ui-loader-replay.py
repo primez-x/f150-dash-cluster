@@ -18,7 +18,7 @@ GENERATOR = BASE / "tools" / "prepare_ui_candidate.py"
 DECODER_PATH = BASE / "tools" / "decode_qml_units.py"
 SOURCE = BASE / "installed" / "capture-04" / "rootfs" / "usr" / "bin" / "Launcher"
 OUTPUT_PARENT = BASE / "analysis" / "capture-04"
-OUTPUT = OUTPUT_PARENT / "ui-candidate-trip-units-v1"
+OUTPUT = OUTPUT_PARENT / "ui-candidate-menu-v1"
 RESULT = OUTPUT_PARENT / "ui-loader-replay-results.json"
 SCHEMA = BASE / "evidence" / "qt-5.14.2" / "qv4instr_moth_p.h"
 EXPECTED_SOURCE_SHA256 = "2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b"
@@ -37,28 +37,22 @@ LOADERS = {
         "source": BASE / "patches" / "capture-04" / "etc" / "common" / "Global.qml",
         "destination": "etc/vnG.qml",
     },
-    "qrc:/Trucks/menu/system/MenuSystemUnits.qml": {
-        "file_offset": 4660016,
-        "replacement": "file:/etc/vnU.qml",
-        "unit_qrc_path": "Trucks/menu/system/MenuSystemSettings.qml",
-        "source": BASE / "patches" / "capture-04" / "etc" / "vnU.qml",
-        "destination": "etc/vnU.qml",
-    },
-    "qrc:/Trucks/menu/system/MenuSystemFactory.qml": {
-        "file_offset": 4660368,
-        "replacement": "file:/etc/vnF.qml",
-        "unit_qrc_path": "Trucks/menu/system/MenuSystemSettings.qml",
-        "source": BASE / "patches" / "capture-04" / "etc" / "vnF.qml",
-        "destination": "etc/vnF.qml",
-    },
-    "qrc:/Trucks/menu/vehicle/MenuVehicleResetSettings.qml": {
-        "file_offset": 5011520,
-        "replacement": "file:/etc/vnR.qml",
-        "unit_qrc_path": "Trucks/menu/vehicle/MenuVehicleSettings.qml",
-        "source": BASE / "patches" / "capture-04" / "etc" / "vnR.qml",
-        "destination": "etc/vnR.qml",
+    "qrc:/Trucks/menu/MenuItemsList.qml": {
+        "file_offset": 4002512,
+        "replacement": "file:/etc/vnM.qml",
+        "unit_qrc_path": "Trucks/menu/MenuPage.qml",
+        "source": BASE / "patches" / "capture-04" / "etc" / "vnM.qml",
+        "destination": "etc/vnM.qml",
     },
 }
+
+
+# Copied with no cache redirect: vnM hosts vnF, and vnF opens vnB.
+COPIES = [
+    {"source": BASE / "patches" / "capture-04" / "etc" / "vnF.qml", "destination": "etc/vnF.qml"},
+    {"source": BASE / "patches" / "capture-04" / "etc" / "vnB.qml", "destination": "etc/vnB.qml"},
+]
+MODIFIED_UNITS = ["Trucks/menu/MenuPage.qml", "Trucks/menu/system/MenuSystemFactory.qml", "main.qml"]
 
 
 class ReplayFailure(Exception):
@@ -145,7 +139,7 @@ def inspect_candidate(directory: Path, decoder) -> dict[str, object]:
     patches = manifest["patches"]
     require(manifest.get("factory_code_removal", {}).get("records_cleared") == 13,
             "candidate retains vendor factory code records")
-    require(len(patches) == 5, f"expected five loader patches, found {len(patches)}")
+    require(len(patches) == len(LOADERS), f"expected {len(LOADERS)} loader patches, found {len(patches)}")
     patch_by_old = {patch["old_string"]: patch for patch in patches}
     require(set(patch_by_old) == set(LOADERS), "manifest loader set mismatch")
     allowed = set()
@@ -182,14 +176,13 @@ def inspect_candidate(directory: Path, decoder) -> dict[str, object]:
         allowed.update(range(record+4,record+8))
         allowed.update(range(record+24,record+34))
     changed = {index for index, (left, right) in enumerate(zip(original, candidate)) if left != right}
-    require(changed and changed <= allowed, "binary changes escaped the five loader and thirteen code records")
+    require(changed and changed <= allowed, "binary changes escaped the loader and factory code records")
     validations = manifest["validation"]
     require(validations["cache_units_before"] == validations["cache_units_after"] == 198, "cache unit count mismatch")
-    require(validations["modified_units"] == 4, "modified cache unit count mismatch")
-    require(validations["modified_unit_paths"] == ["Trucks/menu/system/MenuSystemFactory.qml", "Trucks/menu/system/MenuSystemSettings.qml",
-                                                   "Trucks/menu/vehicle/MenuVehicleSettings.qml", "main.qml"], "modified cache unit path set mismatch")
+    require(validations["modified_units"] == len(MODIFIED_UNITS), "modified cache unit count mismatch")
+    require(validations["modified_unit_paths"] == MODIFIED_UNITS, "modified cache unit path set mismatch")
     require(validations["cache_hash_checked_unit_paths"] == validations["modified_unit_paths"], "cache hash validation path set mismatch")
-    require(validations["other_units_unchanged"] == 194, "other cache unit count mismatch")
+    require(validations["other_units_unchanged"] == 198 - len(MODIFIED_UNITS), "other cache unit count mismatch")
     for key in (
         "registry_unchanged",
         "binary_size_unchanged",
@@ -204,7 +197,7 @@ def inspect_candidate(directory: Path, decoder) -> dict[str, object]:
         require(validations[key] is True, f"manifest validation failed: {key}")
 
     copies = manifest["source_copies"]
-    sources = list(LOADERS.values()) + [{"source":BASE/"patches/capture-04/etc/vnB.qml", "destination":"etc/vnB.qml"}]
+    sources = list(LOADERS.values()) + COPIES
     require(set(copies) == {item["destination"] for item in sources}, "source copy set mismatch")
     for expected in sources:
         destination = expected["destination"]
@@ -263,7 +256,7 @@ def main() -> int:
     require(SOURCE.is_file(), f"verified Launcher missing: {SOURCE}")
     source_bytes = SOURCE.read_bytes()
     require(sha256(source_bytes) == EXPECTED_SOURCE_SHA256 == decoder.SHA256, "installed Launcher baseline hash mismatch")
-    for config in LOADERS.values():
+    for config in list(LOADERS.values()) + COPIES:
         require(config["source"].is_file(), f"QML source candidate missing: {config['source']}")
     OUTPUT_PARENT.mkdir(parents=True, exist_ok=True)
     tests: dict[str, dict[str, object]] = {}
@@ -275,14 +268,15 @@ def main() -> int:
         require(baseline.returncode == 0, f"baseline candidate CLI failed: {baseline.stderr.strip()}")
         successful = inspect_candidate(successful_output, decoder)
         tests["baseline_source"] = {"result": "accepted", "source_sha256": EXPECTED_SOURCE_SHA256}
-        tests["exact_loader_redirects"] = {"result": "passed", "records": len(LOADERS), "units": 2}
+        tests["exact_loader_redirects"] = {"result": "passed", "records": len(LOADERS),
+                                           "units": len({item["unit_qrc_path"] for item in LOADERS.values()})}
         tests["factory_code_removal"] = {"result":"passed", "records":13, "native_text_unchanged":True}
-        tests["source_copy_hashes"] = {"result": "passed", "copies": len(LOADERS)+1}
+        tests["source_copy_hashes"] = {"result": "passed", "copies": len(LOADERS) + len(COPIES)}
         tests["cache_integrity"] = {
             "result": "passed",
             "decoded_units": 198,
-            "modified_units": 3,
-            "unchanged_other_units": 195,
+            "modified_units": len(MODIFIED_UNITS),
+            "unchanged_other_units": 198 - len(MODIFIED_UNITS),
             "size_unchanged": successful["candidate_size"] == len(source_bytes),
         }
 
@@ -342,7 +336,8 @@ def main() -> int:
         "device_execution": False,
     }
     write_result(result)
-    print("PASS: UI candidate replay completed; 198 units decoded, five loaders redirected, thirteen factory codes cleared.")
+    print(f"PASS: UI candidate replay completed; 198 units decoded, {len(LOADERS)} loaders redirected in "
+          f"{len({item['unit_qrc_path'] for item in LOADERS.values()})} units, thirteen factory codes cleared, {len(LOADERS) + len(COPIES)} QML files copied.")
     print(f"Result: {RESULT}")
     print(f"Candidate: {OUTPUT}")
     return 0
