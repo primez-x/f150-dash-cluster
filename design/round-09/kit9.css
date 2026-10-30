@@ -1,0 +1,13 @@
+/* Round 9: fuel in the bottom-right corner on every layout. Loads after round-08/kit8.css. */
+/* Fuel dial (towing B): low and reserve colour the value like the corner readout. */
+.dial.low .big { color: var(--caution); } .dial.reserve .big { color: var(--warn); } .dial.nodata .big { color: #4a525c; }
+
+/* Trailer brake bar: grey gain range at rest, accent output while braking. */
+.brake .top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+.brake.idle .rv { color: #8a929c; }
+.brake.on .rv { color: var(--accent); }
+.brake .bseg { position: relative; display: flex; gap: 4px; height: 18px; }
+.brake .bseg i { flex: 1; border-radius: 3px; background: rgba(255, 255, 255, .05); }
+.brake .bseg i.avail { background: var(--avail); }
+.brake .bseg i.lit { background: var(--accent); }
+.brake .bseg b { position: absolute; top: -6px; bottom: -6px; width: 2px; margin-left: -1px; background: #fff; opacity: .55; }

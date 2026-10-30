@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 9</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+  table { border-collapse: collapse; margin-top: 10px; }
+  td, th { padding: 4px 14px; text-align: right; border-bottom: 1px solid #222a33; color: #c9d1da; }
+  th:first-child, td:first-child { text-align: left; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 9 · Fuel bottom right</h1>
+<p>Fuel sits in the bottom-right corner on every layout, as on most clusters, so the driver finds fuel in one place in every mode.
+  Builds on the <a href="../round-08/">round 8</a> hierarchy; the A and B options stay the same. Pick A or B for each layout from this round.</p>
+<ul>
+  <li>Fuel module: a band along the shroud with E at the corner and F toward the center, the level in the corner, and the range below the level.
+    Towing B shows the same fuel module as a corner dial.</li>
+  <li>Daily layouts: instant economy moves to the bottom-left corner. Daily B option B keeps the temperature fan on the left.</li>
+  <li>Towing: RPM and boost stay bottom left. The trailer brake moves to the upper right, where the fuel bar sat: a segment bar with the gain as
+    a grey range and a marker, lit in the accent colour while braking.</li>
+  <li>Low fuel turns the module amber, and the low-fuel light turns the module red, in the same corner on every layout.</li>
+</ul>
+<h2>Daily A · pick A or B</h2>
+<div class="grid">
+  <div><h3>A · Corner modules: economy left, fuel right</h3><a href="daily-a-a.html"><img src="shots/daily-a-a-normal.png" alt=""></a></div>
+  <div><h3>B · Wings: economy band left, fuel band right</h3><a href="daily-a-b.html"><img src="shots/daily-a-b-normal.png" alt=""></a></div>
+  <div><h3>A · low-fuel light (reserve)</h3><a href="daily-a-a.html?scene=reserve"><img src="shots/daily-a-a-reserve.png" alt=""></a></div>
+  <div><h3>B · low-fuel light (reserve)</h3><a href="daily-a-b.html?scene=reserve"><img src="shots/daily-a-b-reserve.png" alt=""></a></div>
+</div>
+<h2>Daily B · pick A or B</h2>
+<div class="grid">
+  <div><h3>A · Corner modules: economy left, fuel right</h3><a href="daily-b-a.html"><img src="shots/daily-b-a-normal.png" alt=""></a></div>
+  <div><h3>B · Temperature fan left, fuel right</h3><a href="daily-b-b.html"><img src="shots/daily-b-b-normal.png" alt=""></a></div>
+  <div><h3>A · 45 miles to empty</h3><a href="daily-b-a.html?scene=lowfuel"><img src="shots/daily-b-a-lowfuel.png" alt=""></a></div>
+  <div><h3>B · 45 miles to empty</h3><a href="daily-b-b.html?scene=lowfuel"><img src="shots/daily-b-b-lowfuel.png" alt=""></a></div>
+</div>
+<h2>Towing · pick A or B</h2>
+<div class="grid">
+  <div><h3>A · Corner modules: RPM and boost left, fuel right; trailer brake bar upper right</h3><a href="tow-a.html"><img src="shots/tow-a-normal.png" alt=""></a></div>
+  <div><h3>B · Corner dials: RPM and boost left, fuel right; trailer brake bar upper right</h3><a href="tow-b.html"><img src="shots/tow-b-normal.png" alt=""></a></div>
+  <div><h3>A · braking: output 4.0 of gain 5.5</h3><a href="tow-a.html?scene=braking"><img src="shots/tow-a-braking.png" alt=""></a></div>
+  <div><h3>B · braking: output 4.0 of gain 5.5</h3><a href="tow-b.html?scene=braking"><img src="shots/tow-b-braking.png" alt=""></a></div>
+  <div><h3>A · low-fuel light (reserve)</h3><a href="tow-a.html?scene=reserve"><img src="shots/tow-a-reserve.png" alt=""></a></div>
+  <div><h3>B · low-fuel light (reserve)</h3><a href="tow-b.html?scene=reserve"><img src="shots/tow-b-reserve.png" alt=""></a></div>
+</div>
+</body>
+</html>
