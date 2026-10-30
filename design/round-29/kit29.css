@@ -1,0 +1,7 @@
+/* Round 29: panel card balance. Loads after round-28/kit28.css.
+   Audit of round 28: the page values hugged the left edge of the right card, while the temperature card is centered; the page
+   arrows sat outside the card (x 1368 and x 1790), one past the card edge. */
+/* The values form one block, centered in the card; the rows keep a common left edge. */
+.card.sec.sq .cells { align-self: center; }
+/* Page arrows inside the card edges. */
+.card.sec.sq .chev.l { left: 16px; } .card.sec.sq .chev.r { right: 16px; }

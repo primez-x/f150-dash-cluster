@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 29</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 29 · Towing A · Panel card balance</h1>
+<p>From my audit of round 28: the page values hugged the left edge of the right card, while the temperature card is centered, so the two cards read
+unbalanced. The page arrows also sat outside the card, one past the card edge. Every shot passes the margin check (<code>capture.js</code>: 14 shots).
+The shots use ticks B (round 26, locked) and gear B (round 25, the recommended open pick).</p>
+<ul>
+  <li>The page values form one block, centered in the card. The rows keep a common left edge, so the symbols still line up.</li>
+  <li>The page arrows sit inside the card edges.</li>
+</ul>
+<p><strong>No new pick.</strong> Ticks B is locked (round 26). Still open: gear A or B (round 25).</p>
+<div class="grid">
+  <div><h3>highway</h3><a href="tow-a.html?ticks=b&gear=b&"><img src="shots/tow-a-normal.png" alt=""></a></div>
+  <div><h3>six warning lights and cruise set</h3><a href="tow-a.html?ticks=b&gear=b&scene=busycruise"><img src="shots/tow-a-busycruise.png" alt=""></a></div>
+  <div><h3>transmission hot: the values fit the shorter card</h3><a href="tow-a.html?ticks=b&gear=b&scene=hottrans"><img src="shots/tow-a-hottrans.png" alt=""></a></div>
+  <div><h3>oil pressure low</h3><a href="tow-a.html?ticks=b&gear=b&scene=lowoil"><img src="shots/tow-a-lowoil.png" alt=""></a></div>
+  <div><h3>cold start</h3><a href="tow-a.html?ticks=b&gear=b&scene=cold"><img src="shots/tow-a-cold.png" alt=""></a></div>
+  <div><h3>signal lost</h3><a href="tow-a.html?ticks=b&gear=b&scene=stale"><img src="shots/tow-a-stale.png" alt=""></a></div>
+  <div><h3>braking</h3><a href="tow-a.html?ticks=b&gear=b&scene=braking"><img src="shots/tow-a-braking.png" alt=""></a></div>
+  <div><h3>crawl: the steering bar</h3><a href="tow-a.html?ticks=b&gear=b&scene=crawl"><img src="shots/tow-a-crawl.png" alt=""></a></div>
+  <div><h3>tires page</h3><a href="tow-a.html?ticks=b&gear=b&page=1"><img src="shots/tow-a-tires.png" alt=""></a></div>
+  <div><h3>low tire</h3><a href="tow-a.html?ticks=b&gear=b&scene=lowtire"><img src="shots/tow-a-lowtire.png" alt=""></a></div>
+  <div><h3>engine page</h3><a href="tow-a.html?ticks=b&gear=b&page=2"><img src="shots/tow-a-engine.png" alt=""></a></div>
+  <div><h3>trip page</h3><a href="tow-a.html?ticks=b&gear=b&page=4"><img src="shots/tow-a-trip.png" alt=""></a></div>
+  <div><h3>level page, numbers (round 20 A)</h3><a href="tow-a.html?ticks=b&gear=b&page=3"><img src="shots/tow-a-level.png" alt=""></a></div>
+  <div><h3>level page, truck images (round 20 B)</h3><a href="tow-a.html?ticks=b&gear=b&page=3&level=b"><img src="shots/tow-a-levelb.png" alt=""></a></div>
+</div>
+</body>
+</html>
