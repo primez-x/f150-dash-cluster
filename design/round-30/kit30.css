@@ -1,0 +1,3 @@
+/* Round 30: the gear and the drive mode at the side, bottom right. Loads after round-29/kit29.css. */
+.drv30 { display: flex; align-items: center; gap: 18px; }
+.drv30 .drow { display: flex; gap: 10px; }
