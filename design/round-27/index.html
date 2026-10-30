@@ -17,7 +17,7 @@
 <body>
 <h1>F150 cluster · Design round 27 · Towing A · Oil pressure in the left card</h1>
 <p>Your direction: the truck has no differential temperature; the card needs the coolant, engine oil, and transmission temperatures, and the oil pressure.
-Every shot passes the margin check (<code>capture.js</code>: 6 shots). The shots use the recommended open picks: ticks B (round 26) and gear B (round 25).</p>
+Every shot passes the margin check (<code>capture.js</code>: 6 shots). The shots use ticks B (round 26, locked) and gear B (round 25, the recommended open pick).</p>
 <ul>
   <li>Columns from the left: transmission, coolant, oil temperature, oil pressure. The two oil readings sit side by side.</li>
   <li>Oil pressure reads <code>oilPressurePercentage</code>, the value that the stock Ford oil meter draws as a 0 to 100 % bar. The value is a gauge position, not psi,
@@ -25,7 +25,7 @@ Every shot passes the margin check (<code>capture.js</code>: 6 shots). The shots
   <li>Below 20 % the column turns red, shows LOW, and the screen takes the red glow. The 20 % limit is a design value until checked against the truck.</li>
   <li>When the truck sends no oil pressure (0xFF), the column shows <code>--</code> and an empty bar.</li>
 </ul>
-<p><strong>No new pick.</strong> Still open: ticks A or B (round 26) and gear A or B (round 25).</p>
+<p><strong>No new pick.</strong> Ticks B is locked (round 26). Still open: gear A or B (round 25).</p>
 <div class="grid">
   <div><h3>highway: every reading normal, so the card shows bars only</h3><a href="tow-a.html?ticks=b&gear=b&"><img src="shots/tow-a-normal.png" alt=""></a></div>
   <div><h3>oil pressure low: the column turns red and shows LOW</h3><a href="tow-a.html?ticks=b&gear=b&scene=lowoil"><img src="shots/tow-a-lowoil.png" alt=""></a></div>

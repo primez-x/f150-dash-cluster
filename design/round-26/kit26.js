@@ -6,8 +6,9 @@
 // - The digits sit under the bar, with MPH under the digits. No numbers on the bar: the digits carry the number.
 // - The cruise set mark sits under the bar and points up at the bar, so the mark stays clear of the ticks above.
 // - At crawl speed the steering bar takes the same place, with the ticks above the bar (the center tick marks straight ahead).
-// - ?ticks=a|b. A: a plain bar. B: ticks every 10 mph above the bar, longer every 20.
-const TICKS = params.get("ticks") === "b";
+// - ?ticks=a|b. A: a plain bar. B: ticks every 10 mph above the bar, longer every 20. B is locked (2026-10-30) and is the
+//   default; ?ticks=a stays for the round 26 comparison.
+const TICKS = params.get("ticks") !== "a";
 // The bar follows the card top, so a later kit that moves the cards moves the bar too.
 const barY = () => CARD.top + 3;
 
