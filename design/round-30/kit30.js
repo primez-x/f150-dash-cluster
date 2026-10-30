@@ -5,11 +5,12 @@
 // - The center keeps the speed bar, the digits, MPH, and the cruise row under MPH.
 // - The gear (D with the gear number) and the drive mode chip sit together, smaller: gear 40 px (was 60 px).
 //   A drive mode other than 2H keeps the filled chip, and the rear locker keeps the amber chip, so a change still shows.
-// - ?side=a|b is taken by round 23 (fixed to b here), so the pick uses ?drv=a|b.
+// - ?side=a|b is taken by round 23 (fixed to b here), so the pick uses ?drv=a|b. B is locked (2026-10-30) and is the default;
+//   ?drv=a stays for the round 30 comparison.
 //   A: under the right card, centered on the card, 24 px below the card.
 //   B: in the bottom-right corner, right-aligned with the screen margin, above the trailer brake band.
 // This replaces the open round 25 gear pick (beside the digits or in the row): neither place stays.
-const DRV = params.get("drv") === "b" ? "b" : "a";
+const DRV = params.get("drv") === "a" ? "a" : "b";
 const DRV_SIZE = 40;
 const finish28 = finish;
 finish = function (s) {

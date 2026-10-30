@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 31</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 31 · Towing A · Reverse gear in the center</h1>
+<p>Your direction: round 30 B (the gear and the drive mode in the bottom-right corner), with dynamic sizing for the gear.
+Every shot passes the margin check (<code>capture.js</code>: 9 shots).</p>
+<ul>
+  <li>In reverse, R moves to the center under MPH, at 96 px and in full white. The cruise readout uses that place, and cruise is off in reverse.</li>
+  <li>The drive mode chip stays in the corner. Every other gear stays small in the corner.</li>
+</ul>
+<p><strong>No new pick.</strong> Round 30 B is locked and is now the default.</p>
+<div class="grid">
+  <div><h3>reversing: R large in the center</h3><a href="tow-a.html?scene=backing"><img src="shots/tow-a-backing.png" alt=""></a></div>
+  <div><h3>highway: D4 small in the corner</h3><a href="tow-a.html?"><img src="shots/tow-a-normal.png" alt=""></a></div>
+  <div><h3>crawl forward: the gear stays small</h3><a href="tow-a.html?scene=crawl"><img src="shots/tow-a-crawl.png" alt=""></a></div>
+  <div><h3>cruise set</h3><a href="tow-a.html?scene=busycruise"><img src="shots/tow-a-busycruise.png" alt=""></a></div>
+  <div><h3>braking</h3><a href="tow-a.html?scene=braking"><img src="shots/tow-a-braking.png" alt=""></a></div>
+  <div><h3>4L</h3><a href="tow-a.html?scene=d4l"><img src="shots/tow-a-d4l.png" alt=""></a></div>
+  <div><h3>4L with the rear locker</h3><a href="tow-a.html?scene=locker"><img src="shots/tow-a-locker.png" alt=""></a></div>
+  <div><h3>transmission hot</h3><a href="tow-a.html?scene=hottrans"><img src="shots/tow-a-hottrans.png" alt=""></a></div>
+  <div><h3>tires page</h3><a href="tow-a.html?page=1"><img src="shots/tow-a-tires.png" alt=""></a></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,3 @@
+/* Round 31: the reverse gear in the center. Loads after round-30/kit30.css. */
+/* Full white, as the speed digits: R is a primary reading while reversing. */
+.gear4.rev31 { color: #f4f7fa; }
