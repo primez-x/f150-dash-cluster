@@ -10,3 +10,11 @@
 .cr32.on { background: var(--ok); }
 /* Cue B: the MPH label in green while set. */
 .sunit.cr32b { color: var(--ok); }
+/* Cancel: red for 1 s, then a 0.8 s fade into the resume colours (the animation ends on the normal styles). */
+.cancel32 #cset-arrow { animation: cancel32-fill 1.8s linear; }
+.cancel32 .cr32 { animation: cancel32-bg 1.8s linear; }
+.cancel32 .sunit { animation: cancel32-color 1.8s linear; }
+.cancel32.hold #cset-arrow, .cancel32.hold .cr32, .cancel32.hold .sunit { animation-play-state: paused; }
+@keyframes cancel32-fill { 0%, 55% { fill: var(--hot); } }
+@keyframes cancel32-bg { 0%, 55% { background: var(--hot); } }
+@keyframes cancel32-color { 0%, 55% { color: var(--hot); } }

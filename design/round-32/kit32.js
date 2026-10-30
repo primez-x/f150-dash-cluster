@@ -8,6 +8,9 @@
 // - Resume reference: while cruise is on but not set (after a cancel), an amber arrow marks the last set speed, the speed
 //   that Resume returns to. With no earlier set speed (cruise just switched on), no arrow shows.
 //   Truck check: whether cruiseSpeedSet keeps the last set speed after a cancel is unverified.
+// - Cancel: when cruise goes from set to on (brake or Cancel), the arrow, the cruise symbol, and MPH turn red, hold 1 s, then
+//   fade over 0.8 s into the resume state (amber arrow, amber symbol, grey MPH). kit32.css runs the change (cancel32).
+//   The "cruisecancel" scene holds the red frame; ?cancel=1 runs a live demo that cancels and resumes every 4 s.
 // - Number: green, above the arrow. A change of the set speed shows the number at once; the number holds for
 //   SET_HOLD_MS after the last change, then fades over SET_FADE_MS. A new change restarts the hold.
 // - ?cue=a|b, the steady cue while cruise is on. A: a small cruise symbol beside MPH (amber while cruise is on but not set,
@@ -21,6 +24,7 @@ const CRUISE_ICON = `${IMG}/common/acc/cruise.png`;
 SCENES.cruiseadj = s => Object.assign(SCENES.cruise(s), { cruiseSet: 66, adjusting: true });
 SCENES.cruiseon = s => Object.assign(s, { cruise: "available" });
 SCENES.cruisefresh = s => Object.assign(s, { cruise: "available", cruiseSet: null });
+SCENES.cruisecancel = s => Object.assign(s, { cruise: "available", cancelled: true });
 const cruiseSetOn = s => ["set", "acc"].includes(s.cruise);
 
 const setArrow = (x, y) => `M${x.toFixed(1)} ${y - 5} l-9 -15 h18 Z`;
@@ -40,8 +44,25 @@ finish = function (s) {
   const unit = document.querySelector(".sunit");
   if (CUE.includes("a") && s.cruise !== "off") unit.insertAdjacentHTML("afterbegin", `<i class="cr32 ${cruiseSetOn(s) ? "on" : ""}" style="--src:url(${CRUISE_ICON})" data-field="cruiseState"></i>`);
   if (CUE.includes("b") && cruiseSetOn(s)) unit.classList.add("cr32b");
+  if (s.cancelled) document.body.classList.add("cancel32", "hold");
   if (params.has("adjust") && cruiseSetOn(s)) cruiseDemo(s);
+  if (params.has("cancel") && cruiseSetOn(s)) cancelDemo();
 };
+
+// Live demo of a cancel and a resume: set (green) for 4 s, cancel (red, then amber) for 4 s, and again.
+function cancelDemo() {
+  const arrow = document.getElementById("cset-arrow"), icon = document.querySelector(".cr32"), unit = document.querySelector(".sunit");
+  let set = true;
+  setInterval(() => {
+    set = !set;
+    arrow.setAttribute("fill", set ? "var(--ok)" : "var(--caution)");
+    icon?.classList.toggle("on", set);
+    if (CUE.includes("b")) unit.classList.toggle("cr32b", set);
+    document.body.classList.remove("cancel32");
+    void document.body.offsetWidth;
+    if (!set) document.body.classList.add("cancel32");
+  }, 4000);
+}
 
 // Live demo of a set-speed change: move the arrow, show the number, restart the hold.
 function cruiseDemo(s) {
