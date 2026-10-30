@@ -9,6 +9,11 @@ async (page) => {
   page.on("pageerror", e => errors.push(page.url() + ": " + e.message));
   page.on("response", r => { if (r.status() >= 400 && !r.url().endsWith("favicon.ico")) errors.push(r.url() + ": " + r.status()); });
   await page.setViewportSize({ width: 1920, height: 932 });
+  // Load the kits from disk on every run: a cached kit would test old code.
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Network.enable");
+  await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
+  await cdp.send("Network.clearBrowserCache");
   const shots = {
     "daily-a-a": [["normal", ""], ["cruise", "scene=cruise"], ["busy", "scene=busy"]],
     "daily-a-b": [["normal", ""]],

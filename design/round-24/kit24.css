@@ -1,0 +1,12 @@
+/* Round 24: wider spacing and the odometer in a top corner. Loads after round-23/kit23.css. */
+/* Odometer: small and quiet; not a driving reading. Two short lines (label over value) keep the corner narrow: x 1805 to 1900,
+   85 px clear of the clock stack. */
+.odo24 { display: flex; flex-direction: column; gap: 2px; font: 20px "BMW Type Global"; letter-spacing: 1px; color: #c9d1da; opacity: .55; white-space: nowrap; }
+.odo24.right { align-items: flex-end; }
+.odo24 .k { font-size: 14px; letter-spacing: 2px; color: #8a929c; }
+/* The wheel rim corners draw see-through here, so the review shows the odometer that sits behind the rim. */
+.mask22 path.rimLeft, .mask22 path.rimRight { fill: rgba(13, 15, 18, .55); }
+.odo24 small { font-size: 14px; color: #8a929c; margin-left: 4px; }
+/* Towing A option B: larger speed digits; the gear block moves out with the digits and up to the digit top. */
+body.spread-b .speed { top: 130px; font-size: 250px; }
+body.spread-b .gblk { left: 1300px; top: 182px; }

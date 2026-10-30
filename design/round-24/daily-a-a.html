@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 24 · Daily A · A Corner modules</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="../round-02/kit.css">
+<link rel="stylesheet" href="../round-04/kit4.css">
+<link rel="stylesheet" href="../round-06/kit6.css">
+<link rel="stylesheet" href="../round-07/kit7.css">
+<link rel="stylesheet" href="../round-08/kit8.css">
+<link rel="stylesheet" href="../round-09/kit9.css">
+<link rel="stylesheet" href="../round-20/kit20.css">
+<link rel="stylesheet" href="../round-22/kit22.css">
+<link rel="stylesheet" href="../round-23/kit23.css">
+<link rel="stylesheet" href="kit24.css">
+<style>
+  .speed { left: 960px; top: 144px; transform: translateX(-50%); font-size: 240px; letter-spacing: -4px; }
+  .sunit { left: 960px; top: 376px; transform: translateX(-50%); font: var(--small) "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
+  .grow { left: 960px; top: 430px; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; }
+  .tread { top: 540px; display: flex; align-items: center; gap: 12px; }
+</style>
+</head>
+<body class="daily">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="../round-02/kit.js"></script>
+<script src="../round-04/kit4.js"></script>
+<script src="../round-06/kit6.js"></script>
+<script src="../round-07/kit7.js"></script>
+<script src="../round-08/kit8.js"></script>
+<script src="../round-09/kit9.js"></script>
+<!-- kit20 draws the heading tape; the daily pages lack the towing panel tables that kit20 extends, so these start empty. -->
+<script>var FOCUS = [], SYM = {}, PAGE_SYM = {}, PAGE_STATE = {}, SEC_FOCUS = {}, SEC = {};</script>
+<script src="../round-20/kit20.js"></script>
+<script src="../round-22/kit22.js"></script>
+<script src="../round-23/kit23.js"></script>
+<script src="kit24.js"></script>
+<script>
+// Round 24: wider spacing (?spread=a|b on Towing A) and the odometer in a top corner (kit24.js).
+// Round 23: side stacks (?side=a|b), the compass top center, and cruise beside the speed (kit23.js).
+// Round 22: the round 09 page on the measured visible area, with the top bar from ?top=a|b (kit22.js).
+// Daily A with one module per bottom corner: a thick band along the shroud and one large value in the pocket.
+// Fuel on the right (E at the corner, F toward the center), as on every round 9 layout; instant economy on the left. The crescents end higher to make room.
+const s = state("daily");
+frame(s);
+layer(
+  crescents(s, { a0: 252, t: [252, 296] }) +
+  band2({ value: s.mpgNow / 30, field: "instant mpg" }) +
+  fuelBand(s)
+);
+place(`
+  <div class="abs big speed" data-field="speed">${digits(s.speed)}</div>
+  <div class="abs sunit" data-field="vehicleSpeedUnit">MPH</div>
+  <div class="abs grow">${gear(s, 84)}${chip(s)}</div>
+  <div class="abs tread temp ${s.T.coolant.state}" style="left:400px">${tIcon(s.T.coolant)}${tempText(s.T.coolant)}</div>
+  <div class="abs tread temp ${s.T.oil.state}" style="right:400px">${tempText(s.T.oil)}${tIcon(s.T.oil)}</div>
+  ${cornerRead({ at: "left:48px;top:628px", label: "MPG NOW", value: s.mpgNow, cls: "xl", field: "instant mpg" })}
+  ${fuelRead(s)}
+  ${card(s, "left:640px;top:540px;width:640px;height:156px")}`);
+finish(s);
+</script>
+</body>
+</html>

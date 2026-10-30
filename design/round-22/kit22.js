@@ -72,14 +72,17 @@ function shroudViolations() {
         pts.push([x, y - sw], [x, y + sw], [x - sw, y], [x + sw, y]);
       }
     } else {
-      let r = el.getBoundingClientRect();
-      if ([...el.childNodes].every(n => n.nodeType === 3) && el.textContent.trim()) {
-        const range = document.createRange(); range.selectNodeContents(el); r = range.getBoundingClientRect();
-      } else if (el.children.length) continue;   // a container: the children carry the drawing
-      if (!r.width || !r.height || r.width * k > 1800) continue;
-      const x0 = (r.left - c.left) * k, x1 = (r.right - c.left) * k, y0 = (r.top - c.top) * k, y1 = (r.bottom - c.top) * k;
-      for (let x = x0; x <= x1 + .1; x += Math.max(2, (x1 - x0) / 40)) pts.push([x, y0], [x, y1]);
-      for (let y = y0; y <= y1 + .1; y += Math.max(2, (y1 - y0) / 20)) pts.push([x0, y], [x1, y]);
+      // Each text node of the element (the children carry their own drawing), or the box of an element with no children.
+      const rects = [...el.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim()).map(n => {
+        const range = document.createRange(); range.selectNodeContents(n); return range.getBoundingClientRect();
+      });
+      if (!rects.length && !el.children.length) rects.push(el.getBoundingClientRect());
+      for (const r of rects) {
+        if (!r.width || !r.height || r.width * k > 1800) continue;
+        const x0 = (r.left - c.left) * k, x1 = (r.right - c.left) * k, y0 = (r.top - c.top) * k, y1 = (r.bottom - c.top) * k;
+        for (let x = x0; x <= x1 + .1; x += Math.max(2, (x1 - x0) / 40)) pts.push([x, y0], [x, y1]);
+        for (let y = y0; y <= y1 + .1; y += Math.max(2, (y1 - y0) / 20)) pts.push([x0, y], [x1, y]);
+      }
     }
     let worst = 0, at = null;
     for (const [x, y] of pts) { const o = maskOver(x, y); if (o > worst) { worst = o; at = [x, y]; } }
