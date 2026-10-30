@@ -20,7 +20,7 @@ BUSYBOX = ROOT / "tools/busybox/busybox"
 CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v1"
 ORIGINAL = ROOT / "installed/capture-04/rootfs/usr/bin/Launcher"
 RESULT = ROOT / "analysis/capture-04/usb-install-replay-results.json"
-ETC = ["vnB.qml", "vnF.qml", "vnG.qml", "vnM.qml", "vnV.qml"]
+ETC = ["vnB.qml", "vnF.qml", "vnG.qml", "vnM.qml", "vnS.qml", "vnV.qml"]
 APPLETS = ["awk", "cat", "chmod", "cp", "date", "df", "grep", "head", "mkdir", "mv", "rm", "sha256sum", "sync", "tar", "wc"]
 MARKERS = {"install": ("VIKNAV-UI-INSTALL.txt", "VIKNAV_UI_INSTALL_MENU_V1"),
            "rollback": ("VIKNAV-UI-ROLLBACK.txt", "VIKNAV_UI_ROLLBACK_CAPTURE04"),

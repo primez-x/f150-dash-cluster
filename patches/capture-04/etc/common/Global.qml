@@ -2935,7 +2935,19 @@ Item {
     property int swcState: 0
     property int swcStep: 0         // 滚轮时为步进值
     property int swcChanged: 0
+    // Factory > Screen grid: a full-screen pixel grid (/etc/vnS.qml) for a photo of the visible screen area.
+    // main.qml loads Global last in the window, so the grid covers the dashboard. The value is not saved.
+    property int screenGridEnabled: 0
+    property double screenGridShownAt: 0
+    onScreenGridEnabledChanged: screenGridShownAt=Date.now()
+    Loader {
+        active: screenGridEnabled
+        source: "file:/etc/vnS.qml"
+    }
     onSwcChangedChanged: {
+        // Any wheel key event hides the screen grid. Events in the first second belong to the key that showed the grid.
+        if(screenGridEnabled && Date.now()-screenGridShownAt>1000)
+            screenGridEnabled=0
         switch(swcKey){
         case swcNext:
             switch(swcState){

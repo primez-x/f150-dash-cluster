@@ -361,7 +361,7 @@ def settings_pages(fixture, result, app, engine, callbacks, intercepted, denied,
     result["precompiled_ui_dependencies"] = precompiled
     require(all((entry['ready'] for entry in precompiled)), precompiled)
     pages = []
-    for name, alias in (("vnB.qml", "Factory.qml"), ("vnF.qml", "Catalog.qml"), ("vnM.qml", "Menu.qml")):
+    for name, alias in (("vnB.qml", "Factory.qml"), ("vnF.qml", "Catalog.qml"), ("vnM.qml", "Menu.qml"), ("vnS.qml", "Grid.qml")):
         source = ROOT / "patches/capture-04/etc" / name
         content = source.read_bytes()
         copy = fixture / alias
@@ -401,6 +401,7 @@ Window {
             property int menuSettingsSubPageItemSetup: 0
             property int uartDebugEnabled: 0
             property int mediaImageEnabled: 0
+            property int screenGridEnabled: 0
             property bool modelCarSelection: false
             property int menuBarItemIndex: 0
             property int language: 1
@@ -642,7 +643,7 @@ Window {
         advance()
         page = window.property("page")
         verify("page instantiated: " + pages[index]["source"], page is not None)
-        count = (20,16)[index]
+        count = (20,17)[index]
         candidates = [obj for obj in page.findChildren(QtCore.QObject)
                       if obj.metaObject().className().startswith("SwipeView") and obj.property("count") == count]
         if not candidates:
@@ -753,10 +754,10 @@ Window {
     expected_titles = ["General settings","Advanced settings","Fuel tank setup","Vehicle profile","Odometer setup",
                        "Service commands","ADB debugging: enable","ADB debugging: disable","Debug logging: off",
                        "Debug logging: warnings","Debug logging: UART receive","Debug logging: UART transmit",
-                       "Debug logging: MCU","USB image preview: enable","Car model options","Back"]
+                       "Debug logging: MCU","USB image preview: enable","Screen grid","Car model options","Back"]
     verify("catalog exposes all settings and tools", [value(row,"mTitle") for row in catalog_rows] == expected_titles)
     press(QtCore.Qt.Key_Up)
-    verify("catalog Up wraps to Back", menu.property("currentIndex") == 15)
+    verify("catalog Up wraps to Back", menu.property("currentIndex") == 16)
     press(QtCore.Qt.Key_Down)
     verify("catalog Down wraps to General", menu.property("currentIndex") == 0)
     press(QtCore.Qt.Key_Down,False)
@@ -804,6 +805,13 @@ Window {
     press(QtCore.Qt.Key_Return)
     verify("explicit image preview enable", value(global_state,"mediaImageEnabled") == 1)
     menu.setProperty("currentIndex",14)
+    press(QtCore.Qt.Key_Return, False)
+    verify("screen grid waits for release", value(global_state,"screenGridEnabled") == 0)
+    release(QtCore.Qt.Key_Return)
+    verify("screen grid shows and closes the menu", value(global_state,"screenGridEnabled") == 1 and value(global_state,"menuBarIndex") == 0)
+    global_state.setProperty("screenGridEnabled", 0)
+    global_state.setProperty("menuBarIndex", 1)
+    menu.setProperty("currentIndex",15)
     press(QtCore.Qt.Key_Return)
     verify("explicit model options toggle", value(global_state,"modelCarSelection") is True)
     def mode_event(state):
@@ -813,7 +821,7 @@ Window {
     for state in (1,2,2,2,0):
         mode_event(state)
     verify("mode hold activates once and consumes release", value(global_state,"modelCarSelection") is False and
-           menu.property("currentIndex") == 14)
+           menu.property("currentIndex") == 15)
     menu.setProperty("currentIndex",0)
     for state in (1,2,2,0):
         mode_event(state)
@@ -821,7 +829,7 @@ Window {
            any(obj.metaObject().className().startswith("SwipeView") and obj.property("count") == 20 and obj.property("currentIndex") == 0
                for obj in catalog.findChildren(QtCore.QObject)))
     press(QtCore.Qt.Key_Escape)
-    menu.setProperty("currentIndex",15)
+    menu.setProperty("currentIndex",16)
     press(QtCore.Qt.Key_Return)
     verify("catalog Back reaches System Settings", value(global_state,"menuSettingsPageIndex") == 0)
     result["factory_catalog_scope"] = "Actual catalog and General candidate. Other vendor pages use safe markers with recorded Back contracts. Diagnostic methods record arguments only."
@@ -883,7 +891,7 @@ Window {
         return [entry for entry in calls_since(mark) if entry[0] == name]
     def hosted_catalog():
         return [obj for obj in menu_state["page"].findChildren(QtCore.QObject)
-                if obj.metaObject().className().startswith("SwipeView") and obj.property("count") == 16]
+                if obj.metaObject().className().startswith("SwipeView") and obj.property("count") == 17]
     def wait_until(predicate, limit_ms):
         # QML Timers follow the animation clock, which can lag real time in the offscreen harness. Poll up to a bound.
         start = time.monotonic()
@@ -1429,6 +1437,22 @@ Window {
     texts = item_texts(sip.cast(menu_state["page"], QtQuick.QQuickItem))
     verify("menu view shows unit segments and the follow note", {"km/h", "mph", "°C", "°F", "Follow"} <= texts)
     preview("units", "vnM locked view; System > Units.")
+    # Screen grid (vnS): the page fills the window and shows the size, the frame legend, and point labels.
+    window.resize(1920, 720)
+    window.setProperty("pageUrl", QtCore.QUrl.fromLocalFile(pages[3]["copy"]).toString())
+    advance()
+    grid = window.property("page")
+    verify("grid fills the window", grid is not None and grid.property("width") == 1920 and grid.property("height") == 720)
+    texts = item_texts(sip.cast(grid, QtQuick.QQuickItem))
+    verify("grid shows the screen size and the frame legend", "Screen 1920 × 720 px · center 960,360" in texts
+           and {"white 0", "red 10", "purple 70"} <= texts)
+    verify("grid labels points every 200 x 100 px", {"200,100", "1600,600"} <= texts and "1800,100" not in texts)
+    QtTest.QTest.qWait(150)
+    image, render_method = capture()
+    target = fixture / "preview-screen-grid.png"
+    verify("grid preview saved", not image.isNull() and image.save(str(target)))
+    renders.append(dict(path=str(target), method=render_method, sha256=hashlib.sha256(target.read_bytes()).hexdigest(),
+                        width=image.width(), height=image.height(), label="vnS screen grid at 1920 x 720."))
     window.setProperty("pageUrl", "")
     advance()
     result["menu_scope"] = ("vnM engine on host Qt with safe stubs. G-force uses a stub with the compiled Back contract; "

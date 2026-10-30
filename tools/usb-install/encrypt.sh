@@ -20,13 +20,14 @@ LOG_WAIT=180
 # Captured original Launcher (capture-04) and the ui-candidate-menu-v1 files.
 ORIGINAL_SHA256=2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b
 CANDIDATE_SHA256=3aee8242a8cb167069750bb721f34b5ab66e48cf634fe7c3fcb81b75abd49d8a
-ETC_FILES="vnB.qml vnF.qml vnG.qml vnM.qml vnV.qml"
+ETC_FILES="vnB.qml vnF.qml vnG.qml vnM.qml vnS.qml vnV.qml"
 etc_sha256() {
     case "$1" in
         vnB.qml) echo cf4c014945f604b5a0da27d70ec0849a54fb57c972bd9ca55c3f0effd8504aee ;;
-        vnF.qml) echo b9db48d55d04d3dc941d32142a6c435cfa89d9f184029bab5ea9b63621879f84 ;;
-        vnG.qml) echo bf45cee20d9cfd3d1cfbe8c2461522968e8c2ba1d4104d0323d2eb37e64dbfde ;;
+        vnF.qml) echo e3b79fe488506ec3d1c096f3b545df1c166a3e9928f773b1b6507a63e1eb1e12 ;;
+        vnG.qml) echo ce54efec52bfda1778234c1939f29dae6c703d1aa3315856260e37543edaf33e ;;
         vnM.qml) echo bcfbcb20cf4e2ae1853fc442983170a4303c1f4765979378e65dfbb306e8746b ;;
+        vnS.qml) echo 4d285e170e0de495842a247faf83c2d62834ceea8c1e25be7c56de45ee8bfa45 ;;
         vnV.qml) echo ef6d29dae3b736fa8239930c62cb582abc5c302441d47e35ac0f8c18634829c1 ;;
     esac
 }

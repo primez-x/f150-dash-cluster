@@ -47,10 +47,11 @@ LOADERS = {
 }
 
 
-# Copied with no cache redirect: vnM hosts vnF, and vnF opens vnB.
+# Copied with no cache redirect: vnM hosts vnF, vnF opens vnB, and Global opens vnS.
 COPIES = [
     {"source": BASE / "patches" / "capture-04" / "etc" / "vnF.qml", "destination": "etc/vnF.qml"},
     {"source": BASE / "patches" / "capture-04" / "etc" / "vnB.qml", "destination": "etc/vnB.qml"},
+    {"source": BASE / "patches" / "capture-04" / "etc" / "vnS.qml", "destination": "etc/vnS.qml"},
 ]
 MODIFIED_UNITS = ["Trucks/menu/MenuPage.qml", "Trucks/menu/system/MenuSystemFactory.qml", "main.qml"]
 

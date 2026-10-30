@@ -52,6 +52,8 @@ SOURCE_FILES = {item["destination"]: item["source_path"] for item in PATCHES}
 # vnM hosts the Factory menu vnF, and vnF opens vnB. Both load by file URL, with no cache redirect.
 SOURCE_FILES["etc/vnF.qml"] = BASE / "patches/capture-04/etc/vnF.qml"
 SOURCE_FILES["etc/vnB.qml"] = BASE / "patches/capture-04/etc/vnB.qml"
+# Global loads the Factory screen grid vnS by file URL.
+SOURCE_FILES["etc/vnS.qml"] = BASE / "patches/capture-04/etc/vnS.qml"
 ELF_HEADER = struct.Struct("<16sHHIQQQIHHHHHH")
 
 

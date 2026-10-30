@@ -25,6 +25,7 @@ ItemInfo {
         {"title":"Debug logging: UART transmit", "action":"debug", "value":4},
         {"title":"Debug logging: MCU", "action":"debug", "value":8},
         {"title":"USB image preview: enable", "action":"preview"},
+        {"title":"Screen grid", "action":"grid"},
         {"title":"Car model options", "action":"model"}
     ]
     property var mFactorySubPage: [
@@ -76,6 +77,11 @@ ItemInfo {
         case "debug": mGlobalId.item.uartDebugEnabled=entry.value; break
         case "preview": mGlobalId.item.mediaImageEnabled=1; break
         case "model": mGlobalId.item.modelCarSelection=!mGlobalId.item.modelCarSelection; break
+        case "grid":
+            // The grid covers the whole screen. Close the menu, so the next key press returns to the dashboard.
+            mGlobalId.item.screenGridEnabled=1
+            mGlobalId.item.menuBarIndex=0
+            break
         }
         return 1
     }
