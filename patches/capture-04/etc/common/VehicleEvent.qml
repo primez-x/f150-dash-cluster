@@ -1123,7 +1123,7 @@ Item {
             mGlobalId.item.trucksTrailerDistance=getTrucksTrailerDistance()
             mGlobalId.item.trucksTrailerGain=getTrucksTrailerGain()
             mGlobalId.item.trucksOilLifePercentage=getTrucksTrailerOilLifePercentage()
-            mGlobalId.item.trucksOilLifeTrip=getTrucksTrailerOilLifeTrip()
+            mGlobalId.item.trucksOilLifeTripRaw=getTrucksTrailerOilLifeTrip()
             mGlobalId.item.trucksFrontRadarState=getTrucksTrailerFrontRadarState()
             mGlobalId.item.trucksRearRadarState=getTrucksTrailerRrearRadarState()
             mGlobalId.item.trucksOilPressure=getTrucksTrailerOilPressure()
@@ -2238,7 +2238,7 @@ Item {
         "sinceResetAvgFuel", "sinceResetAvgSpeed", "sinceResetTravelTime", "sinceResetTravelMileage",
         "sinceStartAvgFuel", "sinceStartAvgSpeed", "sinceStartTravelTime", "sinceStartTravelMileage",
         "sinceRefuelingDte", "sinceRefuelingAvgFuel", "sinceRefuelingAvgSpeed",
-        "waterTemp", "oilTemp", "gearBoxTemp", "batterVoltage", "trucksOilLifePercentage", "rtcDate", "rtcTime"
+        "waterTemp", "oilTemp", "gearBoxTemp", "batterVoltage", "trucksOilLifePercentage", "trucksOilLifeTripRaw", "trucksTrailerDistance", "rtcDate", "rtcTime"
     ]
     Timer {
         interval: 1000

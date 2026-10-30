@@ -17,12 +17,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools/usb-install/encrypt.sh"
 BUSYBOX = ROOT / "tools/busybox/busybox"
-CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-fuel-log-v1"
+CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-trip-units-v1"
 ORIGINAL = ROOT / "installed/capture-04/rootfs/usr/bin/Launcher"
 RESULT = ROOT / "analysis/capture-04/usb-install-replay-results.json"
 ETC = ["vnB.qml", "vnF.qml", "vnG.qml", "vnU.qml", "vnV.qml"]
 APPLETS = ["awk", "cat", "chmod", "cp", "date", "df", "grep", "head", "mkdir", "mv", "rm", "sha256sum", "sync", "tar", "wc"]
-MARKERS = {"install": ("VIKNAV-UI-INSTALL.txt", "VIKNAV_UI_INSTALL_FUEL_LOG_V1"),
+MARKERS = {"install": ("VIKNAV-UI-INSTALL.txt", "VIKNAV_UI_INSTALL_TRIP_UNITS_V1"),
            "rollback": ("VIKNAV-UI-ROLLBACK.txt", "VIKNAV_UI_ROLLBACK_CAPTURE04"),
            "log": ("VIKNAV-UI-LOG.txt", "VIKNAV_UI_LOG"),
            "record": ("VIKNAV-UI-RECORD.txt", "VIKNAV_UI_RECORD")}

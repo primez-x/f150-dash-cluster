@@ -187,13 +187,38 @@ for (let unit = 0; unit < 3; unit++) for (const mode of [0, 1]) {
     check(`lpk/u${unit}/mode${mode}/raw${raw}/validity`, valid, () => context.lpkValid);
     check(`lpk/u${unit}/mode${mode}/raw${raw}/label`, label, () => context.lpkUnit);
     check(`lpk/u${unit}/mode${mode}/raw${raw}/text`, (valid ? converted : '--.-') + ' ' + label, () => call('getLPK(1)'));
-    check(`lpk/u${unit}/mode${mode}/raw${raw}/data`, valid ? mode === 0 && raw > 100 ? 0 : converted : 0, () => call('getLpkData()'));
+    // The compiled FuelInfo and MpgInfo pages label getLpkData() with fuelUnit (distance consumption), so flow mode (L/h) shows 0.
+    check(`lpk/u${unit}/mode${mode}/raw${raw}/data`, valid && mode === 0 ? raw > 100 ? 0 : converted : 0, () => call('getLpkData()'));
     check(`lpk/u${unit}/mode${mode}/raw${raw}/numeric-binding`, true, () => Number.isFinite(Number(call('getLpkData()'))));
     check(`lpk/u${unit}/mode${mode}/raw${raw}/visibility`, raw !== 32766, () => call('isLpkVisible()'));
     lpkStates.push({unit, mode, raw, valid: context.lpkValid, label: context.lpkUnit, text: call('getLPK(1)'), data: call('getLpkData()')});
   }
 }
 check('lpk/raw-measurement-has-no-animation', false, () => lpkBehavior);
+// Travel and idle times arrive in minutes. The compiled SinceInfoItem page labels the travel time "h:m".
+context.Funcs = {prefixInteger: (num, length) => (Array(length).join('0') + num).slice(-length)};
+for (const name of ['getSinceResetTravelTime', 'getSinceStartTravelTime', 'getIdleUseTime']) {
+  new vm.Script('function ' + name + '(){' + extract(texts['Global.qml'], 'function ' + name + '(') + '}').runInContext(context, {timeout: 100});
+  const property = name === 'getIdleUseTime' ? 'idleUseTime' : name.slice(3, 4).toLowerCase() + name.slice(4);
+  for (const [minutes, expected] of [[0, '0:00'], [5, '0:05'], [65, '1:05'], [600, '10:00'], [6039, '100:39'], [65535, name === 'getIdleUseTime' ? '1092:15' : '--:--']]) {
+    context[property] = minutes;
+    check(`time/${name}/minutes${minutes}`, expected, () => call(name + '()'));
+  }
+}
+// The compiled OilLifeinfo page shows trucksOilLifeTrip next to tripUnit. The adapter sends a 16-bit distance in km, like odo and trip.
+for (const name of ['tripFactor', 'trucksOilLifeTrip']) bind(name);
+const trailerNative = vm.createContext({mGlobalId: {item: context}, getTrucksTrailerDistance: () => 0, getTrucksTrailerGain: () => 0,
+  getTrucksTrailerOilLifePercentage: () => 80, getTrucksTrailerOilLifeTrip: () => trailerTrip, getTrucksTrailerFrontRadarState: () => 0,
+  getTrucksTrailerRrearRadarState: () => 0, getTrucksTrailerOilPressure: () => 0}, {codeGeneration: {strings: false, wasm: false}});
+const trailerHandler = new vm.Script(extract(texts['VehicleEvent.qml'], 'onTrucksTrailerInfoNotify:'));
+let trailerTrip = 0;
+for (const metric of [1, 0]) for (const [raw, expected] of [[0, '0'], [1000, metric ? '1000' : '621'], [8047, metric ? '8047' : '5000'], [65534, metric ? '65534' : '40721'], [65535, '---']]) {
+  context.metricSystem = metric;
+  trailerTrip = raw;
+  trailerHandler.runInContext(trailerNative, {timeout: 100});
+  check(`oil-life-trip/metric${metric}/raw${raw}/shown`, expected, () => String(context.trucksOilLifeTrip));
+  check(`oil-life-trip/metric${metric}/raw${raw}/raw-preserved`, raw, () => context.trucksOilLifeTripRaw);
+}
 const transitions = [];
 for (const [from, to] of [[12.3, 32767], [32767, 5], [12.3, 32766], [32766, 5]]) {
   context.consumptionUnit = 0;
@@ -206,7 +231,7 @@ for (const [from, to] of [[12.3, 32767], [32767, 5], [12.3, 32766], [32766, 5]])
 }
 const hash = folder => Object.fromEntries(['Global.qml', 'VehicleEvent.qml'].map(name => [name, crypto.createHash('sha256').update(fs.readFileSync(path.join(folder, name))).digest('hex')]));
 const results = phase === 'patched' && fs.existsSync(resultPath) ? JSON.parse(fs.readFileSync(resultPath, 'utf8')) : {};
-results.failureModes = ['Incorrect pressure scale for bar, kgf/cm2, and psi', 'Wrong wheel after front or rear swap', 'Unavailable pressure loses placeholder', 'Small RPM updates retain stale values, including 100 to zero', 'DPC handler throws before all four values refresh', 'Metric consumption modes select wrong fuel volume units', 'US MPG mode selects metric or imperial volume', 'Unavailable fuel loses placeholder or unit', 'Fuel readings outside 0..100 reach the gauges or lose the raw byte', 'The low-fuel warning ignores the fuel percent or an invalid reading', 'One invalid tank changes sibling validity', 'Flow mode receives distance-consumption conversion or labels', 'Hidden or unavailable consumption becomes a real number', 'Raw consumption animation interpolates sentinel transitions'];
+results.failureModes = ['Incorrect pressure scale for bar, kgf/cm2, and psi', 'Wrong wheel after front or rear swap', 'Unavailable pressure loses placeholder', 'Small RPM updates retain stale values, including 100 to zero', 'DPC handler throws before all four values refresh', 'Metric consumption modes select wrong fuel volume units', 'US MPG mode selects metric or imperial volume', 'Unavailable fuel loses placeholder or unit', 'Fuel readings outside 0..100 reach the gauges or lose the raw byte', 'The low-fuel warning ignores the fuel percent or an invalid reading', 'One invalid tank changes sibling validity', 'Flow mode receives distance-consumption conversion or labels', 'Hidden or unavailable consumption becomes a real number', 'Raw consumption animation interpolates sentinel transitions', 'Flow readings reach pages labeled with a distance-consumption unit', 'Travel or idle minutes lose the leading zero', 'Oil-life trip ignores the distance unit or shows the unavailable sentinel as a number'];
 results.scope = 'Actual QML source blocks and scalar bindings in isolated Node VM with mocked measurement getters. Sentinel animation replay models the declared raw Behavior endpoints. No Qt renderer, animation engine, device accuracy, or active compiled-consumer proof.';
 results.conversionReference = 'https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b9';
 results[phase] = {source, hashes: hash(source), count: rows.length, passed: rows.filter(row => row.pass).length, failed: rows.filter(row => !row.pass).length, rows, rpmStates, dpcStates, lpkStates, transitions};

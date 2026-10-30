@@ -2618,7 +2618,7 @@ Item {
     function getSinceResetTravelTime(){
         return sinceResetTravelTime===0xFFFF?"--:--":
                (Math.floor(sinceResetTravelTime/60)+":"+
-               Math.floor(sinceResetTravelTime%60))
+               Funcs.prefixInteger(sinceResetTravelTime%60, 2))
     }
     function getSinceResetTravelMileage(){
         return (sinceResetTravelMileage===0xFFFF?"---":
@@ -2664,7 +2664,7 @@ Item {
     function getSinceStartTravelTime(){
         return sinceStartTravelTime===0xFFFF?"--:--":
                (Math.floor(sinceStartTravelTime/60)+":"+
-               Math.floor(sinceStartTravelTime%60))
+               Funcs.prefixInteger(sinceStartTravelTime%60, 2))
     }
     function getSinceStartTravelMileage(){
         return (sinceStartTravelMileage===0xFFFF?"---":
@@ -2705,7 +2705,8 @@ Item {
     function getLpkData(){
         if(!lpkValid)
             return 0
-        return lpkUnitIndex===1?lpk.toFixed(1):lpk>100?0:getFuelConsumption(lpk)
+        // The compiled FuelInfo and MpgInfo pages label this value with fuelUnit, so flow (L/h) has no value here.
+        return lpkUnitIndex===1||lpk>100?0:getFuelConsumption(lpk)
     }
     function getLPK(unit){
         return (!lpkValid?"--.-":lpkUnitIndex===1?lpk.toFixed(1):getFuelConsumption(lpk))+
@@ -2722,7 +2723,7 @@ Item {
     property int idleResetTotalTime;
 
     function getIdleUseTime(){
-        return Math.floor(idleUseTime/60)+":"+Math.floor(idleUseTime%60)
+        return Math.floor(idleUseTime/60)+":"+Funcs.prefixInteger(idleUseTime%60, 2)
     }
     function getIdleStartSavingFuel(){
         return (idleStartSavingsFuel==0xFFFF?"----":
@@ -3857,7 +3858,9 @@ Item {
     property int trucksTrailerDistance: 0
     property real trucksTrailerGain: 0.0
     property int trucksOilLifePercentage: 0
-    property int trucksOilLifeTrip: 0
+    property int trucksOilLifeTripRaw: 0xFFFF   // km from the adapter, 0xFFFF when unavailable
+    // The compiled OilLifeinfo page shows this text next to tripUnit.
+    readonly property string trucksOilLifeTrip: trucksOilLifeTripRaw===0xFFFF?"---":(trucksOilLifeTripRaw*tripFactor).toFixed(0)
     property int trucksFrontRadarState: 0
     property int trucksRearRadarState: 0
     property int trucksOilPressure: 0           // bar
