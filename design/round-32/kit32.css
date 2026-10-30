@@ -1,0 +1,12 @@
+/* Round 32: cruise on the speed bar. Loads after round-31/kit31.css. */
+/* Set speed above the arrow: hidden at rest; shows on a change, holds 3 s, fades over 0.6 s (SET_HOLD_MS, SET_FADE_MS). */
+.cset32 { transform: translateX(-50%); font: 600 28px "BMW Type Global"; line-height: 1; color: var(--ok); opacity: 0; }
+.cset32.hold { opacity: 1; }
+.cset32.show { animation: cset32 3.6s linear forwards; }
+@keyframes cset32 { 0%, 83% { opacity: 1; } 100% { opacity: 0; } }
+/* Cue A: a small cruise symbol before MPH; grey while cruise is on, green while set. */
+.sunit { display: flex; align-items: center; gap: 12px; }
+.cr32 { width: 22px; height: 22px; background: #8a929c; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; }
+.cr32.on { background: var(--ok); }
+/* Cue B: the MPH label in green while set. */
+.sunit.cr32b { color: var(--ok); }
