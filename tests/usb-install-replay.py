@@ -18,7 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools/usb-install/encrypt.sh"
 BUSYBOX = ROOT / "tools/busybox/busybox"
-CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v3"
+CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v4"
 ORIGINAL = ROOT / "installed/capture-04/rootfs/usr/bin/Launcher"
 RESULT = ROOT / "analysis/capture-04/usb-install-replay-results.json"
 ETC = ["vnG.qml", "vnM.qml", "vnS.qml", "vnV.qml"]
@@ -26,6 +26,8 @@ ETC = ["vnG.qml", "vnM.qml", "vnS.qml", "vnV.qml"]
 V1_ETC = ROOT / "analysis/capture-04/usb-install-menu-v1/drive/viknav-ui/etc"
 # The second release (menu-v2: native Factory pages and the key trace).
 V2_ETC = ROOT / "analysis/capture-04/usb-install-menu-v2/drive/viknav-ui/etc"
+# The third release (menu-v3: the wheel key bounce filter).
+V3_ETC = ROOT / "analysis/capture-04/usb-install-menu-v3/drive/viknav-ui/etc"
 RETIRED = ["vnB.qml", "vnF.qml"]
 APPLETS = ["awk", "cat", "chmod", "cp", "date", "df", "grep", "head", "mkdir", "mv", "rm", "sha256sum", "sync", "tar", "wc"]
 MARKERS = {"install": ("VIKNAV-UI-INSTALL.txt", "VIKNAV_UI_INSTALL"),
@@ -395,6 +397,13 @@ def main():
             install(c)
             return [c.status(), c.device(), c.starts(), c.backup() == before, c.leftovers()]
         check("upgrade-from-v2", 11, ["INSTALLED", "candidate", 1, True, []], upgrade_v2)
+
+        def upgrade_v3():
+            c = new().install_v1(V3_ETC)
+            before = c.backup()
+            install(c)
+            return [c.status(), c.device(), c.starts(), c.backup() == before, c.leftovers()]
+        check("upgrade-from-v3", 11, ["INSTALLED", "candidate", 1, True, []], upgrade_v3)
 
         def upgrade_again():
             c = install(new().install_v1())

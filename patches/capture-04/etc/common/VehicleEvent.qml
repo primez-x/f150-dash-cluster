@@ -2303,6 +2303,8 @@ Item {
     readonly property int mDataLogFrameSeconds: 5400
     property bool mDataLogFramesOpen: true
     property int mDataLogTicks: 0
+    // oilPressurePercentage (vehicleInfoNotify) and engOilPercent (oilMeterInfoNotify) both read getOilPressure().
+    // The log keeps both, so a drive shows which notification the truck sends.
     readonly property var mDataLogNames: [
         "vehicleSpeed", "tachoSpeed", "gearString", "metricSystem", "temperatureUnit", "consumptionUnit", "lpkUnitIndex",
         "fuelPercentage", "fuelPercentageRaw", "fuelFrameMs", "fuelLevel", "dte", "mainTank", "subTank",
@@ -2311,7 +2313,7 @@ Item {
         "sinceResetAvgFuel", "sinceResetAvgSpeed", "sinceResetTravelTime", "sinceResetTravelMileage",
         "sinceStartAvgFuel", "sinceStartAvgSpeed", "sinceStartTravelTime", "sinceStartTravelMileage",
         "sinceRefuelingDte", "sinceRefuelingAvgFuel", "sinceRefuelingAvgSpeed",
-        "waterTemp", "oilTemp", "gearBoxTemp", "batterVoltage", "trucksOilLifePercentage", "trucksOilLifeTripRaw", "trucksTrailerDistance", "rtcDate", "rtcTime"
+        "waterTemp", "oilTemp", "gearBoxTemp", "oilPressurePercentage", "engOilPercent", "batterVoltage", "trucksOilLifePercentage", "trucksOilLifeTripRaw", "trucksTrailerDistance", "rtcDate", "rtcTime"
     ]
     Timer {
         interval: 1000

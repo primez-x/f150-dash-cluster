@@ -85,7 +85,7 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - A fuel reading outside 0..100 keeps the last valid gauge value. The raw byte stays in the `*Raw` properties for the data log.
 - The low-fuel warning (`fuelLevel`) is the higher of the adapter state and the percent level: 12% or less is low, and 5% or less is critical. An invalid reading shows at least the low level. The native decoder turns adapter states 3 and up into 0.
 - Fuel data age is logged, not shown. The cadence of fuel frames on the truck is not yet verified.
-- The data logger writes one `viknav-data` line per second while Factory > Debug logging is on. Debug values 2 and 4 also make the native plugin print each received or sent UART frame. The frame print stops after 90 minutes in one power cycle, because `/tmp` is in RAM.
+- The data logger writes one `viknav-data` line per second while Factory > Debug logging is on. The line includes coolant, oil, and transmission temperatures and both oil pressure values (`oilPressurePercentage`, `engOilPercent`), so one drive shows which readings the truck sends. Debug values 2 and 4 also make the native plugin print each received or sent UART frame. The frame print stops after 90 minutes in one power cycle, because `/tmp` is in RAM.
 - Fuel range-validity flags preserve invalid raw samples for diagnostics. Compiled gauge visibility and unit-label changes remain integration work.
 - Five temperature families preserve documented unavailable states. Native calibration and actual vehicle accuracy remain unverified.
 - Boot candidates remove automatic formatting after mount failure and stop later init scripts after critical mount failures.
