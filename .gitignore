@@ -8,6 +8,7 @@
 !/tools/decode_qml_units.py
 !/tools/export_layouts.py
 !/tools/prepare_ui_candidate.py
+!/tools/build_timezone_grid.py
 !/tests/*.cjs
 !/tests/*.py
 !/tests/qt-host-requirements.txt

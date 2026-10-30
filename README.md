@@ -59,6 +59,9 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - Both source replays pass: 527 gauge cases and 194 unit-state cases. Earlier independent review covered the original unit and persistence changes.
 - The TOW telltale (alarm 90) selects the towing layout (`towDashboard`, now stock UI2). Tow/Haul off returns to the saved driver layout. The tow replay passes 11 cases, and host Qt compiles the source.
 - The MCU source of alarm 90 on this truck is not yet verified. Confirm on the vehicle that the stock TOW telltale lights with Tow/Haul.
+- The GPS clock sets the MCU clock from GPS UTC (NMEA RMC) with the time zone from the GPS position and US and Canada daylight saving time. The MCU clock loses the time when the relay cuts power.
+- The clock replay passes 36 cases. The zone grid matches Python zoneinfo for 45 test cities. Host Qt compiles the source.
+- Until the first GPS time after power-up, the dashboard clock shows dashes, unless the MCU date is plausible. GPS auto time is on by default; the stock Date and time menu still turns GPS auto time off.
 - Source formatters distinguish L/h fuel flow from distance consumption. Raw consumption values no longer animate through unavailable sentinels.
 - Fuel range-validity flags preserve invalid raw samples for diagnostics. Compiled gauge visibility and unit-label changes remain integration work.
 - Five temperature families preserve documented unavailable states. Native calibration and actual vehicle accuracy remain unverified.
@@ -82,7 +85,17 @@ node tests/unit-state-replay.cjs original
 node tests/unit-state-replay.cjs patched
 node tests/tow-layout-replay.cjs original
 node tests/tow-layout-replay.cjs patched
+node tests/clock-sync-replay.cjs original
+node tests/clock-sync-replay.cjs patched
 node tests/settings-menu-replay.cjs
+```
+
+Rebuild the GPS clock zone grid in `Global.qml` from timezone-boundary-builder. The tool needs Pillow and the `tzdata` package:
+
+```powershell
+gh release download 2026e -R evansiroky/timezone-boundary-builder -p timezones-now.geojson.zip -D $env:TEMP\tbb
+python tools/build_timezone_grid.py $env:TEMP\tbb\timezones-now.geojson.zip
+python tools/build_timezone_grid.py $env:TEMP\tbb\timezones-now.geojson.zip --check
 ```
 
 The original phase must reproduce the known failures. The patched phase must pass. Results are stored under `analysis/capture-04/`.
@@ -170,6 +183,19 @@ Confirm migration precedence, display availability, and recovery access before a
 
 Fuel and coolant calibration, invalid native values, signal freshness, polling limits, and shutdown behavior require vehicle reference data and hardware checks.
 
+The GPS clock keeps the native GPS time sync off (`timezone: 255`). The native path writes a whole-hour offset with no daylight saving time.
+Check these items on the truck before the GPS clock counts as verified:
+
+- Which notification (`gpsDateTimeInfoNotify` or `gpsLatLongInfoNotify`) follows an RMC sentence. The source calls the sync from both.
+- The `getGpsNmea(NMEA_TYPE_RMC)` text: a full `$..RMC` sentence, with or without the checksum.
+- The MCU accepts `setRtc("yyyy-MM-dd hh:mm:ss")` with seconds, and the next 0x32 notification shows the new time.
+- The MCU date after a power cut. A year before 2026 shows dashes until the first GPS time.
+- The time from power-up to the first GPS time, under open sky and in a garage.
+- A GPS receiver with the week-rollover fault reports a year before 2026. The clock then never sets.
+
+The zone grid uses 0.05° cells (about 5 km). Within one cell of a zone line, the zone can be wrong. A new zone must hold for 60 s before the clock changes.
+Zones with rules other than the US and Canada rule (for example Cuba) have no grid cells. There the clock keeps the last zone.
+
 Keep power relays and vehicle controls unchanged until separate hardware checks prove the shutdown path.
 
 ## Third-party source notices
@@ -178,3 +204,5 @@ Keep power relays and vehicle controls unchanged until separate hardware checks 
 The adjacent `LICENSE.LGPL3`, `LICENSE.GPL2`, and `LICENSE.GPL3` files preserve the upstream license texts.
 `PROVENANCE.json` records official source URLs and byte hashes. The decoder reads opcode declarations from the header.
 Vendor QML fixtures and dashboard assets retain vendor ownership. This repository grants no new license for vendor content.
+The GPS clock zone grid in `patches/capture-04/etc/common/Global.qml` comes from timezone-boundary-builder 2026e.
+The grid contains OpenStreetMap data, © OpenStreetMap contributors, under the Open Database License 1.0. The generated header records the source hash.

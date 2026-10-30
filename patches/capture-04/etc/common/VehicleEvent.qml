@@ -1468,7 +1468,7 @@ Item {
             //console.log("[GPS Bearing: "+mGlobalId.item.gpsBearing+"]");
         }
         onGpsDateTimeInfoNotify: {
-
+            syncRtcFromGps()
         }
         onGpsLatLongInfoNotify: {
             mGlobalId.item.gpsFixedValid=getGpsIsFixed()
@@ -1480,6 +1480,7 @@ Item {
 //            console.log("[GPS LAT: "+mGlobalId.item.gpsLatitude+"]");
 //            console.log("[GPS LONG: "+mGlobalId.item.gpsLongitude+"]");
             //console.log("[NMEA: "+getGpsNmea(YachtEvent.NMEA_TYPE_RMC)+"]");
+            syncRtcFromGps()
         }
         onGpsSNRInfoNotify: {
             mGlobalId.item.gpsSNR=(getGpsSNR()/10).toFixed(0)
@@ -1532,6 +1533,18 @@ Item {
     function setRtc(rtc){
         console.log("setRtc: "+rtc)
         mHandleId.setRtc(rtc)
+    }
+    /////////////////////////////
+    // GPS clock: write the local time from GPS to the MCU clock (Global.qml gpsClockStep).
+    // Both GPS notifications call this; which one the native plugin raises after an RMC sentence is not verified on the truck.
+    // A second call for the same fix writes nothing.
+    /////////////////////////////
+    function syncRtcFromGps(){
+        if(!mGlobalId.item.gpsAutoSetRtcEnabled)
+            return
+        var rtc=mGlobalId.item.gpsClockStep(mHandleId.getGpsNmea(VehicleEvent.NMEA_TYPE_RMC))
+        if(rtc)
+            setRtc(rtc)
     }
     ////////////////////////////////
     // overSpeedWarningNotify

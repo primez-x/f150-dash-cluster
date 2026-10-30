@@ -16,7 +16,7 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parents[1]
 DECODER_PATH = BASE / "tools" / "decode_qml_units.py"
 SOURCE_DEFAULT = BASE / "installed" / "capture-04" / "rootfs" / "usr" / "bin" / "Launcher"
-OUTPUT_DEFAULT = BASE / "analysis" / "capture-04" / "ui-candidate-direct-factory-v2"
+OUTPUT_DEFAULT = BASE / "analysis" / "capture-04" / "ui-candidate-gps-clock-v1"
 ANALYSIS_ROOT = (BASE / "analysis").resolve()
 SCHEMA_PATH = BASE / "evidence" / "qt-5.14.2" / "qv4instr_moth_p.h"
 LAYOUT_PATH = BASE / "evidence" / "fixtures" / "capture-04" / "launcher-layout.json"
