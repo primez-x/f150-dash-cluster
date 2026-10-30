@@ -398,6 +398,8 @@ Window {
             property int menuSettingsPageIndex: 6
             property int menuSettingsSubPageItemSetup: 0
             property int uartDebugEnabled: 0
+            property int dashboardBeforeTow: -1
+            property int towDashboard: 1
             property int mediaImageEnabled: 0
             property int screenGridEnabled: 0
             property bool modelCarSelection: false
@@ -1224,8 +1226,33 @@ Window {
     tap("Back")
     mark = len(log())
     open_path("Display")
-    verify("menu display rows", titles() == ["Day brightness", "Night brightness", "Speed warning", "Speed warning at"] and
-           values()[:3] == ["50%", "0%", "Off"])
+    verify("menu display rows", titles() == ["Dashboard layout", "Day brightness", "Night brightness", "Speed warning",
+                                             "Speed warning at"] and values()[:4] == ["Layout 1", "50%", "0%", "Off"])
+    tap("Enter")
+    tap("Down", 2)
+    verify("menu layout edit is local", m("mEditText") == "‹ Layout 3 ›" and value(global_state, "dashboard") == 0)
+    tap("Enter")
+    verify("menu layout commit", value(global_state, "dashboard") == 2 and row("Dashboard layout")["value"] == "Layout 3")
+    tap("Enter")
+    tap("Up", 3)
+    tap("Enter")
+    verify("menu layout wraps to Layout 6", value(global_state, "dashboard") == 5 and row("Dashboard layout")["current"] == 5)
+    tap("Enter")
+    tap("Back")
+    verify("menu layout cancel keeps the layout", value(global_state, "dashboard") == 5 and not m("mEditing"))
+    global_state.setProperty("dashboard", 1)
+    global_state.setProperty("dashboardBeforeTow", 5)
+    verify("menu layout shows the automatic towing layout", row("Dashboard layout")["value"] == "Layout 2 · Towing")
+    tap("Enter")
+    verify("menu layout edit starts at the towing layout", m("mEditText") == "‹ Layout 2 ›")
+    tap("Down")
+    tap("Enter")
+    verify("menu layout choice while towing", value(global_state, "dashboard") == 2 and
+           value(global_state, "dashboardBeforeTow") == 5 and row("Dashboard layout")["value"] == "Layout 3")
+    global_state.setProperty("dashboardBeforeTow", -1)
+    global_state.setProperty("dashboard", 0)
+    verify("menu sends no vehicle command for a layout", sends(mark) == [])
+    focus("Day brightness")
     tap("Enter")
     verify("menu day brightness edit starts at the level", m("mEditValue") == 50)
     tap("Down")
@@ -1383,6 +1410,14 @@ Window {
     verify("menu view shows unit segments and the follow note", {"km/h", "mph", "°C", "°F", "Follow"} <= texts)
     preview("units", "vnM locked view; System > Units.")
     tap("Back")
+    open_path("Display")
+    tap("Enter")
+    tap("Down")
+    texts = item_texts(sip.cast(menu_state["page"], QtQuick.QQuickItem))
+    verify("menu view shows the layout edit", {"Dashboard layout", "‹ Layout 2 ›"} <= texts)
+    preview("layout-edit", "vnM locked view; System > Display with a dashboard layout edit.")
+    tap("Back")
+    tap("Back")
     open_path("Factory", "General settings")
     texts = item_texts(sip.cast(menu_state["page"], QtQuick.QQuickItem))
     verify("menu view moves the oldest column off at the fourth level", {"Factory", "General settings"} <= texts and
@@ -1432,7 +1467,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--child", choices=PHASES)
     parser.add_argument("--fixture")
-    parser.add_argument("--candidate-dir", default=str(ROOT / "analysis/capture-04/ui-candidate-menu-v2"))
+    parser.add_argument("--candidate-dir", default=str(ROOT / "analysis/capture-04/ui-candidate-menu-v3"))
     args = parser.parse_args()
     if args.child:
         return child(args.child, Path(args.fixture), args.candidate_dir)

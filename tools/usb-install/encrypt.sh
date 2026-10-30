@@ -17,7 +17,7 @@ HEALTH_WAIT=90
 SETTLE_WAIT=20
 LOG_WAIT=180
 
-# Captured original Launcher (capture-04) and the ui-candidate-menu-v2 files.
+# Captured original Launcher (capture-04) and the ui-candidate-menu-v3 files.
 ORIGINAL_SHA256=2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b
 CANDIDATE_SHA256=3aee8242a8cb167069750bb721f34b5ab66e48cf634fe7c3fcb81b75abd49d8a
 # Launcher files of earlier releases (space separated). An install replaces them.
@@ -28,18 +28,19 @@ RETIRED_FILES="vnB.qml vnF.qml"
 etc_sha256() {
     case "$1" in
         vnG.qml) echo ce54efec52bfda1778234c1939f29dae6c703d1aa3315856260e37543edaf33e ;;
-        vnM.qml) echo 27fac58c773beab055b7f5baa3203be379f0aba3287a20ecd2d10d6ae9f0a76b ;;
+        vnM.qml) echo 0fa4d685121b9c8df22fef7f15a034c3e6452f21868abe7b171e0e20f375935b ;;
         vnS.qml) echo 4d285e170e0de495842a247faf83c2d62834ceea8c1e25be7c56de45ee8bfa45 ;;
         vnV.qml) echo ef6d29dae3b736fa8239930c62cb582abc5c302441d47e35ac0f8c18634829c1 ;;
     esac
 }
 # /etc files of earlier releases (space separated per file). menu-v1: the first cluster install, 2026-10-30.
+# menu-v2: native Factory pages and the key trace.
 etc_previous() {
     case "$1" in
         vnB.qml) echo cf4c014945f604b5a0da27d70ec0849a54fb57c972bd9ca55c3f0effd8504aee ;;
         vnF.qml) echo e3b79fe488506ec3d1c096f3b545df1c166a3e9928f773b1b6507a63e1eb1e12 ;;
         vnG.qml) echo ce54efec52bfda1778234c1939f29dae6c703d1aa3315856260e37543edaf33e ;;
-        vnM.qml) echo bcfbcb20cf4e2ae1853fc442983170a4303c1f4765979378e65dfbb306e8746b ;;
+        vnM.qml) echo bcfbcb20cf4e2ae1853fc442983170a4303c1f4765979378e65dfbb306e8746b 27fac58c773beab055b7f5baa3203be379f0aba3287a20ecd2d10d6ae9f0a76b ;;
         vnS.qml) echo 4d285e170e0de495842a247faf83c2d62834ceea8c1e25be7c56de45ee8bfa45 ;;
         vnV.qml) echo ef6d29dae3b736fa8239930c62cb582abc5c302441d47e35ac0f8c18634829c1 ;;
     esac

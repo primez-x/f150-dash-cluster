@@ -18,12 +18,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools/usb-install/encrypt.sh"
 BUSYBOX = ROOT / "tools/busybox/busybox"
-CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v2"
+CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v3"
 ORIGINAL = ROOT / "installed/capture-04/rootfs/usr/bin/Launcher"
 RESULT = ROOT / "analysis/capture-04/usb-install-replay-results.json"
 ETC = ["vnG.qml", "vnM.qml", "vnS.qml", "vnV.qml"]
 # The first cluster install (menu-v1). The upgrade cases start from these files.
 V1_ETC = ROOT / "analysis/capture-04/usb-install-menu-v1/drive/viknav-ui/etc"
+# The second release (menu-v2: native Factory pages and the key trace).
+V2_ETC = ROOT / "analysis/capture-04/usb-install-menu-v2/drive/viknav-ui/etc"
 RETIRED = ["vnB.qml", "vnF.qml"]
 APPLETS = ["awk", "cat", "chmod", "cp", "date", "df", "grep", "head", "mkdir", "mv", "rm", "sha256sum", "sync", "tar", "wc"]
 MARKERS = {"install": ("VIKNAV-UI-INSTALL.txt", "VIKNAV_UI_INSTALL"),
@@ -177,10 +179,10 @@ class Case:
     def settings(self):
         return (self.root / "private/Launcher/settings.db").read_bytes()
 
-    def install_v1(self):
-        """Put the cluster in the menu-v1 state, with the stock settings backup on the drive."""
+    def install_v1(self, etc=V1_ETC):
+        """Put the cluster in an earlier release state (menu-v1 by default), with the stock settings backup on the drive."""
         (self.root / "usr/bin/Launcher").write_bytes(CANDIDATE_BYTES)
-        for path in V1_ETC.iterdir():
+        for path in etc.iterdir():
             (self.root / "etc" / path.name).write_bytes(path.read_bytes())
         (self.root / "private/Launcher/settings.db").write_bytes(b"settings of v1\n")
         stock = self.t / "stock"
@@ -386,6 +388,13 @@ def main():
             return [c.status(), c.device(), c.starts(), [n for n in RETIRED if (c.root / "etc" / n).exists()],
                     c.backup() == before, c.leftovers()]
         check("upgrade-from-v1", 11, ["INSTALLED", "candidate", 1, [], True, []], upgrade)
+
+        def upgrade_v2():
+            c = new().install_v1(V2_ETC)
+            before = c.backup()
+            install(c)
+            return [c.status(), c.device(), c.starts(), c.backup() == before, c.leftovers()]
+        check("upgrade-from-v2", 11, ["INSTALLED", "candidate", 1, True, []], upgrade_v2)
 
         def upgrade_again():
             c = install(new().install_v1())
