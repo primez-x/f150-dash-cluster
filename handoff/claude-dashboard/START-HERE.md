@@ -34,9 +34,10 @@ Relative asset literals can contain parent segments as historical evidence. Expo
 
 Use declared 1920 × 932 layout coordinates for redesign.
 The truck screen measures 1920 × 932, and main.qml draws the dashboard at scale 1, rotation 0, and top 0 (truck model 1, measured 2026-10-30).
-The bezel opening has an arched top edge: 0 px hidden at the center, 40 px at x 344 and x 1576, and 99 px at the side edges.
-The steering column shroud hides the bottom center: from y 776 between x 572 and x 1348, widening to x 210–1710 at the bottom row.
-Schematics shade both hidden areas red. `shared-contracts.json` → `measurement.visible_area` holds the exact points.
+The bezel opening has an arched top edge: 3 px hidden at the center, 43 px at x 360 and x 1560, and 106 px at the side edges.
+The steering column shroud hides the bottom center: from y 776 between x 572 and x 1348, widening to x 180–1710 at the bottom row.
+From the driver eye, the steering wheel rim also hides the top corners: down to y 158 at x 0 and y 177 at x 1920.
+Schematics shade the hidden areas red: the bezel arch, the steering column shroud, and the wheel rim corners. `shared-contracts.json` → `measurement.visible_area` holds the exact points.
 Physical check engine and tire pressure lamps sit on the bezel outside the screen. Do not draw duplicates for them.
 
 ## Visual limits

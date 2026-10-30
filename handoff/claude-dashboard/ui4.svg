@@ -10,6 +10,8 @@
 <text x="5" y="726.0" fill="#8fc87e" font-family="sans-serif" font-size="20">mDockId [32]</text>
 <rect x="465" y="670" width="90" height="50" fill="none" stroke="#ffe184" stroke-width="3"/>
 <text x="465" y="660" fill="#ffe184" font-family="sans-serif" font-size="20">ACC / LIM Ford branch 90x50</text>
-<polygon points="0,0 1920,0 1920,99 1840,83 1760,69 1680,56 1600,44 1520,34 1440,25 1360,17 1280,11 1200,6 1120,3 1040,1 960,0 880,1 800,3 720,6 640,11 560,17 480,25 400,34 320,44 240,56 160,69 80,83 0,99" fill="#ff3b30" fill-opacity="0.35" stroke="#ff3b30" stroke-width="3"/>
-<polygon points="210,932 300,854 460,797 572,776 1348,776 1460,797 1620,854 1710,932" fill="#ff3b30" fill-opacity="0.35" stroke="#ff3b30" stroke-width="3"/>
+<polygon points="0,0 1920,0 1920,106 1880,98 1840,90 1800,82 1760,75 1720,68 1680,61 1640,55 1600,49 1560,43 1520,38 1480,34 1440,29 1400,25 1360,21 1320,18 1280,15 1240,12 1200,10 1160,8 1120,6 1080,5 1040,4 1000,4 960,3 920,4 880,4 840,5 800,6 760,8 720,10 680,12 640,15 600,18 560,21 520,25 480,29 440,34 400,38 360,43 320,49 280,55 240,61 200,68 160,75 120,82 80,90 40,98 0,106" fill="#ff3b30" fill-opacity="0.35" stroke="#ff3b30" stroke-width="3"/>
+<polygon points="180,932 272,862 300,845 380,815 480,792 572,776 1348,776 1460,797 1620,854 1710,932" fill="#ff3b30" fill-opacity="0.35" stroke="#ff3b30" stroke-width="3"/>
+<polygon points="0,0 160,0 160,70 0,158" fill="#ff3b30" fill-opacity="0.35" stroke="#ff3b30" stroke-width="3"/>
+<polygon points="1725,0 1920,0 1920,177 1725,63" fill="#ff3b30" fill-opacity="0.35" stroke="#ff3b30" stroke-width="3"/>
 <text x="960" y="900" fill="#ff8a80" font-family="sans-serif" font-size="22" text-anchor="middle">Hidden by the steering column</text></g></svg>

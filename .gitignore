@@ -10,6 +10,7 @@
 !/tools/prepare_ui_candidate.py
 !/tools/build_timezone_grid.py
 !/tools/build_usb_install.py
+!/tools/check_visible_area.py
 !/tools/usb-install/encrypt.sh
 !/tests/*.cjs
 !/tests/*.py

@@ -176,6 +176,12 @@ Export the Claude design handoff:
 python tools/export_layouts.py
 ```
 
+Check the visible-area mask in the handoff against the edge points read from the truck grid photos. With the private photos present, the tool also writes mask overlays to `analysis/capture-04/vehicle-runs/screen-grid-2026-10-30/mask-check/`:
+
+```powershell
+python tools/check_visible_area.py
+```
+
 Open `handoff/claude-dashboard/index.html` for the gallery. Schematics describe declared bounds; the schematics are not device screenshots.
 
 ## USB install

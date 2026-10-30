@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import html
 import json
+import math
 import posixpath
 import re
 import shutil
@@ -280,25 +281,32 @@ def static_geometry(unit, units, assets, links):
 
 # Visible screen area, measured on the truck on 2026-10-30 from two photos of Factory > Screen grid (driver eye height and
 # a lower camera through the wheel). The window is 1920 x 932 and main.qml draws the dashboard at scale 1, rotation 0,
-# top 0 for truck model 1. The bezel opening has an arched top edge; the steering column shroud covers the bottom center.
-# The hidden areas are the union of both views. A lower driver eye position hides more at the bottom center.
+# top 0 for truck model 1. The bezel opening has an arched top edge; the steering column shroud covers the bottom center;
+# from the driver eye, the wheel rim (wheel straight ahead) covers the two top corners. The hidden areas are the union of
+# both views. tools/check_visible_area.py checks the polygons against the edge points read from the photos.
 def bezel_top(x):
-    return round((x - 960) ** 2 / 9300)
+    return math.ceil(3 + (x - 960) ** 2 / 9000)
 
 
-BEZEL_TOP = [[x, bezel_top(x)] for x in range(0, 1921, 80)]
-SHROUD = [[210, 932], [300, 854], [460, 797], [572, 776], [1348, 776], [1460, 797], [1620, 854], [1710, 932]]
-HIDDEN = {"bezel_top": [[0, 0], [1920, 0]] + BEZEL_TOP[::-1], "steering_column": SHROUD}
+BEZEL_TOP = [[x, bezel_top(x)] for x in range(0, 1921, 40)]
+SHROUD = [[180, 932], [272, 862], [300, 845], [380, 815], [480, 792], [572, 776], [1348, 776], [1460, 797], [1620, 854],
+          [1710, 932]]
+RIM_LEFT = [[0, 0], [160, 0], [160, 70], [0, 158]]
+RIM_RIGHT = [[1725, 0], [1920, 0], [1920, 177], [1725, 63]]
+HIDDEN = {"bezel_top": [[0, 0], [1920, 0]] + BEZEL_TOP[::-1], "steering_column": SHROUD,
+          "wheel_rim_left": RIM_LEFT, "wheel_rim_right": RIM_RIGHT}
 VISIBLE_AREA = {
     "measured": "2026-10-30 on the truck, Factory > Screen grid, two photos (driver eye height and a lower camera)",
     "screen": [1920, 932], "dashboard_transform": {"scale": 1, "rotation": 0, "top_margin": 0, "truck_model": 1},
-    "bezel_top": {"rule": "Rows above y = (x - 960)^2 / 9300 are behind the arched bezel: 0 px at the center, 10 px at x 652/1268, "
-                          "40 px at x 344/1576, 70 px at x 156/1764, 99 px at the side edges.", "points": BEZEL_TOP},
-    "steering_column": {"rule": "The steering column shroud hides the bottom center. The polygon is the hidden area.", "points": SHROUD,
-                        "driver_eye_height": "From the driver eye height the shroud top is near y 818 instead of y 776."},
-    "sides": "Columns x 0 and x 1919 are visible from below the bezel arch to y 931.",
+    "bezel_top": {"rule": "Rows above y = 3 + (x - 960)^2 / 9000 are behind the arched bezel: 3 px at the center, 13 px at x 660/1260, "
+                          "43 px at x 360/1560, 73 px at x 166/1754, 106 px at the side edges.", "points": BEZEL_TOP},
+    "steering_column": {"rule": "The steering column shroud hides the bottom center from y 776 (both views). The polygon is the "
+                                "hidden area; the left side reaches further out than the right.", "points": SHROUD},
+    "steering_wheel": {"rule": "From the driver eye, with the wheel straight ahead, the rim hides the top corners below the bezel "
+                               "arch: on the left from (0, 158) to (160, 70), on the right from (1725, 63) to (1920, 177). "
+                               "A turned wheel moves the rim.", "left": RIM_LEFT, "right": RIM_RIGHT},
+    "sides": "Columns x 0 and x 1919 are visible from below the rim to y 931.",
     "bezel_lamps": "Physical check engine (left) and tire pressure (right) lamps sit on the bezel outside the screen, near y 450.",
-    "steering_wheel": "From the driver eye height the wheel rim passes close to the top corners. Keep critical content off the top corners.",
     "hidden_polygons": HIDDEN}
 
 
@@ -519,9 +527,10 @@ Relative asset literals can contain parent segments as historical evidence. Expo
 
 Use declared 1920 × 932 layout coordinates for redesign.
 The truck screen measures 1920 × 932, and main.qml draws the dashboard at scale 1, rotation 0, and top 0 (truck model 1, measured 2026-10-30).
-The bezel opening has an arched top edge: 0 px hidden at the center, 40 px at x 344 and x 1576, and 99 px at the side edges.
-The steering column shroud hides the bottom center: from y 776 between x 572 and x 1348, widening to x 210–1710 at the bottom row.
-Schematics shade both hidden areas red. `shared-contracts.json` → `measurement.visible_area` holds the exact points.
+The bezel opening has an arched top edge: 3 px hidden at the center, 43 px at x 360 and x 1560, and 106 px at the side edges.
+The steering column shroud hides the bottom center: from y 776 between x 572 and x 1348, widening to x 180–1710 at the bottom row.
+From the driver eye, the steering wheel rim also hides the top corners: down to y 158 at x 0 and y 177 at x 1920.
+Schematics shade the hidden areas red: the bezel arch, the steering column shroud, and the wheel rim corners. `shared-contracts.json` → `measurement.visible_area` holds the exact points.
 Physical check engine and tire pressure lamps sit on the bezel outside the screen. Do not draw duplicates for them.
 
 ## Visual limits

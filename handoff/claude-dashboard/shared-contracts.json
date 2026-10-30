@@ -25,124 +25,228 @@
         "truck_model": 1
       },
       "bezel_top": {
-        "rule": "Rows above y = (x - 960)^2 / 9300 are behind the arched bezel: 0 px at the center, 10 px at x 652/1268, 40 px at x 344/1576, 70 px at x 156/1764, 99 px at the side edges.",
+        "rule": "Rows above y = 3 + (x - 960)^2 / 9000 are behind the arched bezel: 3 px at the center, 13 px at x 660/1260, 43 px at x 360/1560, 73 px at x 166/1754, 106 px at the side edges.",
         "points": [
           [
             0,
-            99
+            106
+          ],
+          [
+            40,
+            98
           ],
           [
             80,
-            83
+            90
+          ],
+          [
+            120,
+            82
           ],
           [
             160,
-            69
+            75
+          ],
+          [
+            200,
+            68
           ],
           [
             240,
-            56
+            61
+          ],
+          [
+            280,
+            55
           ],
           [
             320,
-            44
+            49
+          ],
+          [
+            360,
+            43
           ],
           [
             400,
+            38
+          ],
+          [
+            440,
             34
           ],
           [
             480,
+            29
+          ],
+          [
+            520,
             25
           ],
           [
             560,
-            17
+            21
+          ],
+          [
+            600,
+            18
           ],
           [
             640,
-            11
+            15
+          ],
+          [
+            680,
+            12
           ],
           [
             720,
-            6
+            10
+          ],
+          [
+            760,
+            8
           ],
           [
             800,
-            3
-          ],
-          [
-            880,
-            1
-          ],
-          [
-            960,
-            0
-          ],
-          [
-            1040,
-            1
-          ],
-          [
-            1120,
-            3
-          ],
-          [
-            1200,
             6
           ],
           [
+            840,
+            5
+          ],
+          [
+            880,
+            4
+          ],
+          [
+            920,
+            4
+          ],
+          [
+            960,
+            3
+          ],
+          [
+            1000,
+            4
+          ],
+          [
+            1040,
+            4
+          ],
+          [
+            1080,
+            5
+          ],
+          [
+            1120,
+            6
+          ],
+          [
+            1160,
+            8
+          ],
+          [
+            1200,
+            10
+          ],
+          [
+            1240,
+            12
+          ],
+          [
             1280,
-            11
+            15
+          ],
+          [
+            1320,
+            18
           ],
           [
             1360,
-            17
+            21
           ],
           [
-            1440,
+            1400,
             25
           ],
           [
-            1520,
+            1440,
+            29
+          ],
+          [
+            1480,
             34
           ],
           [
+            1520,
+            38
+          ],
+          [
+            1560,
+            43
+          ],
+          [
             1600,
-            44
+            49
+          ],
+          [
+            1640,
+            55
           ],
           [
             1680,
-            56
+            61
+          ],
+          [
+            1720,
+            68
           ],
           [
             1760,
-            69
+            75
+          ],
+          [
+            1800,
+            82
           ],
           [
             1840,
-            83
+            90
+          ],
+          [
+            1880,
+            98
           ],
           [
             1920,
-            99
+            106
           ]
         ]
       },
       "steering_column": {
-        "rule": "The steering column shroud hides the bottom center. The polygon is the hidden area.",
+        "rule": "The steering column shroud hides the bottom center from y 776 (both views). The polygon is the hidden area; the left side reaches further out than the right.",
         "points": [
           [
-            210,
+            180,
             932
           ],
           [
-            300,
-            854
+            272,
+            862
           ],
           [
-            460,
-            797
+            300,
+            845
+          ],
+          [
+            380,
+            815
+          ],
+          [
+            480,
+            792
           ],
           [
             572,
@@ -164,12 +268,49 @@
             1710,
             932
           ]
-        ],
-        "driver_eye_height": "From the driver eye height the shroud top is near y 818 instead of y 776."
+        ]
       },
-      "sides": "Columns x 0 and x 1919 are visible from below the bezel arch to y 931.",
+      "steering_wheel": {
+        "rule": "From the driver eye, with the wheel straight ahead, the rim hides the top corners below the bezel arch: on the left from (0, 158) to (160, 70), on the right from (1725, 63) to (1920, 177). A turned wheel moves the rim.",
+        "left": [
+          [
+            0,
+            0
+          ],
+          [
+            160,
+            0
+          ],
+          [
+            160,
+            70
+          ],
+          [
+            0,
+            158
+          ]
+        ],
+        "right": [
+          [
+            1725,
+            0
+          ],
+          [
+            1920,
+            0
+          ],
+          [
+            1920,
+            177
+          ],
+          [
+            1725,
+            63
+          ]
+        ]
+      },
+      "sides": "Columns x 0 and x 1919 are visible from below the rim to y 931.",
       "bezel_lamps": "Physical check engine (left) and tire pressure (right) lamps sit on the bezel outside the screen, near y 450.",
-      "steering_wheel": "From the driver eye height the wheel rim passes close to the top corners. Keep critical content off the top corners.",
       "hidden_polygons": {
         "bezel_top": [
           [
@@ -182,117 +323,221 @@
           ],
           [
             1920,
-            99
+            106
+          ],
+          [
+            1880,
+            98
           ],
           [
             1840,
-            83
+            90
+          ],
+          [
+            1800,
+            82
           ],
           [
             1760,
-            69
+            75
+          ],
+          [
+            1720,
+            68
           ],
           [
             1680,
-            56
+            61
+          ],
+          [
+            1640,
+            55
           ],
           [
             1600,
-            44
+            49
+          ],
+          [
+            1560,
+            43
           ],
           [
             1520,
+            38
+          ],
+          [
+            1480,
             34
           ],
           [
             1440,
+            29
+          ],
+          [
+            1400,
             25
           ],
           [
             1360,
-            17
+            21
+          ],
+          [
+            1320,
+            18
           ],
           [
             1280,
-            11
+            15
+          ],
+          [
+            1240,
+            12
           ],
           [
             1200,
-            6
+            10
+          ],
+          [
+            1160,
+            8
           ],
           [
             1120,
-            3
-          ],
-          [
-            1040,
-            1
-          ],
-          [
-            960,
-            0
-          ],
-          [
-            880,
-            1
-          ],
-          [
-            800,
-            3
-          ],
-          [
-            720,
             6
           ],
           [
+            1080,
+            5
+          ],
+          [
+            1040,
+            4
+          ],
+          [
+            1000,
+            4
+          ],
+          [
+            960,
+            3
+          ],
+          [
+            920,
+            4
+          ],
+          [
+            880,
+            4
+          ],
+          [
+            840,
+            5
+          ],
+          [
+            800,
+            6
+          ],
+          [
+            760,
+            8
+          ],
+          [
+            720,
+            10
+          ],
+          [
+            680,
+            12
+          ],
+          [
             640,
-            11
+            15
+          ],
+          [
+            600,
+            18
           ],
           [
             560,
-            17
+            21
           ],
           [
-            480,
+            520,
             25
           ],
           [
-            400,
+            480,
+            29
+          ],
+          [
+            440,
             34
           ],
           [
+            400,
+            38
+          ],
+          [
+            360,
+            43
+          ],
+          [
             320,
-            44
+            49
+          ],
+          [
+            280,
+            55
           ],
           [
             240,
-            56
+            61
+          ],
+          [
+            200,
+            68
           ],
           [
             160,
-            69
+            75
+          ],
+          [
+            120,
+            82
           ],
           [
             80,
-            83
+            90
+          ],
+          [
+            40,
+            98
           ],
           [
             0,
-            99
+            106
           ]
         ],
         "steering_column": [
           [
-            210,
+            180,
             932
           ],
           [
-            300,
-            854
+            272,
+            862
           ],
           [
-            460,
-            797
+            300,
+            845
+          ],
+          [
+            380,
+            815
+          ],
+          [
+            480,
+            792
           ],
           [
             572,
@@ -313,6 +558,42 @@
           [
             1710,
             932
+          ]
+        ],
+        "wheel_rim_left": [
+          [
+            0,
+            0
+          ],
+          [
+            160,
+            0
+          ],
+          [
+            160,
+            70
+          ],
+          [
+            0,
+            158
+          ]
+        ],
+        "wheel_rim_right": [
+          [
+            1725,
+            0
+          ],
+          [
+            1920,
+            0
+          ],
+          [
+            1920,
+            177
+          ],
+          [
+            1725,
+            63
           ]
         ]
       }
