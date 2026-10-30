@@ -4,9 +4,9 @@
 .cset32.hold { opacity: 1; }
 .cset32.show { animation: cset32 3.6s linear forwards; }
 @keyframes cset32 { 0%, 83% { opacity: 1; } 100% { opacity: 0; } }
-/* Cue A: a small cruise symbol before MPH; grey while cruise is on, green while set. */
+/* Cue A: a small cruise symbol before MPH; amber while cruise is on but not set (MPH stays grey), green while set. */
 .sunit { display: flex; align-items: center; gap: 12px; }
-.cr32 { width: 22px; height: 22px; background: #8a929c; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; }
+.cr32 { width: 22px; height: 22px; background: var(--caution); -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; }
 .cr32.on { background: var(--ok); }
 /* Cue B: the MPH label in green while set. */
 .sunit.cr32b { color: var(--ok); }

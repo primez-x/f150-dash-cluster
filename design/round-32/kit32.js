@@ -7,7 +7,7 @@
 //   apart from the ticks. The limiter (cruiseLimState) keeps the white arrow from round 19.
 // - Number: green, above the arrow. A change of the set speed shows the number at once; the number holds for
 //   SET_HOLD_MS after the last change, then fades over SET_FADE_MS. A new change restarts the hold.
-// - ?cue=a|b, the steady cue while cruise is on. A: a small cruise symbol beside MPH (grey while cruise is on but not set,
+// - ?cue=a|b, the steady cue while cruise is on. A: a small cruise symbol beside MPH (amber while cruise is on but not set,
 //   green while set). B: the MPH label turns green while set; cruise on but not set shows no cue.
 //   Locked (2026-10-30): both, the symbol and the green MPH label. Both is the default; ?cue=a or ?cue=b shows one alone.
 // - ?adjust=1 runs a live demo: the set speed steps up three times and down twice. The "cruiseadj" scene holds the number.
