@@ -33,7 +33,7 @@ const REDLINE = 6000, TACHO_MAX = 7000;
 
 // Boost (towing): manifold pressure above atmospheric, in psi on both sides of zero. The 2017+ 3.5 EcoBoost peaks near 16 psi.
 // Vacuum (closed throttle) fills left of the zero mark in quiet grey; boost fills right in the accent colour.
-// No firmware field reports boost yet: the gauge needs a new vehicle signal (protocol work).
+// The JLY parser fills turbo and boostPercentage (command 0x40). The truck log gives the scale.
 const BOOST_MIN = -10, BOOST_MAX = 20;
 function boost(s, at) {
   const n = 15, step = (BOOST_MAX - BOOST_MIN) / n, b = s.boost;
@@ -44,7 +44,7 @@ function boost(s, at) {
     if (b < 0 && c < 0 && c >= b) return `<i class="vac"></i>`;
     return "<i></i>";
   }).join("");
-  return `<div class="abs boost${b == null ? " nodata" : ""}" style="${at}" data-field="boost: no firmware field yet (new vehicle signal needed)">
+  return `<div class="abs boost${b == null ? " nodata" : ""}" style="${at}" data-field="boost: turbo, boostPercentage (JLY 0x40, vehicleInfoNotify); scale from the truck log">
     <div class="top"><span class="k">BOOST</span><span class="rv">${b == null ? "--" : b < 0 ? `−${-b}` : b}<span class="u">psi</span></span></div>
     <div class="bseg">${segs}<b style="left:${-BOOST_MIN / (BOOST_MAX - BOOST_MIN) * 100}%"></b></div></div>`;
 }

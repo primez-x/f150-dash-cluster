@@ -42,7 +42,7 @@ finish = function (s) {
 // Bottom corners: each symbol sits beside the corner end of the band that the symbol names (user direction, 2026-10-30).
 // The bands meet the screen corner at about (153, 869) for rpm and (125, 844) for boost; the trailer brake band mirrors rpm.
 // Each symbol sits on the screen-edge side of the band end, inside the 20 px margin. BRAKING moves above the brake symbol.
-const CORNER_SYM = [["tach", 44, 100, 884, "tacho rpm"], ["turbo", 34, 84, 828, "boost: no firmware field yet (new vehicle signal needed)"]];
+const CORNER_SYM = [["tach", 44, 100, 884, "tacho rpm"], ["turbo", 34, 84, 828, "boost: turbo, boostPercentage (JLY 0x40, vehicleInfoNotify); scale from the truck log"]];
 function cornerIcons(s) {
   document.querySelector(".emarks").remove();
   place(CORNER_SYM.map(([n, h, x, y, f]) => `<div class="abs csym" style="left:${x - h / 2}px;top:${y - h / 2}px" data-field="${f}">${sym(n, h)}</div>`).join(""));

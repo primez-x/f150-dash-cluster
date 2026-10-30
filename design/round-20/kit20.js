@@ -37,7 +37,7 @@ SYM.roll = `<g transform="rotate(14 27 30)"><path d="M17 19l3-7h14l3 7"/><rect x
 PAGE_SYM.level = "roll";
 PAGE_STATE.level = tiltState;
 Object.assign(SEC_FOCUS, { climb: "level", descent: "level", tilt: "level" });
-SEC.engine = s => `<div class="cells">${scell("tach", s.rpm.toLocaleString("en-US"), "rpm", "tacho rpm")}${scell("turbo", boostText(s), "psi", "boost: no firmware field yet")}</div>`;
+SEC.engine = s => `<div class="cells">${scell("tach", s.rpm.toLocaleString("en-US"), "rpm", "tacho rpm")}${scell("turbo", boostText(s), "psi", "boost: turbo, boostPercentage (JLY 0x40, vehicleInfoNotify); scale from the truck log")}</div>`;
 
 const GRADE_FIELD = "mPitch getPitchString() (grade = tan pitch)", ROLL_FIELD = "mRoll getRollString()";
 const rollSym = (s, h) => sym("roll", h, s.roll < 0 ? "flip" : "");

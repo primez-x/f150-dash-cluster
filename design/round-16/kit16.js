@@ -8,7 +8,7 @@ const FOCUS_PAGE = { temps: "temps", warmup: "temps", tires: "tires", brake: "tr
 const PANEL = { x: 1060, w: 660, top: 262 };
 SYM.thermo = `<path d="M22 31V11a5 5 0 0 1 10 0v20a10 10 0 1 1-10 0Z"/><path d="M27 18v18"/><circle cx="27" cy="39" r="4" fill="#000"/><path d="M38 14h6M38 22h6"/>`;
 const PAGE_SYM = { trailer: "trailer", temps: "thermo", tires: "tire", engine: "tach", trip: "road" };
-const BRAKE_FIELD = "trucksTrailerGain (setting); live output: no firmware field yet (brake pedal + controller output needed)";
+const BRAKE_FIELD = "trailer brake: trucksTrailerOutput, trucksTrailerBrakeState, trucksTrailerOutputState, trucksTrailerGain (JLY 0x1A, trucksTrailerInfoNotify); output scale from the truck log";
 
 // Page state for the navigation: the state colour a page needs while the page is not on screen.
 const worstT = s => ["hot", "warm", "cold", "nodata"].find(st => anyT(s, st)) || "";
@@ -24,7 +24,7 @@ const PAGE_VIEW = {
     brakeMeter(s, `left:${PANEL.x + 50}px;top:${PANEL.top + 230}px;width:${PANEL.w - 100}px`),
   temps: s => tBarsH(s, 150, true, false, `top:${PANEL.top}px`),
   tires: s => tires4(s, 230, `left:${PANEL.x + 110}px;top:${PANEL.top + 10}px;width:${PANEL.w - 220}px`).replace('class="abs tp"', 'class="abs tp bigtp"'),
-  engine: s => grid2([big(sym("tach", 52), s.rpm.toLocaleString("en-US"), "rpm", "tacho rpm"), big(sym("turbo", 52), boostText(s), "psi", "boost: no firmware field yet"),
+  engine: s => grid2([big(sym("tach", 52), s.rpm.toLocaleString("en-US"), "rpm", "tacho rpm"), big(sym("turbo", 52), boostText(s), "psi", "boost: turbo, boostPercentage (JLY 0x40, vehicleInfoNotify); scale from the truck log"),
     big(gradeSym(s, 52), gradeText(s.grade), "%", "mPitch (grade = tan pitch)"), big(sym("oil", 52), Math.round(2.9 * 14.5), "psi", "trucksOilPressure (bar)")]),
   trip: s => grid2([big(sym("road", 52), s.trip, "mi", "mTripA"), big(sym("clock", 52), "2:41", "h", "RunTimeInfo"),
     big(sym("avg", 52), s.avg, "mpg", "mAvgFuel"), big(sym("now", 52), s.mpgNow, "mpg", "instant mpg")]),

@@ -17,10 +17,10 @@ const FOCUS = [
   ["temps", s => anyT(s, "hot")],             // waterTemp gearBoxTemp oilTemp diffOilTemp
   ["tires", s => s.low >= 0],                 // mTpmsPressure
   ["fuel", s => fuelLight(s)],                // alarmTable[151] low-fuel light
-  ["brake", s => !!s.braking],                // no firmware field yet: brake pedal and controller output
+  ["brake", s => !!s.braking],                // trucksTrailerBrakeState (JLY 0x1A)
   ["fuel", s => fuelLow(s)],                  // DTE at or under LOW_RANGE miles
   ["temps", s => anyT(s, "warm")],
-  ["climb", s => s.grade >= 4 || s.boost >= 10], // mPitch; boost has no firmware field yet
+  ["climb", s => s.grade >= 4 || s.boost >= 10], // mPitch; turbo / boostPercentage (JLY 0x40)
   ["descent", s => s.grade <= -4],            // mPitch
   ["warmup", s => anyT(s, "cold")],
 ];

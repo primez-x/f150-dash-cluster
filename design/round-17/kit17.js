@@ -13,7 +13,7 @@ const SEC = {
     `${scell("trailer", s.trailerMi, "mi", "trucksTrailerDistance getTrucksTrailerDistance()")}</div>` +
     `<div class="bmeter" data-field="trailer brake output · trucksTrailerGain"><i class="fill" style="width:${(s.braking ? s.output : 0) * 10}%"></i><i class="gain" style="left:${s.gain * 10}%"></i></div>`,
   tires: s => tires4(s, 132, "").replace('class="abs tp"', 'class="tp"'),
-  engine: s => `<div class="cells">${scell("tach", s.rpm.toLocaleString("en-US"), "rpm", "tacho rpm")}${scell("turbo", boostText(s), "psi", "boost: no firmware field yet")}` +
+  engine: s => `<div class="cells">${scell("tach", s.rpm.toLocaleString("en-US"), "rpm", "tacho rpm")}${scell("turbo", boostText(s), "psi", "boost: turbo, boostPercentage (JLY 0x40, vehicleInfoNotify); scale from the truck log")}` +
     `<span class="icell" data-field="mPitch (grade = tan pitch)">${gradeSym(s, 36)}<span class="rv">${gradeText(s.grade)}<span class="u">%</span></span></span></div>`,
   trip: s => `<div class="cells">${scell("road", s.trip, "mi", "mTripA")}${scell("clock", "2:41", "h", "RunTimeInfo")}${scell("avg", s.avg, "mpg", "mAvgFuel")}</div>`,
 };

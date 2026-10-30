@@ -75,8 +75,8 @@ frame(s);
 crawl(s) ? steerBar(s) : speedRuler(s);
 layer(
   band({ x1: CORNER_X1, n: 20, value: s.rpm / TACHO_MAX, redFrom: REDLINE / TACHO_MAX, field: "tacho rpm" }) +
-  band2({ x1: CORNER_X1, n: 24, len: 14, w: 6, from: boostAt(0), value: boostAt(s.boost), color: boostTint(s), mark: boostAt(0), field: "boost: no firmware field yet (new vehicle signal needed)" }, 1) +
-  band({ side: "r", x1: CORNER_X1, n: 20, value: s.braking ? s.output / 10 : 0, avail: s.gain / 10, mark: s.gain / 10, field: "trailer brake output" })
+  band2({ x1: CORNER_X1, n: 24, len: 14, w: 6, from: boostAt(0), value: boostAt(s.boost), color: boostTint(s), mark: boostAt(0), field: "boost: turbo, boostPercentage (JLY 0x40, vehicleInfoNotify); scale from the truck log" }, 1) +
+  band({ side: "r", x1: CORNER_X1, n: 20, value: s.braking ? s.output / 10 : 0, avail: s.gain / 10, mark: s.gain / 10, field: "trucksTrailerOutput (JLY 0x1A)" })
 );
 place(`
   ${compass(s)}${altitude(s)}
