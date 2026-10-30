@@ -1,0 +1,21 @@
+/* Round 23: side stacks and a center compass. Loads after round-22/kit22.css. */
+.stack23 { display: flex; box-sizing: border-box; }
+/* Clock stack: time, date, and the outside temperature (with the altitude on Towing), aligned to the outer edge. */
+.stack23.info { flex-direction: column; gap: 6px; }
+.stack23.info.right { align-items: flex-end; text-align: right; }
+.stack23.info.left { align-items: flex-start; }
+.stack23.info .tb { position: static; }
+.date23 { font: 20px "BMW Type Global"; letter-spacing: 1px; color: #8a929c; }
+.row23 { display: flex; align-items: baseline; gap: 22px; }
+.stack23.info.right .row23 { flex-direction: row-reverse; }
+.row23 .alt { position: static; font: 30px "BMW Type Global"; letter-spacing: 1px; }
+/* Warning lights: rows that fill from the outer edge and grow downward. */
+.telltales.stack23 { flex-wrap: wrap; gap: 10px 16px; transform: none; }
+/* 46 px icons: six wide telltales fit in two rows (y 62 to 164), clear of the cruise readout. */
+.telltales.stack23 img { height: 46px; }
+.telltales.stack23.right { justify-content: flex-end; }
+.telltales.stack23.left { justify-content: flex-start; }
+/* The alert banner stays top center, under the heading tape. */
+.alert4 { top: 92px; }
+/* Cruise beside the speed digits: the symbol and the set speed only (as round-19/kit19.css), except the limiter tag. */
+.cruise:not([data-state="lim"]) .tag, .cruise .unit { display: none; }
