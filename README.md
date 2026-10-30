@@ -153,6 +153,31 @@ python tools/export_layouts.py
 
 Open `handoff/claude-dashboard/index.html` for the gallery. Schematics describe declared bounds; the schematics are not device screenshots.
 
+## USB install
+
+The vendor USB updater (`/etc/mdev/update.sh`) runs `encrypt/encrypt.sh` from `encrypt.zip` as root on each USB drive insertion. The updater runs from the USB hotplug rule, not from the dashboard. A broken dashboard therefore does not block a USB rollback.
+
+`tools/usb-install/encrypt.sh` installs, rolls back, or collects logs. One marker file next to `encrypt.zip` selects the action. The script pins the hash of every payload file in `viknav-ui/`.
+
+- Install: the script aborts with no change for an unknown Launcher, an unknown `/etc/vn*.qml` file, a damaged payload, or low space. The script stops the Launcher, backs up `/private/Launcher` to the drive, and stages and checks each file. Then the script renames the `/etc` files and the Launcher into place and starts the Launcher.
+- Health check: the new Launcher must log `VehicleEvent Ver:VehicleEvent@` and `main.qml starting`, stay up for 20 s, and log no `/etc/vn` error. Otherwise the script restores the original Launcher, the `/etc` files, and the settings. The script also writes `INSTALL-BLOCKED.txt`, so the next insertion does not try the install again.
+- Rollback: the script restores the original Launcher from the drive, removes the `/etc/vn*.qml` files, and restores the settings from before the first install.
+- Log: the script copies `/tmp/Launcher.log` and the installed hashes. The script changes nothing.
+- A repeated install or rollback with nothing to change does not restart the dashboard.
+
+Results go to a new `viknav-ui-<action>-<time>-<pid>` folder on the drive. Line 1 of `STATUS.txt` is the result. The boot scripts (`S01private`, `S90mount`, `rcS`) are not part of the install.
+
+Replay the installer against a fake cluster root with the real payload bytes, then build the drive contents (Ubuntu under WSL):
+
+```powershell
+wsl.exe -d Ubuntu --exec sh -c "cd /mnt/c/f150-dash-cluster/tools/busybox && apt-get download busybox-static && dpkg-deb -x busybox-static_*.deb deb && cp deb/usr/bin/busybox busybox"
+wsl.exe -d Ubuntu --exec python3 /mnt/c/f150-dash-cluster/tests/usb-install-replay.py
+wsl.exe -d Ubuntu --exec sh -c "cd /mnt/c/f150-dash-cluster && python3 tools/build_usb_install.py"
+```
+
+The builder reads the updater archive password from the captured updater; the password does not enter Git. Copy `drive/` to the top level of the USB drive, and copy exactly one file from `markers/`.
+Do not put `dashboard.zip`, `Ford.zip`, `factory.zip`, or a `dashboard_backup` folder on the drive. Those names start other vendor updater actions.
+
 ## Patch boundary
 
 Source replay verifies selected math and state transitions. Source replay does not verify Qt rendering, CAN interpretation, sensor calibration, or live vehicle behavior.

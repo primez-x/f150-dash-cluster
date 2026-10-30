@@ -9,6 +9,8 @@
 !/tools/export_layouts.py
 !/tools/prepare_ui_candidate.py
 !/tools/build_timezone_grid.py
+!/tools/build_usb_install.py
+!/tools/usb-install/encrypt.sh
 !/tests/*.cjs
 !/tests/*.py
 !/tests/qt-host-requirements.txt
