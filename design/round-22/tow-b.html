@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 22 · Towing A · B Truck images</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="../round-02/kit.css">
+<link rel="stylesheet" href="../round-04/kit4.css">
+<link rel="stylesheet" href="../round-06/kit6.css">
+<link rel="stylesheet" href="../round-07/kit7.css">
+<link rel="stylesheet" href="../round-08/kit8.css">
+<link rel="stylesheet" href="../round-10/kit10.css">
+<link rel="stylesheet" href="../round-12/kit12.css">
+<link rel="stylesheet" href="../round-13/kit13.css">
+<link rel="stylesheet" href="../round-14/kit14.css">
+<link rel="stylesheet" href="../round-15/kit15.css">
+<link rel="stylesheet" href="../round-16/kit16.css">
+<link rel="stylesheet" href="../round-17/kit17.css">
+<link rel="stylesheet" href="../round-18/kit18.css">
+<link rel="stylesheet" href="../round-19/kit19.css">
+<link rel="stylesheet" href="../round-20/kit20.css">
+<link rel="stylesheet" href="kit22.css">
+<style>
+  .speed { left: 960px; top: 156px; transform: translateX(-50%); text-align: center; font-size: 210px; letter-spacing: -4px; }
+  .sunit { left: 960px; top: 404px; transform: translateX(-50%); font: var(--small) "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
+  .gblk { left: 1264px; top: 200px; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+  .state { font: 600 var(--small) "BMW Type Global"; letter-spacing: 4px; color: var(--accent); }
+  .tp { column-gap: 40px; }
+</style>
+</head>
+<body class="tow grow">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="../round-02/kit.js"></script>
+<script src="../round-04/kit4.js"></script>
+<script src="../round-06/kit6.js"></script>
+<script src="../round-07/kit7.js"></script>
+<script src="../round-08/kit8.js"></script>
+<script src="../round-10/kit10.js"></script>
+<script src="../round-12/kit12.js"></script>
+<script src="../round-13/kit13.js"></script>
+<script src="../round-14/kit14.js"></script>
+<script src="../round-15/kit15.js"></script>
+<script src="../round-16/kit16.js"></script>
+<script src="../round-17/kit17.js"></script>
+<script src="../round-18/kit18.js"></script>
+<script src="../round-19/kit19.js"></script>
+<script src="../round-20/kit20.js"></script>
+<script src="kit22.js"></script>
+<script>
+// Round 22: the round 20 page on the measured visible area, with the top bar from ?top=a|b (kit22.js).
+// Round 20 option B, truck images: the locked Towing A (round 19 A) with wheel angle, grade and roll, compass heading, and altitude.
+// At crawl speed (8 mph and under) or in reverse, the steering bar takes the place of the speed scale.
+// Level page (a fifth page, at every speed): the stock Ford truck images (side view and rear view) turned to the true angle, each with one number.
+// The engine page keeps rpm and boost; the grade moves to the level page. Climb, descent, and a roll past 10 degrees at
+// crawl speed jump the panel to the level page.
+// Top bar: a heading tape with no seam beside the clock (?turn=1 runs a live turn through north), and the altitude beside the outside temperature.
+SEC.level = levelArt;
+const s = state("tow"), F = focusOf(s);
+if (params.has("cruise")) s.cruise = params.get("cruise");
+const allT = F === "temps" || F === "warmup";
+document.body.classList.add(`focus-${F}`);
+frame(s);
+crawl(s) ? steerBar(s) : speedRuler(s);
+layer(
+  band({ x1: CORNER_X1, n: 20, value: s.rpm / TACHO_MAX, redFrom: REDLINE / TACHO_MAX, field: "tacho rpm" }) +
+  band2({ x1: CORNER_X1, n: 24, len: 14, w: 6, from: boostAt(0), value: boostAt(s.boost), color: boostTint(s), mark: boostAt(0), field: "boost: no firmware field yet (new vehicle signal needed)" }, 1) +
+  band({ side: "r", x1: CORNER_X1, n: 20, value: s.braking ? s.output / 10 : 0, avail: s.gain / 10, mark: s.gain / 10, field: "trailer brake output" })
+);
+place(`
+  ${compass(s)}${altitude(s)}
+  <div class="abs big speed" data-field="speed">${digits(s.speed)}</div>
+  <div class="abs sunit" data-field="vehicleSpeedUnit">MPH</div>
+  <div class="abs gblk">${gear(s, GEAR_SIZE)}<div class="drow">${driveChip(s)}</div></div>
+  ${tBarsK(s, ["trans", "coolant"], allT, "left:270px;top:186px;width:230px")}
+  ${tBarsK(s, ["oil", "diff"], allT, "left:1420px;top:186px;width:230px")}
+  ${secPanel(s, F, PANEL_C)}
+  ${engineMarks("left:48px;top:640px")}
+  <div class="abs corner r ${s.braking ? "on" : "idle"}" style="right:48px;top:640px" data-field="${BRAKE_FIELD}"><span class="k">${s.braking ? `<span class="state">BRAKING</span>` : ""}${sym("trailerBrake", 44)}</span></div>
+  ${fuelCenter(s, { level: false, quarters: true })}
+`);
+clockState(s);
+if (params.has("turn")) turnDemo(s);
+finish(s);
+</script>
+</body>
+</html>

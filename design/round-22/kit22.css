@@ -1,0 +1,9 @@
+/* Round 22: the measured visible area. The bezel and the shroud draw as the black frame; the wheel rim corners draw darker
+   than the screen with a faint edge, because the rim position depends on the wheel tilt and the driver. */
+.mask22 { left: 0; top: 0; pointer-events: none; }
+.mask22 path { fill: #060708; stroke: rgba(255, 255, 255, .07); stroke-width: 2; }
+.mask22 path.rimLeft, .mask22 path.rimRight { fill: #0d0f12; stroke: rgba(255, 255, 255, .12); stroke-dasharray: 6 6; }
+body.nobezel .mask22 { display: none; }
+/* Top bar (kit22.js TOP): the altitude moves in from the round 20 place (right 178), which the wheel rim hides. */
+body.top-a .alt { right: 500px; top: 60px; }
+body.top-b .alt { right: 490px; top: 48px; }

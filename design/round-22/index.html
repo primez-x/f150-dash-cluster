@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 22</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 22 · Layouts on the measured visible area</h1>
+<p>Rounds 4 to 21 used a guessed shroud (an arch from y 752, nothing hidden at the top). The truck photos of Factory &gt; Screen grid
+(2026-10-30) give the real hidden areas, checked by <code>python tools/check_visible_area.py</code> (42 of 42 edge points pass).
+Every mock in this round draws the measured areas and passes the 20 px margin check (<code>capture.js</code>: no content in a hidden area or the margin).</p>
+<ul>
+  <li>Bezel arch: hides y &lt; 3 + (x − 960)² / 9000: 3 px at the center, 43 px at x 360 and x 1560, 106 px at the side edges.</li>
+  <li>Steering column shroud: from y 776 at x 572 to 1348, widening to x 180 to 1710 at the bottom row.</li>
+  <li>Wheel rim, from the driver eye with the wheel straight ahead: the top corners, down to y 158 at x 0 and y 177 at x 1920 (the dashed corners).</li>
+</ul>
+<p>Result of the audit on the round 9 and round 20 layouts: the bottom corners, the fuel line, and the sides all clear the measured shroud.
+Only the top bar fails. The clock and the outside temperature (x 64 and x 1856, y 28) sit behind the arch and the rim by about 100 px, and on Towing A
+the heading tape and the altitude sit up to 60 px into the arch. The telltale row also touched the arch, so the row moves down to y 30 and holds at most 480 px (six wide telltales).
+Earlier round shots were captured with the guessed shroud, so this round shows every open option again on the measured area.</p>
+<p><strong>Picks: open.</strong> Three sets, with one letter for each layout. Add <code>&amp;mask=1</code> to any page to see the 20 px margin.</p>
+
+<h2>Pick 1 · Top bar, for each layout</h2>
+<ul>
+  <li>A · One line: every top-bar item on one straight line at y 60, moved in to x 400 to 1520, where the line clears the arch. The top corners stay empty.</li>
+  <li>B · Center group: the clock and the outside temperature sit beside the telltale row (right edge x 700, left edge x 1220), on the telltale line.
+    On Towing, the heading tape and the altitude sit outside them, each lower, where the arch leaves room.</li>
+  <li>Six telltales at once (bulb check, several faults) fill x 720 to 1200 in both options. In B the clock and the temperature sit right beside a full row.</li>
+</ul>
+<h3>Daily A · pick A or B</h3>
+<div class="grid">
+  <div><h3>A · normal</h3><a href="daily-a-a.html?top=a"><img src="shots/daily-a-a-a-normal.png" alt=""></a></div>
+  <div><h3>B · normal</h3><a href="daily-a-a.html?top=b"><img src="shots/daily-a-a-b-normal.png" alt=""></a></div>
+  <div><h3>A · cruise set</h3><a href="daily-a-a.html?top=a&scene=cruise"><img src="shots/daily-a-a-a-cruise.png" alt=""></a></div>
+  <div><h3>B · cruise set</h3><a href="daily-a-a.html?top=b&scene=cruise"><img src="shots/daily-a-a-b-cruise.png" alt=""></a></div>
+  <div><h3>A · six telltales</h3><a href="daily-a-a.html?top=a&scene=busy"><img src="shots/daily-a-a-a-busy.png" alt=""></a></div>
+  <div><h3>B · six telltales</h3><a href="daily-a-a.html?top=b&scene=busy"><img src="shots/daily-a-a-b-busy.png" alt=""></a></div>
+</div>
+<h3>Daily B · pick A or B</h3>
+<div class="grid">
+  <div><h3>A · normal</h3><a href="daily-b-a.html?top=a"><img src="shots/daily-b-a-a-normal.png" alt=""></a></div>
+  <div><h3>B · normal</h3><a href="daily-b-a.html?top=b"><img src="shots/daily-b-a-b-normal.png" alt=""></a></div>
+  <div><h3>A · normal (temperature fan)</h3><a href="daily-b-b.html?top=a"><img src="shots/daily-b-b-a-normal.png" alt=""></a></div>
+  <div><h3>B · normal (temperature fan)</h3><a href="daily-b-b.html?top=b"><img src="shots/daily-b-b-b-normal.png" alt=""></a></div>
+</div>
+<h3>Towing A · pick A or B</h3>
+<div class="grid">
+  <div><h3>A · highway: heading tape beside the clock, altitude beside the outside temperature</h3><a href="tow-a.html?top=a"><img src="shots/tow-a-a-normal.png" alt=""></a></div>
+  <div><h3>B · highway: heading tape beside the clock, altitude beside the outside temperature</h3><a href="tow-a.html?top=b"><img src="shots/tow-a-b-normal.png" alt=""></a></div>
+  <div><h3>A · crawl: the tape dims (held)</h3><a href="tow-a.html?top=a&scene=crawl"><img src="shots/tow-a-a-crawl.png" alt=""></a></div>
+  <div><h3>B · crawl: the tape dims (held)</h3><a href="tow-a.html?top=b&scene=crawl"><img src="shots/tow-a-b-crawl.png" alt=""></a></div>
+  <div><h3>A · cruise set</h3><a href="tow-a.html?top=a&scene=cruise"><img src="shots/tow-a-a-cruise.png" alt=""></a></div>
+  <div><h3>B · cruise set</h3><a href="tow-a.html?top=b&scene=cruise"><img src="shots/tow-a-b-cruise.png" alt=""></a></div>
+  <div><h3>A · six telltales</h3><a href="tow-a.html?top=a&scene=busy"><img src="shots/tow-a-a-busy.png" alt=""></a></div>
+  <div><h3>B · six telltales</h3><a href="tow-a.html?top=b&scene=busy"><img src="shots/tow-a-b-busy.png" alt=""></a></div>
+  <div><h3>A · 10 seconds after a time zone change</h3><a href="tow-a.html?top=a&clock=zone"><img src="shots/tow-a-a-clockzone.png" alt=""></a></div>
+  <div><h3>B · 10 seconds after a time zone change</h3><a href="tow-a.html?top=b&clock=zone"><img src="shots/tow-a-b-clockzone.png" alt=""></a></div>
+</div>
+
+<h2>Pick 2 · Round 9 Daily options, on the measured area (still open)</h2>
+<p>The same options as <a href="../round-09/">round 9</a>; the shots below use top bar A. Fuel stays in the bottom-right corner on both daily layouts.</p>
+<h3>Daily A · pick A or B</h3>
+<div class="grid">
+  <div><h3>A · Corner modules: economy left, fuel right</h3><a href="daily-a-a.html?top=a"><img src="shots/daily-a-a-a-normal.png" alt=""></a></div>
+  <div><h3>B · Wings: economy band left, fuel band right</h3><a href="daily-a-b.html?top=a"><img src="shots/daily-a-b-a-normal.png" alt=""></a></div>
+</div>
+<h3>Daily B · pick A or B</h3>
+<div class="grid">
+  <div><h3>A · Corner modules: economy left, fuel right</h3><a href="daily-b-a.html?top=a"><img src="shots/daily-b-a-a-normal.png" alt=""></a></div>
+  <div><h3>B · Temperature fan left, fuel right</h3><a href="daily-b-b.html?top=a"><img src="shots/daily-b-b-a-normal.png" alt=""></a></div>
+</div>
+
+<h2>Pick 3 · Round 20 level page on Towing A (still open)</h2>
+<p>The same options as <a href="../round-20/">round 20</a>: A shows the grade and the roll as numbers with symbols; B shows the stock Ford truck images turned to the true angle.</p>
+<div class="grid">
+  <div><h3>A · Numbers</h3><a href="tow-a.html?top=a&page=3"><img src="shots/tow-a-a-level.png" alt=""></a></div>
+  <div><h3>B · Truck images</h3><a href="tow-b.html?top=a&page=3"><img src="shots/tow-b-a-level.png" alt=""></a></div>
+  <div><h3>A · Numbers, top bar B</h3><a href="tow-a.html?top=b&page=3"><img src="shots/tow-a-b-level.png" alt=""></a></div>
+  <div><h3>B · Truck images, top bar B</h3><a href="tow-b.html?top=b&page=3"><img src="shots/tow-b-b-level.png" alt=""></a></div>
+</div>
+
+<h2>Content gaps</h2>
+<p>These readings have a place in the layouts but no confirmed data source. Each needs a decision: keep (and add protocol work), or remove.</p>
+<ul>
+  <li>Boost (Towing A corner band and engine page): no firmware field. The gauge needs a new vehicle signal (CAN protocol work).</li>
+  <li>Trailer brake output and the BRAKING state (Towing A bottom-right corner and trailer page): only the gain setting (trucksTrailerGain) exists.
+    The live output needs the brake pedal and the controller output.</li>
+  <li>Rear locker chip: alarmTable[76], not yet verified on the truck.</li>
+  <li>Cruise states (set, adaptive, limiter): not yet verified on the truck.</li>
+</ul>
+</body>
+</html>
