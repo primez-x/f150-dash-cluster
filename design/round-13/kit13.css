@@ -1,0 +1,4 @@
+/* Round 13: temperature bars. Loads after round-12/kit12.css. */
+.tbars { left: 1060px; top: 186px; width: 660px; display: flex; justify-content: space-between; }
+.tb13 { width: 120px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.tb13 .rv { font-size: 40px; }

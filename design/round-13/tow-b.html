@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 13 · Towing A · B Bars, no card</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="../round-02/kit.css">
+<link rel="stylesheet" href="../round-04/kit4.css">
+<link rel="stylesheet" href="../round-06/kit6.css">
+<link rel="stylesheet" href="../round-07/kit7.css">
+<link rel="stylesheet" href="../round-08/kit8.css">
+<link rel="stylesheet" href="../round-10/kit10.css">
+<link rel="stylesheet" href="../round-12/kit12.css">
+<link rel="stylesheet" href="kit13.css">
+<style>
+  .speed { right: 1300px; top: 156px; text-align: right; font-size: 210px; letter-spacing: -4px; }
+  .sunit { right: 1304px; top: 372px; font: var(--small) "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
+  .gblk { left: 674px; top: 182px; display: flex; flex-direction: column; align-items: flex-start; gap: 22px; }
+  .gblk .row { display: flex; align-items: center; gap: 22px; }
+  .state { font: 600 var(--small) "BMW Type Global"; letter-spacing: 4px; color: var(--accent); }
+  .tp { column-gap: 40px; }
+  .tp .rv { font-size: 30px; }
+</style>
+</head>
+<body class="tow">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="../round-02/kit.js"></script>
+<script src="../round-04/kit4.js"></script>
+<script src="../round-06/kit6.js"></script>
+<script src="../round-07/kit7.js"></script>
+<script src="../round-08/kit8.js"></script>
+<script src="../round-10/kit10.js"></script>
+<script src="../round-12/kit12.js"></script>
+<script src="kit13.js"></script>
+<script>
+// Round 13 option B, bars and no card: the locked Towing A with symbols in place of text labels, and no paged card.
+// Two aligned groups mirror each other across the center (x 200 to 860 and x 1060 to 1720). Top row: speed and gear on the left,
+// four temperature bars on the right. Trailer distance joins the gear block. Lower row: the tire diagram on the right only.
+// Corners: the engine (RPM band with the boost band outside) and the trailer brake (output band with the gain marker).
+// Fuel sits at bottom center, as on every round 10 layout, without the E and F letters.
+const s = state("tow");
+frame(s);
+layer(
+  band({ x1: CORNER_X1, n: 20, value: s.rpm / TACHO_MAX, redFrom: REDLINE / TACHO_MAX, field: "tacho rpm" }) +
+  band2({ x1: CORNER_X1, n: 24, len: 14, w: 6, from: boostAt(0), value: boostAt(s.boost), color: boostTint(s), mark: boostAt(0), field: "boost: no firmware field yet (new vehicle signal needed)" }, 1) +
+  band({ side: "r", x1: CORNER_X1, n: 20, value: s.braking ? s.output / 10 : 0, avail: s.gain / 10, mark: s.gain / 10, field: "trailer brake output" })
+);
+place(`
+  <div class="abs big speed" data-field="speed">${digits(s.speed)}</div>
+  <div class="abs sunit" data-field="vehicleSpeedUnit">MPH</div>
+  <div class="abs gblk">${gear(s, 120)}<div class="row">${chip(s)}<span class="sv" data-field="mPitch (grade = tan pitch)">${sym("grade", 34)}<span class="rv">+${s.grade}<span class="u">%</span></span></span></div><span class="sv" data-field="trucksTrailerDistance getTrucksTrailerDistance()">${sym("trailer", 36)}<span class="rv">${s.trailerMi}<span class="u">mi</span></span></span></div>
+  ${tBars(s)}
+  ${tires4(s, 140, "left:1240px;top:450px;width:300px")}
+  ${cornerRead({ at: "left:48px;top:628px", label: sym("tach", 44), value: s.rpm.toLocaleString("en-US"),
+    sub: `${sym("turbo", 32)}${boostText(s)}<span class="u">psi</span>`, cls: "xl", field: "tacho rpm · boost" })}
+  ${cornerRead({ side: "r", at: "right:48px;top:628px", label: s.braking ? `<span class="state">BRAKING</span>${sym("trailerBrake", 44)}` : sym("trailerBrake", 44),
+    value: (s.braking ? s.output : s.gain).toFixed(1), unit: s.braking ? `of ${s.gain.toFixed(1)}` : "gain", cls: `xl ${s.braking ? "on" : "idle"}`,
+    field: "trucksTrailerGain (setting); live output: no firmware field yet (brake pedal + controller output needed)" })}
+  ${fuelCenter(s, { ends: null })}
+`);
+finish(s);
+</script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 13</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+  table { border-collapse: collapse; margin-top: 10px; }
+  td, th { padding: 4px 14px; text-align: right; border-bottom: 1px solid #222a33; color: #c9d1da; }
+  th:first-child, td:first-child { text-align: left; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 13 · Towing A with symbols and bars</h1>
+<p>Towing A from <a href="../round-10/">round 10</a> is locked. Rounds 12 and 13 replace text labels with symbols and gauge shapes,
+  and align the screen into two groups that mirror each other across the center. Pick A or B.</p>
+<p>Round 13 replaces the <a href="../round-12/">round 12</a> temperature rings with the vertical temperature bars. Every other round 12 change stays open for evaluation.</p>
+<ul>
+  <li>Both: the temperatures are four vertical bars. Each bar shows the value on top and the symbol under the bar.
+    A warm or hot reading colours the bar, the value, and the symbol. The bars span the same width as the tire diagram group.</li>
+  <li>Both: symbols take the place of RPM, boost, TRAILER BRAKE, grade, and the temperature names. Temperatures show ° only.
+    The fuel line at bottom center drops the E and F letters.</li>
+  <li>Both: new drawn symbols match the stock icon line weight: trailer, trailer brake, turbo, differential temperature, grade, tach,
+    road, clock, average, instant economy, and service. The stock icons cover coolant, oil, transmission, battery, fuel, and range.</li>
+  <li>A · Bars and card: the paged card is one line with no title and no cell labels. A symbol names each value.
+    The trailer page drops BRAKE TYPE (a vehicle setting).</li>
+  <li>B · Bars, no card: trailer distance joins the gear block, and the paged card is gone.
+    Trip, economy, and vehicle pages are then not on the towing screen.</li>
+</ul>
+<div class="grid">
+  <div><h3>A · Bars and card</h3><a href="tow-a.html"><img src="shots/tow-a-normal.png" alt=""></a></div>
+  <div><h3>B · Bars, no card</h3><a href="tow-b.html"><img src="shots/tow-b-normal.png" alt=""></a></div>
+  <div><h3>A · transmission hot, differential warm</h3><a href="tow-a.html?scene=hottrans"><img src="shots/tow-a-hottrans.png" alt=""></a></div>
+  <div><h3>B · transmission hot, differential warm</h3><a href="tow-b.html?scene=hottrans"><img src="shots/tow-b-hottrans.png" alt=""></a></div>
+  <div><h3>A · braking</h3><a href="tow-a.html?scene=braking"><img src="shots/tow-a-braking.png" alt=""></a></div>
+  <div><h3>B · braking</h3><a href="tow-b.html?scene=braking"><img src="shots/tow-b-braking.png" alt=""></a></div>
+  <div><h3>A · right rear tire low</h3><a href="tow-a.html?scene=lowtire"><img src="shots/tow-a-lowtire.png" alt=""></a></div>
+  <div><h3>B · right rear tire low</h3><a href="tow-b.html?scene=lowtire"><img src="shots/tow-b-lowtire.png" alt=""></a></div>
+  <div><h3>A · card page 2: trip</h3><a href="tow-a.html?page=1"><img src="shots/tow-a-page1.png" alt=""></a></div>
+  <div><h3>A · card page 3: economy</h3><a href="tow-a.html?page=2"><img src="shots/tow-a-page2.png" alt=""></a></div>
+  <div><h3>A · card page 4: vehicle</h3><a href="tow-a.html?page=3"><img src="shots/tow-a-page3.png" alt=""></a></div>
+  <div><h3>A · true size</h3><a href="tow-a.html?view=physical&amp;ruler=1"><img src="shots/tow-a-physical.png" alt=""></a></div>
+</div>
+</body>
+</html>
