@@ -28,7 +28,7 @@ RETIRED_FILES="vnB.qml vnF.qml"
 etc_sha256() {
     case "$1" in
         vnG.qml) echo ce54efec52bfda1778234c1939f29dae6c703d1aa3315856260e37543edaf33e ;;
-        vnM.qml) echo 4cc896802f39aac63b0069d2cade407b1b6d66cc91fcae9d0c3243487b71127b ;;
+        vnM.qml) echo 27fac58c773beab055b7f5baa3203be379f0aba3287a20ecd2d10d6ae9f0a76b ;;
         vnS.qml) echo 4d285e170e0de495842a247faf83c2d62834ceea8c1e25be7c56de45ee8bfa45 ;;
         vnV.qml) echo ef6d29dae3b736fa8239930c62cb582abc5c302441d47e35ac0f8c18634829c1 ;;
     esac

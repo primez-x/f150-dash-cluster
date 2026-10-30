@@ -131,7 +131,15 @@ ItemInfo {
     // States: 0 release, 1 press, 2 hold, 3 (3 s hold) ignored. Pages act on release.
     // Hold: Modes = Enter, Back = close the menu, other keys nothing. The next release of a held key is swallowed.
     // A new press ends the hold, so a hold without a release does not swallow the next tap.
+    // Each key event writes one "viknav-key" line to the Launcher log: time (ms), key code, state, then the page path,
+    // cursor, and edit or hosted state after the event. The lines show repeated, held, or missing events from the wheel.
     function key(code, state) {
+        handleKey(code, state)
+        console.log("viknav-key "+Date.now()+" "+code+" "+state+" "+mPath.join("/")+" "+mCursor+
+                    (mEditing?" edit":"")+(mHostedUrl!==""?" hosted":""))
+        return 1
+    }
+    function handleKey(code, state) {
         var g=mGlobalId.item
         var hosted=mHostedUrl!==""
         if(state===1) {
