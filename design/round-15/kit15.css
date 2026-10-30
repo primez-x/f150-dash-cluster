@@ -1,0 +1,27 @@
+/* Round 15: conditional focus. Loads after round-14/kit14.css. */
+.sym.flip { transform: scaleX(-1); }
+.dim { opacity: .35; }
+
+/* Focus modules: large symbol and value pairs. A single value takes the 80 px corner tier; a grid of values takes 64 px. */
+.fslot { display: flex; align-items: center; justify-content: center; height: 300px; }
+.fgrid { display: grid; grid-template-columns: auto auto; justify-content: space-between; align-content: center; row-gap: 48px; height: 300px; }
+.bigsv { display: flex; align-items: center; gap: 18px; white-space: nowrap; }
+.bigsv .rv { font-size: 64px; }
+.fslot > .bigsv .rv { font-size: 80px; }
+.bigsv .u { font-size: 24px; }
+.bigsv.on .rv, .bigsv.on .sym { color: var(--accent); }
+.bigsv.low .rv, .bigsv.low .sym { color: var(--caution); }
+.bigsv.reserve .rv, .bigsv.reserve .sym { color: var(--warn); }
+.tp.bigtp .rv { font-size: 44px; }
+
+/* Status strip: one symbol per reading outside the focus, tinted by state, no numbers. */
+.strip { display: flex; justify-content: center; gap: 52px; }
+.tirest.low .sym { color: var(--caution); }
+
+/* Trailer brake meter: live output fills in the accent colour; the white mark is the gain. */
+.bmeter { height: 14px; border-radius: 7px; background: rgba(255, 255, 255, .06); }
+.bmeter .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 7px; background: linear-gradient(90deg, transparent, var(--accent)); }
+.bmeter .gain { position: absolute; top: -8px; width: 3px; height: 30px; background: #fff; opacity: .6; transform: translateX(-50%); }
+
+/* Option B: the range readout grows in place for a fuel focus. */
+.focus-fuel.grow .fc .rv { font-size: 56px; }

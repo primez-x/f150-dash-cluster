@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 15</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+  table { border-collapse: collapse; margin-top: 10px; }
+  td, th { padding: 4px 14px; text-align: left; border-bottom: 1px solid #222a33; color: #c9d1da; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 15 · Towing A with conditional focus</h1>
+<p>Towing A from <a href="../round-10/">round 10</a> is locked. Round 15 starts from <a href="../round-14/">round 14</a> and makes the screen
+  follow the drive. One rule picks the reading that matters most right now: the focus. The focus shows numbers and size; every other
+  secondary reading stays quiet. Speed, gear, both corner bands, and the fuel line never move. Pick A or B.</p>
+<ul>
+  <li>A · Focus slot: one fixed place on the right always holds the focus. A calm drive shows the quiet temperature bars there.
+    Any other focus fills the slot with large values, and the other readings fold into a strip of symbols under the slot, tinted by state.
+    The driver always looks at the same place.</li>
+  <li>B · Grow in place: every reading keeps the round 14 position. The focus grows and shows numbers in place; the other secondary readings dim.</li>
+  <li>The card question from rounds 12 to 14 stays open: both options keep the one-line card. In A the card stays bright; in B the card dims during a focus.</li>
+  <li>Numbers on a calm drive: speed, gear, the card value, and range, plus the clock and outside temperature.</li>
+</ul>
+
+<h2>Focus rule</h2>
+<p>The first matching row wins. The climb and descent thresholds are design values. The firmware must hold a focus for a few seconds
+  (hysteresis), so a grade near 4 % does not switch the screen back and forth.</p>
+<table>
+  <tr><th>Priority</th><th>Focus</th><th>Trigger</th><th>Firmware signal</th><th>On the truck today</th></tr>
+  <tr><td>1</td><td>Temperatures</td><td>any temperature hot</td><td>waterTemp, gearBoxTemp, oilTemp, diffOilTemp</td><td>yes</td></tr>
+  <tr><td>2</td><td>Tires</td><td>a tire low</td><td>mTpmsPressure</td><td>yes</td></tr>
+  <tr><td>3</td><td>Fuel</td><td>low-fuel light</td><td>alarmTable[151]</td><td>yes</td></tr>
+  <tr><td>4</td><td>Trailer brake</td><td>live trailer braking</td><td>brake pedal and controller output</td><td>no: protocol work</td></tr>
+  <tr><td>5</td><td>Fuel</td><td>50 mi or less to empty</td><td>DTE</td><td>yes</td></tr>
+  <tr><td>6</td><td>Temperatures</td><td>any temperature warm</td><td>as row 1</td><td>yes</td></tr>
+  <tr><td>7</td><td>Climb</td><td>grade 4 % or more, or boost 10 psi or more</td><td>mPitch; boost</td><td>grade yes; boost no: protocol work</td></tr>
+  <tr><td>8</td><td>Descent</td><td>grade −4 % or less</td><td>mPitch</td><td>yes</td></tr>
+  <tr><td>9</td><td>Warm-up</td><td>any temperature cold</td><td>as row 1</td><td>yes</td></tr>
+  <tr><td>—</td><td>Calm</td><td>nothing above</td><td></td><td></td></tr>
+</table>
+
+<h2>A · Focus slot</h2>
+<div class="grid">
+  <div><h3>calm</h3><a href="tow-a.html"><img src="shots/tow-a-normal.png" alt=""></a></div>
+  <div><h3>climb</h3><a href="tow-a.html?scene=climb"><img src="shots/tow-a-climb.png" alt=""></a></div>
+  <div><h3>descent</h3><a href="tow-a.html?scene=descent"><img src="shots/tow-a-descent.png" alt=""></a></div>
+  <div><h3>trailer braking</h3><a href="tow-a.html?scene=braking"><img src="shots/tow-a-braking.png" alt=""></a></div>
+  <div><h3>transmission hot</h3><a href="tow-a.html?scene=hottrans"><img src="shots/tow-a-hottrans.png" alt=""></a></div>
+  <div><h3>braking and transmission hot: the hot transmission wins</h3><a href="tow-a.html?scene=stack"><img src="shots/tow-a-stack.png" alt=""></a></div>
+  <div><h3>low tire</h3><a href="tow-a.html?scene=lowtire"><img src="shots/tow-a-lowtire.png" alt=""></a></div>
+  <div><h3>low fuel</h3><a href="tow-a.html?scene=lowfuel"><img src="shots/tow-a-lowfuel.png" alt=""></a></div>
+  <div><h3>cold start</h3><a href="tow-a.html?scene=cold"><img src="shots/tow-a-cold.png" alt=""></a></div>
+</div>
+
+<h2>B · Grow in place</h2>
+<div class="grid">
+  <div><h3>calm</h3><a href="tow-b.html"><img src="shots/tow-b-normal.png" alt=""></a></div>
+  <div><h3>climb</h3><a href="tow-b.html?scene=climb"><img src="shots/tow-b-climb.png" alt=""></a></div>
+  <div><h3>descent</h3><a href="tow-b.html?scene=descent"><img src="shots/tow-b-descent.png" alt=""></a></div>
+  <div><h3>trailer braking</h3><a href="tow-b.html?scene=braking"><img src="shots/tow-b-braking.png" alt=""></a></div>
+  <div><h3>transmission hot</h3><a href="tow-b.html?scene=hottrans"><img src="shots/tow-b-hottrans.png" alt=""></a></div>
+  <div><h3>braking and transmission hot: the hot transmission wins</h3><a href="tow-b.html?scene=stack"><img src="shots/tow-b-stack.png" alt=""></a></div>
+  <div><h3>low tire</h3><a href="tow-b.html?scene=lowtire"><img src="shots/tow-b-lowtire.png" alt=""></a></div>
+  <div><h3>low fuel</h3><a href="tow-b.html?scene=lowfuel"><img src="shots/tow-b-lowfuel.png" alt=""></a></div>
+  <div><h3>cold start</h3><a href="tow-b.html?scene=cold"><img src="shots/tow-b-cold.png" alt=""></a></div>
+</div>
+
+<h2>True size</h2>
+<div class="grid">
+  <div><h3>A</h3><a href="tow-a.html?view=physical&amp;ruler=1"><img src="shots/tow-a-physical.png" alt=""></a></div>
+  <div><h3>B</h3><a href="tow-b.html?view=physical&amp;ruler=1"><img src="shots/tow-b-physical.png" alt=""></a></div>
+</div>
+</body>
+</html>

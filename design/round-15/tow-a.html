@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 15 · Towing A · A Focus slot</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="../round-02/kit.css">
+<link rel="stylesheet" href="../round-04/kit4.css">
+<link rel="stylesheet" href="../round-06/kit6.css">
+<link rel="stylesheet" href="../round-07/kit7.css">
+<link rel="stylesheet" href="../round-08/kit8.css">
+<link rel="stylesheet" href="../round-10/kit10.css">
+<link rel="stylesheet" href="../round-12/kit12.css">
+<link rel="stylesheet" href="../round-13/kit13.css">
+<link rel="stylesheet" href="../round-14/kit14.css">
+<link rel="stylesheet" href="kit15.css">
+<style>
+  .speed { right: 1300px; top: 156px; text-align: right; font-size: 210px; letter-spacing: -4px; }
+  .sunit { right: 1304px; top: 372px; font: var(--small) "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
+  .gblk { left: 674px; top: 182px; display: flex; flex-direction: column; align-items: flex-start; gap: 22px; }
+  .state { font: 600 var(--small) "BMW Type Global"; letter-spacing: 4px; color: var(--accent); }
+  .tp { column-gap: 40px; }
+  .tp .rv { font-size: 30px; }
+</style>
+</head>
+<body class="tow">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<script src="../round-02/kit.js"></script>
+<script src="../round-04/kit4.js"></script>
+<script src="../round-06/kit6.js"></script>
+<script src="../round-07/kit7.js"></script>
+<script src="../round-08/kit8.js"></script>
+<script src="../round-10/kit10.js"></script>
+<script src="../round-12/kit12.js"></script>
+<script src="../round-13/kit13.js"></script>
+<script src="../round-14/kit14.js"></script>
+<script src="kit15.js"></script>
+<script>
+// Round 15 option A, focus slot: one fixed place on the right (x 1060 to 1720) always holds the reading that matters most.
+// Calm: the slot shows the quiet temperature bars. Any other focus fills the slot with large values, and the readings outside
+// the focus fold into a strip of symbols under the slot, tinted by state. The focus rule is focusOf() in kit15.js.
+// Fixed on every scene: speed, gear, the paged card, both corner bands, and the fuel line.
+const s = state("tow"), F = focusOf(s);
+document.body.classList.add(`focus-${F}`);
+frame(s);
+layer(
+  band({ x1: CORNER_X1, n: 20, value: s.rpm / TACHO_MAX, redFrom: REDLINE / TACHO_MAX, field: "tacho rpm" }) +
+  band2({ x1: CORNER_X1, n: 24, len: 14, w: 6, from: boostAt(0), value: boostAt(s.boost), color: boostTint(s), mark: boostAt(0), field: "boost: no firmware field yet (new vehicle signal needed)" }, 1) +
+  band({ side: "r", x1: CORNER_X1, n: 20, value: s.braking ? s.output / 10 : 0, avail: s.gain / 10, mark: s.gain / 10, field: "trailer brake output" })
+);
+const BRAKE_FIELD = "trucksTrailerGain (setting); live output: no firmware field yet (brake pedal + controller output needed)";
+const SLOT = "left:1060px;top:186px;width:660px";
+const strip = `<div class="abs strip" style="left:1060px;top:528px;width:660px">${["trans", "coolant", "oil", "diff"].map(k => `<span class="temp ${s.T[k].state}" data-field="${s.T[k].field}">${tSym(s.T[k], 38)}</span>`).join("")}` +
+  `<span class="tirest${s.low >= 0 ? " low" : ""}" data-field="mTpmsPressure">${sym("tire", 38)}</span></div>`;
+const slot = {
+  calm: () => tBarsH(s, 100, false),
+  warmup: () => tBarsH(s, 150, true),
+  temps: () => tBarsH(s, 150, true),
+  tires: () => tires4(s, 230, "left:1170px;top:196px;width:440px").replace('class="abs tp"', 'class="abs tp bigtp"') + strip,
+  fuel: () => `<div class="abs fslot" style="${SLOT}">${big(sym("fuel", 70), dash(s.range), "mi", "DTE", fuelState(s))}</div>` + strip,
+  brake: () => `<div class="abs fslot" style="${SLOT};height:240px">${big(sym("trailerBrake", 70), s.output.toFixed(1), `of ${s.gain.toFixed(1)}`, BRAKE_FIELD, "on")}</div>` +
+    brakeMeter(s, "left:1110px;top:446px;width:560px") + strip,
+  climb: () => `<div class="abs fgrid" style="${SLOT}">${big(sym("tach", 52), s.rpm.toLocaleString("en-US"), "rpm", "tacho rpm")}${big(sym("turbo", 52), boostText(s), "psi", "boost: no firmware field yet")}` +
+    `${big(gradeSym(s, 52), gradeText(s.grade), "%", "mPitch (grade = tan pitch)")}${tempBig(s.T.trans)}</div>` + strip,
+  descent: () => `<div class="abs fgrid" style="${SLOT}">${big(gradeSym(s, 52), gradeText(s.grade), "%", "mPitch (grade = tan pitch)")}${big(sym("trailerBrake", 52), s.gain.toFixed(1), "gain", BRAKE_FIELD)}` +
+    `${tempBig(s.T.trans)}${big(sym("tach", 52), s.rpm.toLocaleString("en-US"), "rpm", "tacho rpm")}</div>` + strip,
+}[F]();
+place(`
+  <div class="abs big speed" data-field="speed">${digits(s.speed)}</div>
+  <div class="abs sunit" data-field="vehicleSpeedUnit">MPH</div>
+  <div class="abs gblk">${gear(s, 120)}${chip(s)}</div>
+  ${slot}
+  ${icard(s, "left:200px;top:466px;width:660px;height:108px")}
+  ${engineMarks("left:48px;top:640px")}
+  <div class="abs corner r ${s.braking ? "on" : "idle"}" style="right:48px;top:640px" data-field="${BRAKE_FIELD}"><span class="k">${s.braking ? `<span class="state">BRAKING</span>` : ""}${sym("trailerBrake", 44)}</span></div>
+  ${fuelCenter(s, { level: false, quarters: true })}
+`);
+finish(s);
+</script>
+</body>
+</html>
