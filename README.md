@@ -212,7 +212,7 @@ Source replay verifies selected math and state transitions. Source replay does n
 
 The UI candidate redirects three compiled loaders and includes four source files.
 The generator clears 13 code records in the old factory gate. The generator preserves native code, ELF geometry, and the other 195 cache units.
-The menu-v1 candidate is installed on the truck (2026-10-30). The install log shows a clean start, and the new menu opens. Other vehicle checks remain open.
+The menu-v1 and menu-v2 candidates are installed on the truck (2026-10-30). Both install logs show a clean start, and the menu-v2 key trace recorded the wheel bounce. Other vehicle checks remain open.
 
 System > Units shows independent Manual/Follow state and exposes `followVehicleUnits()`. Host tests verify the controls with recorded native-call stubs.
 
