@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 11</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+  table { border-collapse: collapse; margin-top: 10px; }
+  td, th { padding: 4px 14px; text-align: right; border-bottom: 1px solid #222a33; color: #c9d1da; }
+  th:first-child, td:first-child { text-align: left; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 11 · Towing A clean-up</h1>
+<p>Towing A from <a href="../round-10/">round 10</a> is locked. Round 11 gives the locked layout two clean-up options. Pick A or B.
+  Both options keep the corners and the fuel line at bottom center unchanged.</p>
+<ul>
+  <li>Both: grade joins the gear block under 2H, the divider beside the gear is gone, and the temperature labels lose the icons.</li>
+  <li>A · Grouped: every reading stays on the main screen. The temperature columns are shorter, and the tire block is smaller and sits under the temperatures.</li>
+  <li>B · Exceptions only: tire pressures move to card page 2 and return to the main screen only while a tire is low.
+    The temperatures use short horizontal tracks. Under the temperatures the screen stays empty in normal driving.</li>
+</ul>
+<div class="grid">
+  <div><h3>A · Grouped</h3><a href="tow-a.html"><img src="shots/tow-a-normal.png" alt=""></a></div>
+  <div><h3>B · Exceptions only</h3><a href="tow-b.html"><img src="shots/tow-b-normal.png" alt=""></a></div>
+  <div><h3>A · right rear tire low</h3><a href="tow-a.html?scene=lowtire"><img src="shots/tow-a-lowtire.png" alt=""></a></div>
+  <div><h3>B · right rear tire low: the tire block returns</h3><a href="tow-b.html?scene=lowtire"><img src="shots/tow-b-lowtire.png" alt=""></a></div>
+  <div><h3>A · transmission hot</h3><a href="tow-a.html?scene=hottrans"><img src="shots/tow-a-hottrans.png" alt=""></a></div>
+  <div><h3>B · transmission hot</h3><a href="tow-b.html?scene=hottrans"><img src="shots/tow-b-hottrans.png" alt=""></a></div>
+  <div><h3>A · braking</h3><a href="tow-a.html?scene=braking"><img src="shots/tow-a-braking.png" alt=""></a></div>
+  <div><h3>B · tire pressures on card page 2</h3><a href="tow-b.html?page=1"><img src="shots/tow-b-tires-page.png" alt=""></a></div>
+</div>
+</body>
+</html>
