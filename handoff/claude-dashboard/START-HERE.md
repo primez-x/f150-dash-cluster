@@ -33,10 +33,11 @@ Relative asset literals can contain parent segments as historical evidence. Expo
 ## Measurement
 
 Use declared 1920 × 932 layout coordinates for redesign.
-The physical screen measures 1920 × 720. Main applies uniform scale, rotation, and margins for the selected vehicle model.
-Model index 0 uses scale 0.7752 when the screen height equals 720.
-Other model branches remain explicit in the main geometry bytecode.
-Do not assume a simple vertical resize or claim pixel-perfect physical alignment.
+The truck screen measures 1920 × 932, and main.qml draws the dashboard at scale 1, rotation 0, and top 0 (truck model 1, measured 2026-10-30).
+The bezel opening has an arched top edge: 0 px hidden at the center, 40 px at x 344 and x 1576, and 99 px at the side edges.
+The steering column shroud hides the bottom center: from y 776 between x 572 and x 1348, widening to x 210–1710 at the bottom row.
+Schematics shade both hidden areas red. `shared-contracts.json` → `measurement.visible_area` holds the exact points.
+Physical check engine and tire pressure lamps sit on the bezel outside the screen. Do not draw duplicates for them.
 
 ## Visual limits
 

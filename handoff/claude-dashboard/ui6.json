@@ -16,9 +16,315 @@
       ],
       "physical_display": [
         1920,
-        720
+        932
       ],
-      "warning": "Do not compress Y alone or assume full-width fit. Main uses uniform model-dependent scale, rotation, and margins.",
+      "physical_display_source": "Measured on the truck (Factory > Screen grid). QT_QPA_EGLFS_PHYSICAL_WIDTH/HEIGHT 1920/720 in qtenv.sh are millimetres, not pixels.",
+      "visible_area": {
+        "measured": "2026-10-30 on the truck, Factory > Screen grid, two photos (driver eye height and a lower camera)",
+        "screen": [
+          1920,
+          932
+        ],
+        "dashboard_transform": {
+          "scale": 1,
+          "rotation": 0,
+          "top_margin": 0,
+          "truck_model": 1
+        },
+        "bezel_top": {
+          "rule": "Rows above y = (x - 960)^2 / 9300 are behind the arched bezel: 0 px at the center, 10 px at x 652/1268, 40 px at x 344/1576, 70 px at x 156/1764, 99 px at the side edges.",
+          "points": [
+            [
+              0,
+              99
+            ],
+            [
+              80,
+              83
+            ],
+            [
+              160,
+              69
+            ],
+            [
+              240,
+              56
+            ],
+            [
+              320,
+              44
+            ],
+            [
+              400,
+              34
+            ],
+            [
+              480,
+              25
+            ],
+            [
+              560,
+              17
+            ],
+            [
+              640,
+              11
+            ],
+            [
+              720,
+              6
+            ],
+            [
+              800,
+              3
+            ],
+            [
+              880,
+              1
+            ],
+            [
+              960,
+              0
+            ],
+            [
+              1040,
+              1
+            ],
+            [
+              1120,
+              3
+            ],
+            [
+              1200,
+              6
+            ],
+            [
+              1280,
+              11
+            ],
+            [
+              1360,
+              17
+            ],
+            [
+              1440,
+              25
+            ],
+            [
+              1520,
+              34
+            ],
+            [
+              1600,
+              44
+            ],
+            [
+              1680,
+              56
+            ],
+            [
+              1760,
+              69
+            ],
+            [
+              1840,
+              83
+            ],
+            [
+              1920,
+              99
+            ]
+          ]
+        },
+        "steering_column": {
+          "rule": "The steering column shroud hides the bottom center. The polygon is the hidden area.",
+          "points": [
+            [
+              210,
+              932
+            ],
+            [
+              300,
+              854
+            ],
+            [
+              460,
+              797
+            ],
+            [
+              572,
+              776
+            ],
+            [
+              1348,
+              776
+            ],
+            [
+              1460,
+              797
+            ],
+            [
+              1620,
+              854
+            ],
+            [
+              1710,
+              932
+            ]
+          ],
+          "driver_eye_height": "From the driver eye height the shroud top is near y 818 instead of y 776."
+        },
+        "sides": "Columns x 0 and x 1919 are visible from below the bezel arch to y 931.",
+        "bezel_lamps": "Physical check engine (left) and tire pressure (right) lamps sit on the bezel outside the screen, near y 450.",
+        "steering_wheel": "From the driver eye height the wheel rim passes close to the top corners. Keep critical content off the top corners.",
+        "hidden_polygons": {
+          "bezel_top": [
+            [
+              0,
+              0
+            ],
+            [
+              1920,
+              0
+            ],
+            [
+              1920,
+              99
+            ],
+            [
+              1840,
+              83
+            ],
+            [
+              1760,
+              69
+            ],
+            [
+              1680,
+              56
+            ],
+            [
+              1600,
+              44
+            ],
+            [
+              1520,
+              34
+            ],
+            [
+              1440,
+              25
+            ],
+            [
+              1360,
+              17
+            ],
+            [
+              1280,
+              11
+            ],
+            [
+              1200,
+              6
+            ],
+            [
+              1120,
+              3
+            ],
+            [
+              1040,
+              1
+            ],
+            [
+              960,
+              0
+            ],
+            [
+              880,
+              1
+            ],
+            [
+              800,
+              3
+            ],
+            [
+              720,
+              6
+            ],
+            [
+              640,
+              11
+            ],
+            [
+              560,
+              17
+            ],
+            [
+              480,
+              25
+            ],
+            [
+              400,
+              34
+            ],
+            [
+              320,
+              44
+            ],
+            [
+              240,
+              56
+            ],
+            [
+              160,
+              69
+            ],
+            [
+              80,
+              83
+            ],
+            [
+              0,
+              99
+            ]
+          ],
+          "steering_column": [
+            [
+              210,
+              932
+            ],
+            [
+              300,
+              854
+            ],
+            [
+              460,
+              797
+            ],
+            [
+              572,
+              776
+            ],
+            [
+              1348,
+              776
+            ],
+            [
+              1460,
+              797
+            ],
+            [
+              1620,
+              854
+            ],
+            [
+              1710,
+              932
+            ]
+          ]
+        }
+      },
+      "warning": "Keep content out of the hidden polygons. Main uses uniform model-dependent scale, rotation, and margins; truck model 1 draws 1:1.",
       "main_loader": {
         "scale": "mSacel[Number(mTrucksModel)]",
         "rotation": "mRotation[Number(mTrucksModel)]",
@@ -33,7 +339,7 @@
           1488.384,
           722.4864
         ],
-        "limit": "Model identity, current screenFlipEnabled, and runtime margins require device state. No physical overlay asserted."
+        "limit": "Model index 0 applies only on a 720-pixel-high window. The truck window is 932 pixels high."
       },
       "main_geometry_evidence": {
         "component": "main.qml",

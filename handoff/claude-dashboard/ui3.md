@@ -3,7 +3,7 @@
 Labelled reconstruction from compiled QML. No actual screen capture.
 
 - Entry component: `Trucks/ui3/Dashboard.qml`
-- Canvas: 1920 × 932. Physical display: 1920 × 720. Use the shared measurement contract.
+- Canvas: 1920 × 932, drawn 1:1 on the truck screen. Red areas in the schematic are hidden by the bezel or the steering column (`visible_area` in the shared measurement contract).
 - Alarm component: `qrc:/Trucks/ui3/AlarmPage.qml`. UI3–UI6 share the UI3 alarm component.
 - Component definitions: 55. Public assist widget definitions: 21.
 - Constant schematic bounds: 3. Unresolved bounds: 6.

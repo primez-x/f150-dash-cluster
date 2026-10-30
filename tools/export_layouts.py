@@ -157,6 +157,19 @@ def export_assets(selected_units):
             if not matches:
                 unresolved.append({"component": name, "source_literal": literal,
                                    "reason": "No matching file in recovered resource sets"})
+    # The design kit (design/round-02, design/round-03) also draws these launcher images.
+    for candidate in ["Trucks/images/common/icon/fuel.png", "Trucks/images/common/turnlight/tsico_left_h.png",
+                      "Trucks/images/common/turnlight/tsico_left_n.png", "Trucks/images/common/turnlight/tsico_right_h.png",
+                      "Trucks/images/common/turnlight/tsico_right_n.png"]:
+        key = "assets/launcher/" + candidate
+        if key not in assets:
+            path = OUT / key
+            path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(inventory["launcher"][candidate], path)
+            with Image.open(path) as image:
+                width, height = image.size
+            assets[key] = {"path": key, "sha256": digest(path), "width": width, "height": height,
+                           "source": "launcher/" + candidate, "selection": "Design kit image"}
     for font_name, family in [("KonexyPersonalUseRegular.ttf", "Konexy Personal Use"),
                               ("BMW.ttf", "BMW Type Global")]:
         source = ROOT / "installed" / "capture-04" / "rootfs" / "usr" / "share" / "fonts" / font_name
@@ -265,6 +278,30 @@ def static_geometry(unit, units, assets, links):
     return result, notes
 
 
+# Visible screen area, measured on the truck on 2026-10-30 from two photos of Factory > Screen grid (driver eye height and
+# a lower camera through the wheel). The window is 1920 x 932 and main.qml draws the dashboard at scale 1, rotation 0,
+# top 0 for truck model 1. The bezel opening has an arched top edge; the steering column shroud covers the bottom center.
+# The hidden areas are the union of both views. A lower driver eye position hides more at the bottom center.
+def bezel_top(x):
+    return round((x - 960) ** 2 / 9300)
+
+
+BEZEL_TOP = [[x, bezel_top(x)] for x in range(0, 1921, 80)]
+SHROUD = [[210, 932], [300, 854], [460, 797], [572, 776], [1348, 776], [1460, 797], [1620, 854], [1710, 932]]
+HIDDEN = {"bezel_top": [[0, 0], [1920, 0]] + BEZEL_TOP[::-1], "steering_column": SHROUD}
+VISIBLE_AREA = {
+    "measured": "2026-10-30 on the truck, Factory > Screen grid, two photos (driver eye height and a lower camera)",
+    "screen": [1920, 932], "dashboard_transform": {"scale": 1, "rotation": 0, "top_margin": 0, "truck_model": 1},
+    "bezel_top": {"rule": "Rows above y = (x - 960)^2 / 9300 are behind the arched bezel: 0 px at the center, 10 px at x 652/1268, "
+                          "40 px at x 344/1576, 70 px at x 156/1764, 99 px at the side edges.", "points": BEZEL_TOP},
+    "steering_column": {"rule": "The steering column shroud hides the bottom center. The polygon is the hidden area.", "points": SHROUD,
+                        "driver_eye_height": "From the driver eye height the shroud top is near y 818 instead of y 776."},
+    "sides": "Columns x 0 and x 1919 are visible from below the bezel arch to y 931.",
+    "bezel_lamps": "Physical check engine (left) and tire pressure (right) lamps sit on the bezel outside the screen, near y 450.",
+    "steering_wheel": "From the driver eye height the wheel rim passes close to the top corners. Keep critical content off the top corners.",
+    "hidden_polygons": HIDDEN}
+
+
 def schematic(layout, boxes, cruise):
     svg = ['<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1040" viewBox="0 0 1920 1040">',
            '<rect width="1920" height="1040" fill="#111820"/>',
@@ -295,9 +332,18 @@ def schematic(layout, boxes, cruise):
         x, y = 465, 670
         label = "ACC / LIM Ford branch 90x50"
     svg += [f'<rect x="{x}" y="{y}" width="90" height="50" fill="none" stroke="#ffe184" stroke-width="3"/>',
-            f'<text x="{x}" y="{y-10}" fill="#ffe184" font-family="sans-serif" font-size="20">{label}</text>', '</g></svg>']
+            f'<text x="{x}" y="{y-10}" fill="#ffe184" font-family="sans-serif" font-size="20">{label}</text>']
     draw.rectangle((x, y, x + 90, y + 50), outline="#ffe184", width=3)
     draw.text((x, y - 24), label, fill="#ffe184", font=small)
+    # Areas the truck hides: shaded red with an outline.
+    shade = Image.new("RGBA", (1920, 932), (0, 0, 0, 0))
+    shade_draw = ImageDraw.Draw(shade)
+    for points in HIDDEN.values():
+        shade_draw.polygon([tuple(p) for p in points], fill=(255, 59, 48, 90), outline=(255, 59, 48, 255), width=3)
+        svg.append(f'<polygon points="{" ".join(f"{a},{b}" for a, b in points)}" fill="#ff3b30" fill-opacity="0.35" stroke="#ff3b30" stroke-width="3"/>')
+    svg.append('<text x="960" y="900" fill="#ff8a80" font-family="sans-serif" font-size="22" text-anchor="middle">Hidden by the steering column</text></g></svg>')
+    scene = Image.alpha_composite(scene.convert("RGBA"), shade).convert("RGB")
+    ImageDraw.Draw(scene).text((960, 888), "Hidden by the steering column", fill="#ff8a80", font=small, anchor="mm")
     canvas.paste(scene, (0,0))
     draw = ImageDraw.Draw(canvas)
     draw.text((24, 957), f"UI{layout} - labelled reconstruction; declared 1920 x 932 coordinates", fill="white", font=font)
@@ -322,8 +368,10 @@ def main():
     contracts = {
         "format": "dashboard-design-evidence-v1", "purpose": "Design new styles from recovered compiled UI evidence",
         "evidence": "Shipped compiled QML; branch-free expressions are decoder inferences, bytecode preserves unresolved branches",
-        "measurement": {"design_canvas": [1920, 932], "physical_display": [1920, 720],
-            "warning": "Do not compress Y alone or assume full-width fit. Main uses uniform model-dependent scale, rotation, and margins.",
+        "measurement": {"design_canvas": [1920, 932], "physical_display": [1920, 932],
+            "physical_display_source": "Measured on the truck (Factory > Screen grid). QT_QPA_EGLFS_PHYSICAL_WIDTH/HEIGHT 1920/720 in qtenv.sh are millimetres, not pixels.",
+            "visible_area": VISIBLE_AREA,
+            "warning": "Keep content out of the hidden polygons. Main uses uniform model-dependent scale, rotation, and margins; truck model 1 draws 1:1.",
             "main_loader": {"scale": "mSacel[Number(mTrucksModel)]", "rotation": "mRotation[Number(mTrucksModel)]",
                 "top_margin": "mTopMargin[Number(mTrucksModel)]", "origin": "Item.Top",
                 "model_index_0_scale": "mGlobalHeight === 720 ? 0.7752 : 1",
@@ -331,7 +379,7 @@ def main():
                 "model_index_0_left_margin": 0,
                 "model_index_0_transform": "At 1920x720: x_screen = 960 + 0.7752 * (x_design - 960); y_screen = 0.7752 * y_design",
                 "model_index_0_extent": [1488.384, 722.4864],
-                "limit": "Model identity, current screenFlipEnabled, and runtime margins require device state. No physical overlay asserted."},
+                "limit": "Model index 0 applies only on a 720-pixel-high window. The truck window is 932 pixels high."},
             "main_geometry_evidence": {"component": "main.qml", "functions": [plain(f) for f in units["main.qml"]["functions"] if f["index"] in [2,3,4,6,7,8,19]]}},
         "fonts": {"default_family": "Konexy Personal Use", "authority": "Installed common/Translation.qml:22",
                   "alternate_observed_family": "BMW Type Global", "assets": [r for r in assets.values() if "family" in r]},
@@ -405,7 +453,7 @@ def main():
         png = schematic(i, geometry, cruise)
         sheets.append(png.resize((768,416)))
         lines = [f"# UI{i} design specification", "", "Labelled reconstruction from compiled QML. No actual screen capture.", "",
-                 f"- Entry component: `{name}`", f"- Canvas: 1920 × 932. Physical display: 1920 × 720. Use the shared measurement contract.",
+                 f"- Entry component: `{name}`", f"- Canvas: 1920 × 932, drawn 1:1 on the truck screen. Red areas in the schematic are hidden by the bezel or the steering column (`visible_area` in the shared measurement contract).",
                  f"- Alarm component: `{cruise['alarm_path']}`. UI3–UI6 share the UI3 alarm component.",
                  f"- Component definitions: {len(names)}. Public assist widget definitions: {len(assist)}.",
                  f"- Constant schematic bounds: {len(geometry)}. Unresolved bounds: {len(omitted)}.",
@@ -470,10 +518,11 @@ Relative asset literals can contain parent segments as historical evidence. Expo
 ## Measurement
 
 Use declared 1920 × 932 layout coordinates for redesign.
-The physical screen measures 1920 × 720. Main applies uniform scale, rotation, and margins for the selected vehicle model.
-Model index 0 uses scale 0.7752 when the screen height equals 720.
-Other model branches remain explicit in the main geometry bytecode.
-Do not assume a simple vertical resize or claim pixel-perfect physical alignment.
+The truck screen measures 1920 × 932, and main.qml draws the dashboard at scale 1, rotation 0, and top 0 (truck model 1, measured 2026-10-30).
+The bezel opening has an arched top edge: 0 px hidden at the center, 40 px at x 344 and x 1576, and 99 px at the side edges.
+The steering column shroud hides the bottom center: from y 776 between x 572 and x 1348, widening to x 210–1710 at the bottom row.
+Schematics shade both hidden areas red. `shared-contracts.json` → `measurement.visible_area` holds the exact points.
+Physical check engine and tire pressure lamps sit on the bezel outside the screen. Do not draw duplicates for them.
 
 ## Visual limits
 

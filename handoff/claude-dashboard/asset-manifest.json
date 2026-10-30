@@ -5801,6 +5801,46 @@
       "selection": "literal or dynamic prefix candidate"
     },
     {
+      "path": "assets/launcher/Trucks/images/common/icon/fuel.png",
+      "sha256": "bfdd92d5fff3068d3094721e465fad2e9bf7526d9a555ab7964bcabe594b5b0e",
+      "width": 54,
+      "height": 54,
+      "source": "launcher/Trucks/images/common/icon/fuel.png",
+      "selection": "Design kit image"
+    },
+    {
+      "path": "assets/launcher/Trucks/images/common/turnlight/tsico_left_h.png",
+      "sha256": "40a34cae2badc7347278fac60778437100da61bcbefe0c0e0b26572060d44031",
+      "width": 64,
+      "height": 45,
+      "source": "launcher/Trucks/images/common/turnlight/tsico_left_h.png",
+      "selection": "Design kit image"
+    },
+    {
+      "path": "assets/launcher/Trucks/images/common/turnlight/tsico_left_n.png",
+      "sha256": "249d5353b2dee743f975ece5b7457cd5ffcd9c4820036a821ad953bae0c96b92",
+      "width": 64,
+      "height": 45,
+      "source": "launcher/Trucks/images/common/turnlight/tsico_left_n.png",
+      "selection": "Design kit image"
+    },
+    {
+      "path": "assets/launcher/Trucks/images/common/turnlight/tsico_right_h.png",
+      "sha256": "319b1531f1c0c20ebcf49b13987b6fcab4b3dd7e13e13d1b3165a60362ab0fe8",
+      "width": 64,
+      "height": 45,
+      "source": "launcher/Trucks/images/common/turnlight/tsico_right_h.png",
+      "selection": "Design kit image"
+    },
+    {
+      "path": "assets/launcher/Trucks/images/common/turnlight/tsico_right_n.png",
+      "sha256": "4b3d5be7748fc176ffa90d826576e3e5e1914cd1ab8dcd70fadbdc01da5848b4",
+      "width": 64,
+      "height": 45,
+      "source": "launcher/Trucks/images/common/turnlight/tsico_right_n.png",
+      "selection": "Design kit image"
+    },
+    {
       "path": "assets/fonts/KonexyPersonalUseRegular.ttf",
       "sha256": "7ecc381a7a4a5f032452d3dcf8eb98b988a53135e8b0a5558840f7c94fde9450",
       "family": "Konexy Personal Use",
