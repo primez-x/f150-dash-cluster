@@ -5,6 +5,9 @@
 // is on, in place of the large cruise readout under MPH.
 // - Arrow: green, on top of the bar, pointing down at the set speed (cruiseSpeedSet). The dark outline keeps the arrow
 //   apart from the ticks. The limiter (cruiseLimState) keeps the white arrow from round 19.
+// - Resume reference: while cruise is on but not set (after a cancel), an amber arrow marks the last set speed, the speed
+//   that Resume returns to. With no earlier set speed (cruise just switched on), no arrow shows.
+//   Truck check: whether cruiseSpeedSet keeps the last set speed after a cancel is unverified.
 // - Number: green, above the arrow. A change of the set speed shows the number at once; the number holds for
 //   SET_HOLD_MS after the last change, then fades over SET_FADE_MS. A new change restarts the hold.
 // - ?cue=a|b, the steady cue while cruise is on. A: a small cruise symbol beside MPH (amber while cruise is on but not set,
@@ -17,13 +20,14 @@ const SET_HOLD_MS = 3000, SET_FADE_MS = 600;
 const CRUISE_ICON = `${IMG}/common/acc/cruise.png`;
 SCENES.cruiseadj = s => Object.assign(SCENES.cruise(s), { cruiseSet: 66, adjusting: true });
 SCENES.cruiseon = s => Object.assign(s, { cruise: "available" });
+SCENES.cruisefresh = s => Object.assign(s, { cruise: "available", cruiseSet: null });
 const cruiseSetOn = s => ["set", "acc"].includes(s.cruise);
 
 const setArrow = (x, y) => `M${x.toFixed(1)} ${y - 5} l-9 -15 h18 Z`;
 const speedRuler26 = speedRuler;
 speedRuler = function (s, y = barY()) {
   speedRuler26({ ...s, cruise: "off" }, y);
-  const m = cruiseMark(s);
+  const m = cruiseMark(s) || (s.cruise === "available" && s.cruiseSet ? [s.cruiseSet, "var(--caution)"] : null);
   if (!m) return;
   layer(`<path id="cset-arrow" data-field="cruiseSpeedSet" d="${setArrow(speedX(m[0]), y)}" fill="${m[1]}" stroke="#05070a" stroke-width="3" paint-order="stroke"/>`);
   place(`<div class="abs cset32${s.adjusting ? " hold" : ""}" style="left:${speedX(m[0])}px;top:${y - 60}px" data-field="cruiseSpeedSet (shows while the set speed changes)">${m[0]}</div>`);

@@ -14,8 +14,8 @@ async (page) => {
   await cdp.send("Network.enable");
   await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
   await cdp.send("Network.clearBrowserCache");
-  // Cruise off, on (not set), set, set while adjusting, set with six warning lights, set during an alert, and reverse.
-  const scenes = [["off", ""], ["on", "scene=cruiseon"], ["set", "scene=cruise"], ["adjust", "scene=cruiseadj"],
+  // Cruise off, on after a cancel (resume reference), on with no earlier set speed, set, set while adjusting, set with six warning lights, set during an alert, and reverse.
+  const scenes = [["off", ""], ["on", "scene=cruiseon"], ["fresh", "scene=cruisefresh"], ["set", "scene=cruise"], ["adjust", "scene=cruiseadj"],
     ["busycruise", "scene=busycruise"], ["alertcruise", "scene=alertcruise"], ["backing", "scene=backing"]];
   for (const cue of ["a", "b", "ab"]) for (const [tag, q] of scenes) {
     await page.goto(`${root}tow-a.html?cue=${cue}&${q}&still=1`);
