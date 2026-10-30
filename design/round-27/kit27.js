@@ -8,6 +8,7 @@
 //   The value is a gauge position, not psi, so the column shows a bar only. A low reading turns the column red and shows LOW.
 // - OILP_LOW (20 %) is a design value until checked against the truck. Truck readings for all four columns are unverified.
 const OILP_LOW = 20;
+Object.assign(CARD, { bar: 190 });
 const OILP_FIELD = "oilPressurePercentage getOilPressure() (stock oil meter %, 0xFF hidden)";
 delete BASE.tow.temps.diff;
 BASE.tow.oilp = 62;
@@ -28,8 +29,8 @@ const oilpCol = (s, h) => {
 // Temperature card (kit25) with oil pressure in the fourth column.
 const tempCard27 = (s, all) => `<div class="abs card t25" style="left:${CARD.l}px;top:${CARD.top}px;width:${CARD.w}px;height:${CARD.h}px">` +
   ["trans", "coolant", "oil"].map(k => { const T = s.T[k], show = all || T.state !== "normal";
-    return `<div class="tb13 temp ${T.state}" data-field="${T.field}">${show ? deg(T) : `<span class="rv slot"></span>`}${tempCol(T, 190)}${tSym(T, 42)}</div>`; }).join("") +
-  oilpCol(s, 190) + `</div>`;
+    return `<div class="tb13 temp ${T.state}" data-field="${T.field}">${show ? deg(T) : `<span class="rv slot"></span>`}${tempCol(T, CARD.bar)}${tSym(T, 42)}</div>`; }).join("") +
+  oilpCol(s, CARD.bar) + `</div>`;
 
 // Low oil pressure takes the red glow, as a hot temperature does.
 const frame26 = frame;

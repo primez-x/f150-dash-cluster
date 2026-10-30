@@ -1,0 +1,6 @@
+/* Round 28: shorter cards (y 262 to 572). Loads after round-27 styles. */
+/* Speed group: bar y 265, digit glyphs y 305 to 445, MPH under the digits, row on the card bottom line (y 512 to 572). */
+.speed { top: 266px; }
+.sunit { top: 458px; }
+.gblk { top: 310px; }
+.row25 { top: 512px; }

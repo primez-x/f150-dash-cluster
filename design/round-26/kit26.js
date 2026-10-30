@@ -8,9 +8,10 @@
 // - At crawl speed the steering bar takes the same place, with the ticks above the bar (the center tick marks straight ahead).
 // - ?ticks=a|b. A: a plain bar. B: ticks every 10 mph above the bar, longer every 20.
 const TICKS = params.get("ticks") === "b";
-const BAR_Y = CARD.top + 3;
+// The bar follows the card top, so a later kit that moves the cards moves the bar too.
+const barY = () => CARD.top + 3;
 
-speedRuler = function (s, y = BAR_Y) {
+speedRuler = function (s, y = barY()) {
   let g = `<g data-field="speed">` + line(SCALE.x0, y, SCALE.x1, y, "#1d252e", 6, `stroke-linecap="round"`) +
     line(SCALE.x0, y, speedX(s.speed), y, ACC, 6, `stroke-linecap="round"`);
   if (TICKS) for (let v = 0; v <= SPEED_MAX; v += 10) g += line(speedX(v), y - 10, speedX(v), y - (v % 20 ? 18 : 26), "#4a525c", 2);
@@ -19,7 +20,7 @@ speedRuler = function (s, y = BAR_Y) {
   layer(g + `</g>`);
 };
 
-steerBar = function (s, y = BAR_Y) {
+steerBar = function (s, y = barY()) {
   const x = steerX(s.steer), r = `stroke-linecap="round"`;
   let g = `<g data-field="angle getAngle() · MCU 0x26 trackInfoNotify (stock: Wheel angle display)">` +
     line(SCALE.x0, y, SCALE.x1, y, "#1d252e", 6, r) + line(960, y, x, y, ACC, 6, r);
