@@ -801,6 +801,8 @@ Item {
             mGlobalId.item.oilTempPercentage=getOilTempPercentage()
             mGlobalId.item.oilTemp=getOilTemp()
             mGlobalId.item.diffOilTemp=getDiffOilTemp()
+            mGlobalId.item.turbo=getTurbo()
+            mGlobalId.item.boostPercentage=getBoostPercentage()
             mGlobalId.item.reverseAlarmEnabled=getReverseAlarm()
         }
         ////////////////////////////////
@@ -1116,6 +1118,9 @@ Item {
         onTrucksTrailerInfoNotify: {
             mGlobalId.item.trucksTrailerDistance=getTrucksTrailerDistance()
             mGlobalId.item.trucksTrailerGain=getTrucksTrailerGain()
+            mGlobalId.item.trucksTrailerBrakeState=getTrucksTrailerBrakeState()
+            mGlobalId.item.trucksTrailerOutputState=getTrucksTrailerOutputState()
+            mGlobalId.item.trucksTrailerOutput=getTrucksTrailerOutput()
             mGlobalId.item.trucksOilLifePercentage=getTrucksTrailerOilLifePercentage()
             mGlobalId.item.trucksOilLifeTripRaw=getTrucksTrailerOilLifeTrip()
             mGlobalId.item.trucksFrontRadarState=getTrucksTrailerFrontRadarState()
@@ -2306,6 +2311,7 @@ Item {
     // oilPressurePercentage (vehicleInfoNotify) and engOilPercent (oilMeterInfoNotify) both read getOilPressure().
     // The log keeps both, so a drive shows which notification the truck sends.
     // The cruise fields are the four that the stock cruise widget reads (on, SET, stored speed, set speed in km/h).
+    // The boost and trailer fields come from JLY commands 0x40 and 0x1A. The stock layouts never read them, so the units need a drive.
     readonly property var mDataLogNames: [
         "vehicleSpeed", "tachoSpeed", "gearString", "metricSystem", "temperatureUnit", "consumptionUnit", "lpkUnitIndex",
         "fuelPercentage", "fuelPercentageRaw", "fuelFrameMs", "fuelLevel", "dte", "mainTank", "subTank",
@@ -2315,7 +2321,9 @@ Item {
         "sinceStartAvgFuel", "sinceStartAvgSpeed", "sinceStartTravelTime", "sinceStartTravelMileage",
         "sinceRefuelingDte", "sinceRefuelingAvgFuel", "sinceRefuelingAvgSpeed",
         "waterTemp", "oilTemp", "gearBoxTemp", "oilPressurePercentage", "engOilPercent", "batterVoltage", "trucksOilLifePercentage", "trucksOilLifeTripRaw", "trucksTrailerDistance", "rtcDate", "rtcTime",
-        "cruiseState", "cruiseSpeedSet", "cruiseSetSpeedState", "cruiseSpeed"
+        "cruiseState", "cruiseSpeedSet", "cruiseSetSpeedState", "cruiseSpeed",
+        "diffOilTemp", "turbo", "boostPercentage",
+        "trucksTrailerGain", "trucksTrailerBrakeState", "trucksTrailerOutputState", "trucksTrailerOutput"
     ]
     Timer {
         interval: 1000

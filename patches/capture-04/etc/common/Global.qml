@@ -3465,6 +3465,9 @@ Item {
     property int oilTempPercentage: 0
     property int oilTemp: 0xFF
     property int diffOilTemp: 0xFF
+    // JLY command 0x40 also fills turbo (payload byte 1) and boostPercentage (payload byte 3). -1: no frame yet.
+    property int turbo: -1
+    property int boostPercentage: -1
 
     onTemperatureUnitChanged: {
         Funcs.setProperty("temperatureUnit", temperatureUnit)
@@ -3872,6 +3875,10 @@ Item {
 
     property int trucksTrailerDistance: 0
     property real trucksTrailerGain: 0.0
+    // JLY command 0x1A fills the gain and these: brake state (payload byte 0 bit 7), output state (bit 6), output (byte 1). -1: no frame yet.
+    property int trucksTrailerBrakeState: -1
+    property int trucksTrailerOutputState: -1
+    property int trucksTrailerOutput: -1
     property int trucksOilLifePercentage: 0
     property int trucksOilLifeTripRaw: 0xFFFF   // km from the adapter, 0xFFFF when unavailable
     // The compiled OilLifeinfo page shows this text next to tripUnit.
