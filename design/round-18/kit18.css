@@ -1,0 +1,5 @@
+/* Round 18: visual balance. Loads after round-17/kit17.css. */
+/* Heavier temperature bars, so the temperature group carries weight against the speed. */
+.tb13 { width: 100px; }
+.tb13 .zcol { width: 26px; border-radius: 13px; }
+.tb13 .zcol i { border-radius: 13px; }
