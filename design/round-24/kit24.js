@@ -8,7 +8,7 @@
 //   grows the speed digits from 210 to 250 px, with a wider speed scale; the gear and cruise keep 119 px from the digits.
 // - Odometer: in the top corner on the clock stack side, at 55 % strength. From the driver eye the wheel rim hides this
 //   corner while driving (the rim reaches y 153 at x 1880); the odometer shows when parked or with the wheel turned.
-//   The corner sits below the arch plus the 20 px margin (y 121 at x 1900), so the margin check skips only the rim for it.
+//   The corner sits below the arch plus the 20 px margin (y 121 at x 1900), so the margin check skips only the rim for the odometer.
 const LAYOUT = location.pathname.match(/(daily-a|daily-b|tow)/)[1];
 const SPREAD = LAYOUT === "tow" ? (params.get("spread") === "b" ? "b" : "a") : "";
 if (LAYOUT !== "daily-a") Object.assign(STACK, { outer: 200, top: 92 });
