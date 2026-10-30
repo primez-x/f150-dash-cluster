@@ -1,0 +1,6 @@
+/* Round 26: the speed bar above the speed digits. Loads after round-25/kit25.css. */
+/* Digits under the bar (glyph top about y 290), MPH under the digits, and the row on the temperature symbol line (center y 545). */
+.speed { left: 960px; top: 251px; transform: translateX(-50%); text-align: center; font-size: 210px; letter-spacing: -4px; }
+.sunit { left: 960px; top: 448px; transform: translateX(-50%); font: var(--small) "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
+.gblk { left: 1264px; top: 295px; }
+.row25 { top: 515px; }
