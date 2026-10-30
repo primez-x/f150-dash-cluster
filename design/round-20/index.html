@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 20</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 20 · Steering angle, roll, and heading on Towing A</h1>
+<p>Towing A is locked as <a href="../round-19/">round 19</a> option A (ruler). Round 20 adds the steering angle, the roll, and the compass heading.
+The firmware already carries these readings. None of them is verified on the truck yet.</p>
+<p><strong>Pick: open.</strong></p>
+<ul>
+  <li>Crawl state: 8 mph and under, or in reverse. The speed scale carries nothing at crawl speed, so a steering bar takes the place of the scale.
+    The fill runs from the center line to the wheel angle, and the knob is a tire seen from above. No number. Field: angle (getAngle(), MCU message 0x26 trackInfoNotify, the reverse camera guide lines).</li>
+  <li>Level page: at crawl speed the level page (grade and roll) takes the place of the engine page. Above crawl speed the engine page keeps the grade, as before.
+    Fields: mPitch and mRoll, from the motion sensor inside the cluster.</li>
+  <li>Tilt focus: at crawl speed, a roll of 10° or more jumps the panel to the level page in amber; 20° or more shows red. The climb and descent focus also jump to the level page at crawl speed.
+    The thresholds are design values, to tune on the truck.</li>
+  <li>Why crawl only: the motion sensor reads acceleration as tilt. A fast corner reads as roll, and hard braking reads as a descent. The firmware must also hold the tilt focus for a few seconds (hysteresis).</li>
+  <li>Compass: the heading in letters (8 points) beside the clock, in the quiet grey. Hidden at 5 mph and under, because the firmware stops updating the GPS bearing there.</li>
+  <li>A · Numbers: the grade and the roll as numbers with symbols, as on every other page. B · Truck outlines: a side view and a rear view of the truck at the true angle over a dashed level line, each with one number.</li>
+  <li>Not on Towing A: altitude (barometer and GPS), G-force, and the park sensors. Altitude and G-force suit an off-road layout. Ford turns off the rear park sensors with a trailer connected.</li>
+</ul>
+<h2>Truck checks (protocol work, separate from the design)</h2>
+<ul>
+  <li>Does the MCU send 0x26 for this truck, and in every gear or only in reverse? The angle has no "no data" value, so a missing message reads as straight ahead. Check the sign (assumed: positive = right) and the full scale (45° each way).</li>
+  <li>Calibrate the motion sensor on level ground after install (mGyroCalibration). Check the roll sign (assumed: positive = right side down). 0xFFFF means no data and shows "--".</li>
+</ul>
+<h2>A · Numbers</h2>
+<div class="grid">
+  <div><h3>highway: the speed scale, and the heading NE beside the clock</h3><a href="tow-a.html?"><img src="shots/tow-a-normal.png" alt=""></a></div>
+  <div><h3>crawl at 3 mph, wheels turned left: the steering bar; the level page takes the engine slot</h3><a href="tow-a.html?scene=crawl&amp;page=2"><img src="shots/tow-a-crawl.png" alt=""></a></div>
+  <div><h3>reverse at 2 mph, wheels turned right</h3><a href="tow-a.html?scene=backing"><img src="shots/tow-a-backing.png" alt=""></a></div>
+  <div><h3>roll 13° at 4 mph: the panel jumps to the level page; roll in amber</h3><a href="tow-a.html?scene=tilt"><img src="shots/tow-a-tilt.png" alt=""></a></div>
+  <div><h3>roll 21°, left side down: roll in red</h3><a href="tow-a.html?scene=tilthot"><img src="shots/tow-a-tilthot.png" alt=""></a></div>
+  <div><h3>hot transmission and roll 13°: the temperature wins; the level symbol shows amber beside the dots</h3><a href="tow-a.html?scene=tiltstack"><img src="shots/tow-a-tiltstack.png" alt=""></a></div>
+  <div><h3>4L at 6 mph on a 12 % grade: the climb focus jumps to the level page</h3><a href="tow-a.html?scene=d4l"><img src="shots/tow-a-d4l.png" alt=""></a></div>
+  <div><h3>4L and the rear locker</h3><a href="tow-a.html?scene=locker"><img src="shots/tow-a-locker.png" alt=""></a></div>
+  <div><h3>true size</h3><a href="tow-a.html?view=physical&amp;ruler=1"><img src="shots/tow-a-physical.png" alt=""></a></div>
+</div>
+<h2>B · Truck outlines</h2>
+<div class="grid">
+  <div><h3>highway: the speed scale, and the heading NE beside the clock</h3><a href="tow-b.html?"><img src="shots/tow-b-normal.png" alt=""></a></div>
+  <div><h3>crawl at 3 mph, wheels turned left: the steering bar; the level page takes the engine slot</h3><a href="tow-b.html?scene=crawl&amp;page=2"><img src="shots/tow-b-crawl.png" alt=""></a></div>
+  <div><h3>reverse at 2 mph, wheels turned right</h3><a href="tow-b.html?scene=backing"><img src="shots/tow-b-backing.png" alt=""></a></div>
+  <div><h3>roll 13° at 4 mph: the panel jumps to the level page; roll in amber</h3><a href="tow-b.html?scene=tilt"><img src="shots/tow-b-tilt.png" alt=""></a></div>
+  <div><h3>roll 21°, left side down: roll in red</h3><a href="tow-b.html?scene=tilthot"><img src="shots/tow-b-tilthot.png" alt=""></a></div>
+  <div><h3>hot transmission and roll 13°: the temperature wins; the level symbol shows amber beside the dots</h3><a href="tow-b.html?scene=tiltstack"><img src="shots/tow-b-tiltstack.png" alt=""></a></div>
+  <div><h3>4L at 6 mph on a 12 % grade: the climb focus jumps to the level page</h3><a href="tow-b.html?scene=d4l"><img src="shots/tow-b-d4l.png" alt=""></a></div>
+  <div><h3>4L and the rear locker</h3><a href="tow-b.html?scene=locker"><img src="shots/tow-b-locker.png" alt=""></a></div>
+  <div><h3>true size</h3><a href="tow-b.html?view=physical&amp;ruler=1"><img src="shots/tow-b-physical.png" alt=""></a></div>
+</div>
+</body>
+</html>

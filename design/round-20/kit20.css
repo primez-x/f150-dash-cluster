@@ -1,0 +1,10 @@
+/* Round 20: steering angle, level page, and compass. Loads after round-19/kit19.css. */
+/* Level page: two values, spread like the trailer page. Roll takes the caution or hot colour past the tilt limits. */
+.card.sec.level .cells { justify-content: space-around; }
+.card.sec .icell.warm .rv, .card.sec .icell.warm .sym, .card.sec .icell.warm .tart { color: var(--caution); }
+.card.sec .icell.hot .rv, .card.sec .icell.hot .sym, .card.sec .icell.hot .tart { color: var(--hot); }
+/* Option B truck outlines. */
+.card.sec .icell.art { gap: 18px; }
+.tart { color: #c9d1da; overflow: visible; }
+/* Compass heading beside the clock, in the quiet grey. */
+.hdg { left: 176px; color: #8a929c; }

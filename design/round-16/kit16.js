@@ -12,7 +12,9 @@ const BRAKE_FIELD = "trucksTrailerGain (setting); live output: no firmware field
 
 // Page state for the navigation: the state colour a page needs while the page is not on screen.
 const worstT = s => ["hot", "warm", "cold", "nodata"].find(st => anyT(s, st)) || "";
-const pageState = (s, p) => ({ temps: worstT(s), tires: s.low >= 0 ? "low" : "", trailer: s.braking ? "live" : "" })[p] || "";
+// Later kits add pages to PAGE_STATE.
+const PAGE_STATE = { temps: worstT, tires: s => s.low >= 0 ? "low" : "", trailer: s => s.braking ? "live" : "" };
+const pageState = (s, p) => PAGE_STATE[p] ? PAGE_STATE[p](s) : "";
 
 const grid2 = cells => `<div class="abs fgrid" style="left:${PANEL.x}px;top:${PANEL.top}px;width:${PANEL.w}px">${cells.join("")}</div>`;
 const PAGE_VIEW = {
