@@ -2207,10 +2207,19 @@ Item {
     ////////////////////////////////
     property int consumptionUnit: 0
     property int dte: 0xFFFF         // 续航里程
+    // The compiled fuel gauges (ui1, ui2, ui3 FuelMeter) draw fuelPercentage, mainTankPercentage, and subTankPercentage.
+    // VehicleEvent onFuelInfoNotify sets them only from a reading in 0..100. The raw byte stays in the *Raw property.
     property int fuelPercentage: 0
-    property bool fuelPercentageValid: fuelPercentage>=0 && fuelPercentage<=100
+    property int fuelPercentageRaw: 0
+    property bool fuelPercentageValid: fuelPercentageRaw>=0 && fuelPercentageRaw<=100
+    property bool fuelPercentageSeen: false
+    property double fuelFrameMs: 0      // time of the last fuel frame (0x06), for the data log
     property int fuelFillerPosition: 0  // 0: left, 1: right,  應用工廠設置決定
     property int fuelLevel: 0     // 0: white, 1: yellow, 2: red
+    // The adapter state alone never warns from the percent (the native decoder also turns states 3 and up into 0).
+    // Ford lights the low-fuel lamp near 1/8 tank.
+    readonly property int fuelLowPercent: 12
+    readonly property int fuelCriticalPercent: 5
     property var mFuelUnit:
     [
         "l/100km",
@@ -2223,8 +2232,10 @@ Item {
     property int subTank: 0
     property int mainTankPercentage: 0
     property int subTankPercentage: 0
-    property bool mainTankPercentageValid: mainTankPercentage>=0 && mainTankPercentage<=100
-    property bool subTankPercentageValid: subTankPercentage>=0 && subTankPercentage<=100
+    property int mainTankPercentageRaw: 0
+    property int subTankPercentageRaw: 0
+    property bool mainTankPercentageValid: mainTankPercentageRaw>=0 && mainTankPercentageRaw<=100
+    property bool subTankPercentageValid: subTankPercentageRaw>=0 && subTankPercentageRaw<=100
     property int mainTankState: 0
     property int subTankState: 0
     property string tankUnit: "L" //metricSystem?"L":"GAL"
@@ -2277,6 +2288,14 @@ Item {
     }
     function getFuelPercentage(){
         return (fuelPercentageValid?fuelPercentage:"---")+"%"
+    }
+    // Low-fuel level for fuelLevel: the higher of the percent level and the adapter state.
+    // percent is -1 before the first valid reading. An invalid reading shows at least the low level.
+    function fuelWarningLevel(percent, state, valid){
+        var level=percent<0?0:percent<=fuelCriticalPercent?2:percent<=fuelLowPercent?1:0
+        if(!valid)
+            level=Math.max(level, 1)
+        return Math.max(level, state)
     }
     property var mFuelStateColor:
     [

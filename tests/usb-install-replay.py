@@ -17,14 +17,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools/usb-install/encrypt.sh"
 BUSYBOX = ROOT / "tools/busybox/busybox"
-CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-gps-clock-v2"
+CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-fuel-log-v1"
 ORIGINAL = ROOT / "installed/capture-04/rootfs/usr/bin/Launcher"
 RESULT = ROOT / "analysis/capture-04/usb-install-replay-results.json"
 ETC = ["vnB.qml", "vnF.qml", "vnG.qml", "vnU.qml", "vnV.qml"]
 APPLETS = ["awk", "cat", "chmod", "cp", "date", "df", "grep", "head", "mkdir", "mv", "rm", "sha256sum", "sync", "tar", "wc"]
-MARKERS = {"install": ("VIKNAV-UI-INSTALL.txt", "VIKNAV_UI_INSTALL_GPS_CLOCK_V2"),
+MARKERS = {"install": ("VIKNAV-UI-INSTALL.txt", "VIKNAV_UI_INSTALL_FUEL_LOG_V1"),
            "rollback": ("VIKNAV-UI-ROLLBACK.txt", "VIKNAV_UI_ROLLBACK_CAPTURE04"),
-           "log": ("VIKNAV-UI-LOG.txt", "VIKNAV_UI_LOG")}
+           "log": ("VIKNAV-UI-LOG.txt", "VIKNAV_UI_LOG"),
+           "record": ("VIKNAV-UI-RECORD.txt", "VIKNAV_UI_RECORD")}
 
 FAILURE_MODES = [
     "The installer changes the cluster when the USB drive or the action is ambiguous",
@@ -37,6 +38,7 @@ FAILURE_MODES = [
     "Rollback does not restore the original Launcher, /etc files, and settings",
     "The restarted Launcher holds the USB drive (working directory or output stream)",
     "Log collection changes the cluster",
+    "The recorder misses new Launcher log lines, runs twice, or keeps running after the drive is gone",
 ]
 
 sha = lambda data: hashlib.sha256(data).hexdigest()
@@ -102,8 +104,10 @@ class Case:
         (self.t / "running").write_text("")
         fakebin = self.t / "bin"
         fakebin.mkdir()
-        for applet in APPLETS + ["readlink", "pwd"]:
+        for applet in APPLETS + ["readlink", "pwd", "tail", "cut", "kill"]:
             (fakebin / applet).symlink_to(BUSYBOX)
+        # The recorder runs in a second shell. dash keeps the sleep stub in use (the BusyBox shell would run its own sleep).
+        (fakebin / "sh").symlink_to("/bin/dash")
         stubs = {"ps": STUB_PS, "killall": STUB_KILLALL, "sleep": STUB_SLEEP, "fbinit": STUB_FBINIT}
         for name, text in stubs.items():
             self.stub(fakebin / name, text)
@@ -173,6 +177,16 @@ class Case:
 
 
 rows = []
+
+
+def wait_for(condition, seconds=20):
+    import time
+    end = time.time() + seconds
+    while time.time() < end:
+        if condition():
+            return True
+        time.sleep(0.05)
+    return False
 
 
 def check(name, mode, expected, run):
@@ -343,6 +357,24 @@ def main():
             return [c.status(), c.device(), c.starts(), (c.out / "Launcher.log").exists(),
                     "Launcher check: running" in (c.out / "installed-sha256.txt").read_text()]
         check("log-changes-nothing", 9, ["LOGGED", "candidate", 1, True, True], log_only)
+
+        def record():
+            c = new()
+            (c.root / "proc/uptime").write_text("12.34 5.00\n")
+            c.marker("record")
+            c.run()
+            first = c.status()
+            pidfile = c.root / "tmp/viknav-recorder.pid"
+            pid = int(pidfile.read_text()) if pidfile.exists() else 0
+            target = c.out / "launcher.log" if c.out else Path("/nonexistent")
+            with open(c.root / "tmp/Launcher.log", "a") as log:
+                log.write("qml: viknav-data {\"tick\": 1}\n")
+            copied = wait_for(lambda: target.exists() and "viknav-data" in target.read_text())
+            again = c.run().status()
+            (c.root / "proc/mounts").write_text("/dev/root / ext2 rw 0 0\n")
+            stopped = wait_for(lambda: not Path(f"/proc/{pid}").exists())
+            return [first, again, copied, stopped, c.device(), c.starts()]
+        check("record-copies-log-until-drive-gone", 10, ["RECORDING", "ALREADY_RECORDING", True, True, "original", 0], record)
     finally:
         for path in Path(base).rglob("*"):
             if path.is_dir():

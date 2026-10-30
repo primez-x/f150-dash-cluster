@@ -56,13 +56,18 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - The cache decoder maps all 198 units and validates objects, bindings, functions, and bytecode spans.
 - The source candidate corrects pressure conversion, low-RPM updates, DPC assignments, and idle fuel units.
 - The candidate keeps temperature and speed preferences independent. Separate saved overrides prevent native unit snapshots from changing manual choices.
-- Both source replays pass: 527 gauge cases and 194 unit-state cases. Earlier independent review covered the original unit and persistence changes.
+- Both source replays pass: 568 gauge cases and 194 unit-state cases. Earlier independent review covered the original unit and persistence changes.
 - The TOW telltale (alarm 90) selects the towing layout (`towDashboard`, now stock UI2). Tow/Haul off returns to the saved driver layout. The tow replay passes 11 cases, and host Qt compiles the source.
 - The MCU source of alarm 90 on this truck is not yet verified. Confirm on the vehicle that the stock TOW telltale lights with Tow/Haul.
 - The GPS clock sets the MCU clock from GPS UTC (NMEA RMC) with the time zone from the GPS position and US and Canada daylight saving time. The MCU clock loses the time when the relay cuts power.
 - The clock replay passes 39 cases. The zone grid matches Python zoneinfo for 45 test cities. Host Qt compiles the source.
 - Until the first clock write after power-up (GPS or the Date and time menu), the dashboard clock shows dashes, unless the MCU date is plausible. GPS auto time is on by default; the stock Date and time menu still turns GPS auto time off.
 - Source formatters distinguish L/h fuel flow from distance consumption. Raw consumption values no longer animate through unavailable sentinels.
+- The native decoder raises the fuel notification on every fuel frame (0x06), with no change check. The compiled fuel gauges draw `fuelPercentage`, `mainTankPercentage`, and `subTankPercentage` directly.
+- A fuel reading outside 0..100 keeps the last valid gauge value. The raw byte stays in the `*Raw` properties for the data log.
+- The low-fuel warning (`fuelLevel`) is the higher of the adapter state and the percent level: 12% or less is low, and 5% or less is critical. An invalid reading shows at least the low level. The native decoder turns adapter states 3 and up into 0.
+- Fuel data age is logged, not shown. The cadence of fuel frames on the truck is not yet verified.
+- The data logger writes one `viknav-data` line per second while Factory > Debug logging is on. Debug values 2 and 4 also make the native plugin print each received or sent UART frame. The frame print stops after 90 minutes in one power cycle, because `/tmp` is in RAM.
 - Fuel range-validity flags preserve invalid raw samples for diagnostics. Compiled gauge visibility and unit-label changes remain integration work.
 - Five temperature families preserve documented unavailable states. Native calibration and actual vehicle accuracy remain unverified.
 - Boot candidates remove automatic formatting after mount failure and stop later init scripts after critical mount failures.
@@ -163,8 +168,10 @@ The vendor USB updater (`/etc/mdev/update.sh`) runs `encrypt/encrypt.sh` from `e
 - Health check: the new Launcher must log `VehicleEvent Ver:VehicleEvent@` and `main.qml starting`, stay up for 20 s, and log no `/etc/vn` error. Otherwise the script restores the original Launcher, the `/etc` files, and the settings. The script also writes `INSTALL-BLOCKED.txt`, so the next insertion does not try the install again.
 - Rollback: the script restores the original Launcher from the drive, removes the `/etc/vn*.qml` files, and restores the settings from before the first install.
 - Log: the script copies `/tmp/Launcher.log` and the installed hashes. The script changes nothing.
+- Record: the script starts a background copy of `/tmp/Launcher.log` to the drive every 2 s. The copy stops when the drive is unmounted or the power goes. The script changes nothing on the cluster.
 - A repeated install or rollback with nothing to change does not restart the dashboard.
 
+The USB port becomes a host port at the end of `rcS`, after the hotplug handler starts. A drive left in at power-up therefore most likely runs the updater again; the truck has not yet confirmed this. A repeated install does nothing, and each record run writes a new folder.
 Results go to a new `viknav-ui-<action>-<time>-<pid>` folder on the drive. Line 1 of `STATUS.txt` is the result. The boot scripts (`S01private`, `S90mount`, `rcS`) are not part of the install.
 
 Replay the installer against a fake cluster root with the real payload bytes, then build the drive contents (Ubuntu under WSL):

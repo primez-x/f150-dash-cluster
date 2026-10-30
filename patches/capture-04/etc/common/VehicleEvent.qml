@@ -107,7 +107,7 @@ Item {
         //=============================
         // debug settings
         //=============================
-        debug: mGlobalId.item.uartDebugEnabled
+        debug: mDataLogFramesOpen?mGlobalId.item.uartDebugEnabled:(mGlobalId.item.uartDebugEnabled&1)
         debugFilter: "0x04, 0x34"
         //=============================
         // bright min/max settings
@@ -415,17 +415,29 @@ Item {
         ///////////////////////////////////////
         /// fuelInfoNotify
         ///////////////////////////////////////
+        // The native decoder raises this on every fuel frame (0x06), which the heartbeat polls.
         onFuelInfoNotify: {
-            mGlobalId.item.dte=getDte()             // 续航里程
-            mGlobalId.item.fuelPercentage=getFuelPercentage()
-            mGlobalId.item.fuelRefuelingPortPositon=getFuelFillerRight()
-            mGlobalId.item.fuelLevel=getFuelState()
-            mGlobalId.item.mainTank=getFuelTank(0)
-            mGlobalId.item.subTank=getFuelTank(1)
-            mGlobalId.item.mainTankPercentage=getTankFuelPercetage(0)
-            mGlobalId.item.subTankPercentage=getTankFuelPercetage(1)
-            mGlobalId.item.mainTankState=getTankFuelState(0)
-            mGlobalId.item.subTankState=getTankFuelState(1)
+            var g=mGlobalId.item
+            g.fuelFrameMs=Date.now()
+            g.dte=getDte()             // 续航里程
+            // The gauges keep the last reading in 0..100. The raw bytes stay in the *Raw properties for the data log.
+            g.fuelPercentageRaw=getFuelPercentage()
+            if(g.fuelPercentageValid){
+                g.fuelPercentage=g.fuelPercentageRaw
+                g.fuelPercentageSeen=true
+            }
+            g.fuelRefuelingPortPositon=getFuelFillerRight()
+            g.fuelLevel=g.fuelWarningLevel(g.fuelPercentageSeen?g.fuelPercentage:-1, getFuelState(), g.fuelPercentageValid)
+            g.mainTank=getFuelTank(0)
+            g.subTank=getFuelTank(1)
+            g.mainTankPercentageRaw=getTankFuelPercetage(0)
+            if(g.mainTankPercentageValid)
+                g.mainTankPercentage=g.mainTankPercentageRaw
+            g.subTankPercentageRaw=getTankFuelPercetage(1)
+            if(g.subTankPercentageValid)
+                g.subTankPercentage=g.subTankPercentageRaw
+            g.mainTankState=getTankFuelState(0)
+            g.subTankState=getTankFuelState(1)
         }
         ///////////////////////////////////////
         /// dashboardInfoNotify
@@ -2207,6 +2219,42 @@ Item {
             return
         }
         mHandleId.splash(animation)
+    }
+
+    /////////////////////////////
+    // Data logger. With Factory "Debug logging" on (any value), one line per second of decoded values ("viknav-data {...}")
+    // goes to the Launcher log (/tmp/Launcher.log, in RAM). Debug values 2 (UART receive) and 4 (UART transmit) also make the
+    // native plugin print every UART frame there. The frame print stops after mDataLogFrameSeconds in one power cycle,
+    // so the log in RAM stays bounded. The USB record action (tools/usb-install) copies the log to a drive while the truck runs.
+    /////////////////////////////
+    readonly property int mDataLogFrameSeconds: 5400
+    property bool mDataLogFramesOpen: true
+    property int mDataLogTicks: 0
+    readonly property var mDataLogNames: [
+        "vehicleSpeed", "tachoSpeed", "gearString", "metricSystem", "temperatureUnit", "consumptionUnit", "lpkUnitIndex",
+        "fuelPercentage", "fuelPercentageRaw", "fuelFrameMs", "fuelLevel", "dte", "mainTank", "subTank",
+        "mainTankPercentage", "mainTankPercentageRaw", "subTankPercentage", "subTankPercentageRaw",
+        "mainTankState", "subTankState", "lpk", "odo", "tripA", "tripB", "tripType",
+        "sinceResetAvgFuel", "sinceResetAvgSpeed", "sinceResetTravelTime", "sinceResetTravelMileage",
+        "sinceStartAvgFuel", "sinceStartAvgSpeed", "sinceStartTravelTime", "sinceStartTravelMileage",
+        "sinceRefuelingDte", "sinceRefuelingAvgFuel", "sinceRefuelingAvgSpeed",
+        "waterTemp", "oilTemp", "gearBoxTemp", "batterVoltage", "trucksOilLifePercentage", "rtcDate", "rtcTime"
+    ]
+    Timer {
+        interval: 1000
+        repeat: true
+        running: mGlobalId.item.uartDebugEnabled!==0
+        onTriggered: {
+            var g=mGlobalId.item, values={}
+            for(var i=0;i<mDataLogNames.length;i++)
+                values[mDataLogNames[i]]=g[mDataLogNames[i]]
+            mDataLogTicks++
+            console.log("viknav-data "+JSON.stringify({tick: mDataLogTicks, ms: Date.now(), v: values}))
+            if(mDataLogFramesOpen&&(g.uartDebugEnabled&6)&&mDataLogTicks>=mDataLogFrameSeconds){
+                mDataLogFramesOpen=false
+                console.log("viknav-data frame print stopped for this power cycle")
+            }
+        }
     }
 
     Component.onCompleted: {

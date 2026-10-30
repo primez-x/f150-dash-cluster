@@ -121,7 +121,7 @@ for (let unit = 0; unit < 3; unit++) {
   }
 }
 function bind(name) {
-  const match = texts['Global.qml'].match(new RegExp('^[ \\t]*property \\w+ ' + name + ':[ \\t]*(.+)$', 'm'));
+  const match = texts['Global.qml'].match(new RegExp('^[ \\t]*(?:readonly )?property \\w+ ' + name + ':[ \\t]*(.+)$', 'm'));
   const expression = match ? new vm.Script('(' + match[1].split('//')[0] + ')') : null;
   Object.defineProperty(context, name, {configurable: true, get() { return expression ? expression.runInContext(context, {timeout: 100}) : undefined; }});
 }
@@ -131,23 +131,43 @@ for (const name of ['mFuelUnit', 'mLpkUnit']) {
   if (!match) throw new Error('Missing unit table ' + name);
   context[name] = new vm.Script('(' + match[1] + ')').runInContext(context, {timeout: 100});
 }
+// The compiled fuel gauges (ui1, ui2, ui3 FuelMeter) draw fuelPercentage, mainTankPercentage, and subTankPercentage directly.
+// A reading outside 0..100 must keep the last valid gauge value. The raw byte stays in the *Raw property for the data log.
 let fuelSamples = [0, 0, 0];
+let fuelState = 0;
+const fuelNames = ['fuelPercentage', 'mainTankPercentage', 'subTankPercentage'];
+for (const name of fuelNames) context[name] = 0;
+for (const name of ['fuelLowPercent', 'fuelCriticalPercent']) bind(name);
+try {
+  new vm.Script('function fuelWarningLevel(percent, state, valid){' + extract(texts['Global.qml'], 'function fuelWarningLevel(') + '}').runInContext(context, {timeout: 100});
+} catch (missing) { /* the original source has no percent-based warning */ }
 const fuelNative = vm.createContext({mGlobalId: {item: context}, getDte: () => 300, getFuelPercentage: () => fuelSamples[0],
-  getFuelFillerRight: () => 1, getFuelState: () => 0, getFuelTank: index => index ? 30 : 60,
+  getFuelFillerRight: () => 1, getFuelState: () => fuelState, getFuelTank: index => index ? 30 : 60,
   getTankFuelPercetage: index => fuelSamples[index + 1], getTankFuelState: () => 0}, {codeGeneration: {strings: false, wasm: false}});
 const fuelHandler = new vm.Script(extract(texts['VehicleEvent.qml'], 'onFuelInfoNotify:'));
+const fuelFrame = (raw, state = 0) => { fuelSamples = Array.isArray(raw) ? raw : [raw, raw, raw]; fuelState = state; fuelHandler.runInContext(fuelNative, {timeout: 100}); };
+let lastValid = 0;
 for (const raw of [-1, 0, 1, 50, 100, 101, 254, 255, 256]) {
-  fuelSamples = [raw, raw, raw];
-  fuelHandler.runInContext(fuelNative, {timeout: 100});
+  fuelFrame(raw);
   const valid = raw >= 0 && raw <= 100;
-  for (const name of ['fuelPercentage', 'mainTankPercentage', 'subTankPercentage']) {
-    check(`fuel/${name}/raw${raw}/raw-preserved`, raw, () => context[name]);
+  if (valid) lastValid = raw;
+  for (const name of fuelNames) {
+    check(`fuel/${name}/raw${raw}/gauge-value`, lastValid, () => context[name]);
+    check(`fuel/${name}/raw${raw}/raw-preserved`, raw, () => context[name + 'Raw']);
     check(`fuel/${name}/raw${raw}/validity`, valid, () => context[name + 'Valid']);
   }
   check(`fuel/raw${raw}/formatted`, valid ? raw + '%' : '---%', () => call('getFuelPercentage()'));
 }
-fuelSamples = [50, 255, 75];
-fuelHandler.runInContext(fuelNative, {timeout: 100});
+check('fuel/frame-time-recorded', true, () => context.fuelFrameMs > 0);
+// Low-fuel warning (fuelLevel: 0 normal, 1 low, 2 critical) from the percent, whatever the adapter state. The adapter state
+// still wins when higher. An invalid reading shows at least the low warning.
+for (const [raw, state, expected] of [[50, 0, 0], [13, 0, 0], [12, 0, 1], [6, 0, 1], [5, 0, 2], [0, 0, 2], [50, 1, 1], [50, 2, 2],
+  [8, 2, 2], [60, 0, 0], [255, 0, 1], [60, 0, 0], [255, 2, 2]]) {
+  fuelFrame(raw, state);
+  check(`fuel-warning/raw${raw}/state${state}/after${lastValid}`, expected, () => context.fuelLevel);
+  if (raw <= 100) lastValid = raw;
+}
+fuelFrame([50, 255, 75]);
 check('fuel/independent-tank-validity', [true, false, true], () => [context.fuelPercentageValid, context.mainTankPercentageValid, context.subTankPercentageValid]);
 const lpkBehavior = /(?:^|\n)\s*Behavior on lpk\s*\{/.test(texts['Global.qml']);
 let lpkSample = 0;
@@ -186,7 +206,7 @@ for (const [from, to] of [[12.3, 32767], [32767, 5], [12.3, 32766], [32766, 5]])
 }
 const hash = folder => Object.fromEntries(['Global.qml', 'VehicleEvent.qml'].map(name => [name, crypto.createHash('sha256').update(fs.readFileSync(path.join(folder, name))).digest('hex')]));
 const results = phase === 'patched' && fs.existsSync(resultPath) ? JSON.parse(fs.readFileSync(resultPath, 'utf8')) : {};
-results.failureModes = ['Incorrect pressure scale for bar, kgf/cm2, and psi', 'Wrong wheel after front or rear swap', 'Unavailable pressure loses placeholder', 'Small RPM updates retain stale values, including 100 to zero', 'DPC handler throws before all four values refresh', 'Metric consumption modes select wrong fuel volume units', 'US MPG mode selects metric or imperial volume', 'Unavailable fuel loses placeholder or unit', 'Fuel percentages outside 0..100 remain real readings', 'One invalid tank changes sibling validity', 'Flow mode receives distance-consumption conversion or labels', 'Hidden or unavailable consumption becomes a real number', 'Raw consumption animation interpolates sentinel transitions'];
+results.failureModes = ['Incorrect pressure scale for bar, kgf/cm2, and psi', 'Wrong wheel after front or rear swap', 'Unavailable pressure loses placeholder', 'Small RPM updates retain stale values, including 100 to zero', 'DPC handler throws before all four values refresh', 'Metric consumption modes select wrong fuel volume units', 'US MPG mode selects metric or imperial volume', 'Unavailable fuel loses placeholder or unit', 'Fuel readings outside 0..100 reach the gauges or lose the raw byte', 'The low-fuel warning ignores the fuel percent or an invalid reading', 'One invalid tank changes sibling validity', 'Flow mode receives distance-consumption conversion or labels', 'Hidden or unavailable consumption becomes a real number', 'Raw consumption animation interpolates sentinel transitions'];
 results.scope = 'Actual QML source blocks and scalar bindings in isolated Node VM with mocked measurement getters. Sentinel animation replay models the declared raw Behavior endpoints. No Qt renderer, animation engine, device accuracy, or active compiled-consumer proof.';
 results.conversionReference = 'https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b9';
 results[phase] = {source, hashes: hash(source), count: rows.length, passed: rows.filter(row => row.pass).length, failed: rows.filter(row => !row.pass).length, rows, rpmStates, dpcStates, lpkStates, transitions};

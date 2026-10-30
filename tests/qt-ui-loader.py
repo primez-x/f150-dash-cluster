@@ -797,7 +797,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--child", choices=PHASES)
     parser.add_argument("--fixture")
-    parser.add_argument("--candidate-dir", default=str(ROOT / "analysis/capture-04/ui-candidate-gps-clock-v2"))
+    parser.add_argument("--candidate-dir", default=str(ROOT / "analysis/capture-04/ui-candidate-fuel-log-v1"))
     args = parser.parse_args()
     if args.child:
         return child(args.child, Path(args.fixture), args.candidate_dir)

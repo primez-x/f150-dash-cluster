@@ -1,5 +1,5 @@
 #!/bin/sh
-# F150 cluster UI update from a USB drive: install, rollback, or log collection.
+# F150 cluster UI update from a USB drive: install, rollback, log collection, or recording.
 # The vendor USB updater (/etc/mdev/update.sh) unpacks encrypt.zip to /mnt/temp/encrypt and runs this file as root.
 # One marker file next to encrypt.zip selects the action. The payload folder viknav-ui/ sits next to encrypt.zip.
 # The hashes below pin every payload file. tools/build_usb_install.py builds the drive contents.
@@ -17,7 +17,7 @@ HEALTH_WAIT=90
 SETTLE_WAIT=20
 LOG_WAIT=180
 
-# Captured original Launcher (capture-04) and the ui-candidate-gps-clock-v2 files.
+# Captured original Launcher (capture-04) and the ui-candidate-fuel-log-v1 files.
 ORIGINAL_SHA256=2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b
 CANDIDATE_SHA256=74f3d2ecfe80bbf2b8d58d7812ba277af5289f9dc48cae73d14f59944d6d6005
 ETC_FILES="vnB.qml vnF.qml vnG.qml vnU.qml vnV.qml"
@@ -25,18 +25,19 @@ etc_sha256() {
     case "$1" in
         vnB.qml) echo 02e74078b79bb0e7b33fff1b0f0e7182d0e940b1fca951b405528d6b2e72758c ;;
         vnF.qml) echo b9db48d55d04d3dc941d32142a6c435cfa89d9f184029bab5ea9b63621879f84 ;;
-        vnG.qml) echo a877fb6d4c4785146264a2c9b0c9b10ffe58a68f597a1e22f5073a0ce51db065 ;;
+        vnG.qml) echo 9c8704f77ab8d0e19ab87d7b9fa331113c5ddaa6f01bdd39825978389da46f3d ;;
         vnU.qml) echo 10aec2382811d6120f70d88c1640ce8009c2a867c4ae473e878b217beddada80 ;;
-        vnV.qml) echo bc2ba70e6a039ac583045d5cd3212584d914ec466aa6a9f41ab3618e14308dd1 ;;
+        vnV.qml) echo 427d4fe352e47c2693828f4b6700768bc6f935f5f7609e7d7cd81ee7abb27822 ;;
     esac
 }
 
-MARKERS="VIKNAV-UI-INSTALL.txt VIKNAV-UI-ROLLBACK.txt VIKNAV-UI-LOG.txt"
+MARKERS="VIKNAV-UI-INSTALL.txt VIKNAV-UI-ROLLBACK.txt VIKNAV-UI-LOG.txt VIKNAV-UI-RECORD.txt"
 marker_token() {
     case "$1" in
-        VIKNAV-UI-INSTALL.txt) echo VIKNAV_UI_INSTALL_GPS_CLOCK_V2 ;;
+        VIKNAV-UI-INSTALL.txt) echo VIKNAV_UI_INSTALL_FUEL_LOG_V1 ;;
         VIKNAV-UI-ROLLBACK.txt) echo VIKNAV_UI_ROLLBACK_CAPTURE04 ;;
         VIKNAV-UI-LOG.txt) echo VIKNAV_UI_LOG ;;
+        VIKNAV-UI-RECORD.txt) echo VIKNAV_UI_RECORD ;;
     esac
 }
 marker_ok() {
@@ -47,6 +48,8 @@ marker_ok() {
 R=$SYSTEM_ROOT
 LAUNCHER=$R/usr/bin/Launcher
 LAUNCHER_LOG=$R/tmp/Launcher.log
+RECORDER=$R/tmp/viknav-recorder.sh
+RECORDER_PID=$R/tmp/viknav-recorder.pid
 
 # Exactly one drive with encrypt.zip and a valid marker, mounted read-write from a USB disk node.
 usb_root=
@@ -75,6 +78,7 @@ for marker in $MARKERS; do
         VIKNAV-UI-INSTALL.txt) action=install ;;
         VIKNAV-UI-ROLLBACK.txt) action=rollback ;;
         VIKNAV-UI-LOG.txt) action=log ;;
+        VIKNAV-UI-RECORD.txt) action=record ;;
     esac
 done
 
@@ -325,11 +329,52 @@ do_log() {
     finish LOGGED
 }
 
+# Start a background copy of the Launcher log to the drive. The copy ends when the drive is unmounted or the power goes.
+# The vendor updater removes /mnt/temp/encrypt after this script, so the recorder runs from /tmp.
+# The recorder opens the drive only for each append, so the drive stays free to unmount.
+do_record() {
+    if [ -f "$RECORDER_PID" ] && kill -0 "$(cat "$RECORDER_PID" 2>/dev/null)" 2>/dev/null; then
+        finish ALREADY_RECORDING
+        exit 0
+    fi
+    cat > "$RECORDER" <<'RECORDER_END' || abort "recorder copy"
+#!/bin/sh
+# Copy new Launcher log bytes to $3/launcher.log every 2 s while drive $2 stays mounted. $1 is the system root.
+# chunks.txt records the uptime and the log byte offset of each copy, to line up the frame print in time.
+R=$1
+usb=$2
+out=$3
+log=$R/tmp/Launcher.log
+off=0
+n=0
+while [ -d "$out" ] && awk -v t="$usb" '$2 == t {f = 1} END {exit !f}' "$R/proc/mounts"; do
+    size=$(wc -c < "$log" 2>/dev/null)
+    case "$size" in ''|*[!0-9\ ]*) size=0 ;; esac
+    size=$((size))
+    # A Launcher restart starts a new log.
+    [ "$size" -ge "$off" ] || off=0
+    if [ "$size" -gt "$off" ]; then
+        tail -c +$((off + 1)) "$log" | head -c $((size - off)) >> "$out/launcher.log" || break
+        printf '%s %s %s\n' "$(cut -d' ' -f1 "$R/proc/uptime" 2>/dev/null)" "$off" "$size" >> "$out/chunks.txt" || break
+        off=$size
+    fi
+    n=$((n + 1))
+    [ $((n % 5)) -ne 0 ] || sync
+    sleep 2
+done
+rm -f "$R/tmp/viknav-recorder.pid"
+RECORDER_END
+    (cd / && exec sh "$RECORDER" "$R" "$usb_root" "$out" </dev/null >/dev/null 2>&1) &
+    echo "$!" > "$RECORDER_PID"
+    finish RECORDING "Turn on Factory > Debug logging for values and UART frames. Each power-up with the drive in starts a new folder."
+}
+
 [ "$actions" -eq 1 ] || abort "more than one action marker"
 log "action $action from $usb_root"
 case "$action" in
     install) do_install ;;
     rollback) do_rollback ;;
     log) do_log ;;
+    record) do_record ;;
 esac
 exit 0

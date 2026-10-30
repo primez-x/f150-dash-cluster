@@ -1,14 +1,14 @@
 """Build the USB drive contents for the cluster UI install, rollback, and log collection (tools/usb-install/encrypt.sh).
 
 Run under WSL: python3 tools/build_usb_install.py [--output DIR]
-Inputs: the UI candidate (analysis/capture-04/ui-candidate-gps-clock-v2) and the captured original Launcher.
+Inputs: the UI candidate (analysis/capture-04/ui-candidate-fuel-log-v1) and the captured original Launcher.
 The vendor USB updater unpacks encrypt.zip with a password. The builder reads that password from the captured updater
 (installed/capture-04/rootfs/etc/mdev/update.sh) at build time; the password never enters Git or the output text.
 Info-ZIP (tools/infozip/usr/bin/zip) writes the encrypted archive, as for the diagnostic packages.
 
 Output (ignored by Git):
   drive/      copy everything here to the top level of the USB drive
-  markers/    copy exactly one marker next to encrypt.zip to select install, rollback, or log collection
+  markers/    copy exactly one marker next to encrypt.zip to select install, rollback, log collection, or recording
   MANIFEST.json
 """
 import argparse
@@ -23,11 +23,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools/usb-install/encrypt.sh"
-CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-gps-clock-v2"
+CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-fuel-log-v1"
 ORIGINAL = ROOT / "installed/capture-04/rootfs/usr/bin/Launcher"
 UPDATER = ROOT / "installed/capture-04/rootfs/etc/mdev/update.sh"
 ZIP_TOOL = ROOT / "tools/infozip/usr/bin/zip"
-OUTPUT_DEFAULT = ROOT / "analysis/capture-04/usb-install-gps-clock-v2"
+OUTPUT_DEFAULT = ROOT / "analysis/capture-04/usb-install-fuel-log-v1"
 ETC = ["vnB.qml", "vnF.qml", "vnG.qml", "vnU.qml", "vnV.qml"]
 
 sha = lambda data: hashlib.sha256(data).hexdigest()
@@ -44,7 +44,7 @@ def script_pins(text):
     pins.update({f"etc/{name}": re.search(rf"^\s+{re.escape(name)}\) echo ([0-9a-f]{{64}}) ;;$", text, re.M) for name in ETC})
     require(all(pins.values()), "encrypt.sh pins are incomplete")
     markers = dict(re.findall(r"^\s+(VIKNAV-UI-\w+\.txt)\) echo (\w+) ;;$", text, re.M))
-    require(len(markers) == 3, "encrypt.sh marker tokens are incomplete")
+    require(len(markers) == 4, "encrypt.sh marker tokens are incomplete")
     return {key: match.group(1) for key, match in pins.items()}, markers
 
 
