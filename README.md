@@ -66,8 +66,8 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - The compiled FuelInfo and MpgInfo pages label the instant consumption with the distance unit (MPG, L/100km, km/l). In flow mode (L/h) those pages now show 0, not an L/h number under an MPG label.
 - Travel and idle times show minutes with two digits (`1:05`, not `1:5`).
 - The oil-life trip on the OilLifeinfo page now follows the distance unit. The adapter field is 16 bits; the page shows `---` until the first trailer frame and for 0xFFFF. The field was matched by storage order, and the km unit is an inference. The logger records `trucksOilLifeTripRaw` with `odo`, so one drive confirms the unit.
-- The settings menu is the owned page `/etc/vnM.qml`. MenuPage loads vnM in place of the compiled menu list, so vnM owns Vehicle, System, and Service. G-force (compiled) and Factory (`/etc/vnF.qml`) open inside vnM. The menu audit is in `analysis/capture-04/menu-audit/` (private).
-- The menu uses the locked round 21 design: layout A (each open page stays on screen as a column), values B (switches, segments, and a percent meter), and confirm A (press OK twice). The accent is blue, and teal while the towing layout is on. The menu uses the BMW Type Global font from `/usr/share/fonts`.
+- The settings menu is the owned page `/etc/vnM.qml`. MenuPage loads vnM in place of the compiled menu list, so vnM owns Vehicle, System, Service, and Factory. G-force and the five Factory setup pages (Advanced, Fuel tank, Vehicle profile, Odometer, Service commands) are compiled vendor pages that open inside vnM. The menu audit is in `analysis/capture-04/menu-audit/` (private).
+- The menu uses the locked round 21 design: layout A (each open page stays on screen as a column), values B (switches, segments, and a percent meter), and confirm A (press OK twice). The accent is blue, and teal while the towing layout is on. The menu uses the BMW Type Global font from `/usr/share/fonts`. At most three columns show; a fourth level (Factory > General settings) moves the oldest column off the left side, and the narrow first column shows titles only.
 - Factory > Screen grid closes the menu and covers the whole screen with a pixel grid (`/etc/vnS.qml`): lines every 20 px, x,y labels, colored frames every 10 px from each edge, the screen size, and the dashboard transform. A photo of the grid maps the area that the bezel and the steering column leave visible. Any wheel key after the first second, or a power cycle, hides the grid.
 - Menu keys act on release. Up and Down wrap; Left goes back; Right and OK open or change; Modes steps down; a Modes hold acts as OK; a Back hold closes the menu. The release after a hold is ignored. Each page opens on the first row and drops any unfinished edit.
 - Settings with more than two values open an editor: Up and Down change the value, OK sends the value once, and Back cancels. Oil life start value stays between 10% and 100%. The off-road camera never sends the camera fault value. Ford settings show "Waiting for truck" until the first settings frame, and 500 ms after a change the menu reads the settings back once.
@@ -88,9 +88,9 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - Boot candidates remove automatic formatting after mount failure and stop later init scripts after critical mount failures.
 - Private-data migration restores the original directory after a failed mount. If rollback fails, the data remains in `/private-move`.
 - A failed copy preserves the migration backup. Independent review approved the boot candidates for a local commit.
-- The settings menu, the Factory catalog, and General settings pass 258 host Qt checks; 162 of the checks cover the settings menu.
+- The settings menu, including Factory and General settings, passes 235 host Qt checks.
 - Eight additional Qt checks execute the patched MenuPage cache. The checks verify that MenuPage loads `/etc/vnM.qml` and passes the keys.
-- Native Qt fixture previews cover General settings and the Factory catalog at 1920×932 and 1920×720, and two settings menu states. Real vehicle rendering remains unverified.
+- Native Qt fixture previews cover seven settings menu states, including Factory and General settings, and the screen grid. Real vehicle rendering remains unverified.
 - The candidate clears all 13 vendor factory-menu code records and exposes labeled settings and diagnostic entries.
 - All six layouts have detailed specifications, coordinate schematics, and genuine assets under `handoff/claude-dashboard/`.
 
@@ -179,14 +179,14 @@ The vendor USB updater (`/etc/mdev/update.sh`) runs `encrypt/encrypt.sh` from `e
 
 `tools/usb-install/encrypt.sh` installs, rolls back, or collects logs. One marker file next to `encrypt.zip` selects the action. The script pins the hash of every payload file in `viknav-ui/`.
 
-- Install: the script aborts with no change for an unknown Launcher, an unknown `/etc/vn*.qml` file, a damaged payload, or low space. The script stops the Launcher, backs up `/private/Launcher` to the drive, and stages and checks each file. Then the script renames the `/etc` files and the Launcher into place and starts the Launcher.
+- Install: the script aborts with no change for an unknown Launcher, an unknown `/etc/vn*.qml` file, a damaged payload, or low space. Files of an earlier release are known files, so a new drive upgrades the cluster in place. The install removes files that only an earlier release used (`RETIRED_FILES`). The script stops the Launcher, backs up `/private/Launcher` to the drive, and stages and checks each file. Only an install over the original Launcher writes `viknav-ui/settings-before-install.tar`; an upgrade keeps that stock backup. Then the script renames the `/etc` files and the Launcher into place and starts the Launcher.
 - Health check: the new Launcher must log `VehicleEvent Ver:VehicleEvent@` and `main.qml starting`, stay up for 20 s, and log no `/etc/vn` error. Otherwise the script restores the original Launcher, the `/etc` files, and the settings. The script also writes `INSTALL-BLOCKED.txt`, so the next insertion does not try the install again.
-- Rollback: the script restores the original Launcher from the drive, removes the `/etc/vn*.qml` files, and restores the settings from before the first install.
+- Rollback: the script restores the original Launcher from the drive, removes the current and retired `/etc/vn*.qml` files, and restores the settings from before the first install.
 - Log: the script copies `/tmp/Launcher.log` and the installed hashes. The script changes nothing.
 - Record: the script starts a background copy of `/tmp/Launcher.log` to the drive every 2 s. The copy stops when the drive is unmounted or the power goes. The script changes nothing on the cluster.
 - A repeated install or rollback with nothing to change does not restart the dashboard.
 
-The USB port becomes a host port at the end of `rcS`, after the hotplug handler starts. A drive left in at power-up therefore most likely runs the updater again; the truck has not yet confirmed this. A repeated install does nothing, and each record run writes a new folder.
+The USB port becomes a host port at the end of `rcS`, after the hotplug handler starts. A drive left in at power-up therefore runs the updater; the first truck install (menu-v1, 2026-10-30) ran this way. A repeated install does nothing, and each record run writes a new folder.
 Results go to a new `viknav-ui-<action>-<time>-<pid>` folder on the drive. Line 1 of `STATUS.txt` is the result. The boot scripts (`S01private`, `S90mount`, `rcS`) are not part of the install.
 
 Replay the installer against a fake cluster root with the real payload bytes, then build the drive contents (Ubuntu under WSL):
@@ -197,24 +197,25 @@ wsl.exe -d Ubuntu --exec python3 /mnt/c/f150-dash-cluster/tests/usb-install-repl
 wsl.exe -d Ubuntu --exec sh -c "cd /mnt/c/f150-dash-cluster && python3 tools/build_usb_install.py"
 ```
 
-The builder reads the updater archive password from the captured updater; the password does not enter Git. Copy `drive/` to the top level of the USB drive, and copy exactly one file from `markers/`.
+The builder reads the updater archive password from the captured updater; the password does not enter Git. Copy `drive/` to the top level of the USB drive, and copy exactly one file from `markers/`. Keep `viknav-ui/settings-before-install.tar` on the drive after the first install; rollback restores the stock settings from that file.
+To release a new candidate, move the current `etc_sha256` pins into `etc_previous` (and a changed Launcher pin into `PREVIOUS_LAUNCHERS`), list files the new release drops in `RETIRED_FILES`, then pin the new files.
 Do not put `dashboard.zip`, `Ford.zip`, `factory.zip`, or a `dashboard_backup` folder on the drive. Those names start other vendor updater actions.
 
 ## Patch boundary
 
 Source replay verifies selected math and state transitions. Source replay does not verify Qt rendering, CAN interpretation, sensor calibration, or live vehicle behavior.
 
-The UI candidate redirects three compiled loaders and includes five source files.
+The UI candidate redirects three compiled loaders and includes four source files.
 The generator clears 13 code records in the old factory gate. The generator preserves native code, ELF geometry, and the other 195 cache units.
-No custom dashboard update has been installed. Device-fork cache acceptance and wrapper startup remain unverified.
+The menu-v1 candidate is installed on the truck (2026-10-30). The install log shows a clean start, and the new menu opens. Other vehicle checks remain open.
 
 System > Units shows independent Manual/Follow state and exposes `followVehicleUnits()`. Host tests verify the controls with recorded native-call stubs.
 
-Factory opens a labeled menu without a code prompt. The menu exposes General, Advanced, tank, vehicle-profile, odometer, and service-command pages.
-The menu also exposes the existing USB debug, log mode, image preview, and model-option actions. Actions require explicit activation.
-The catalog preserves the vendor service-list query after 300 ms. General settings preserve the separate status query after 50 ms.
-General settings show all 19 controls. Seven controls that no compiled page or native code reads (sub tank, eco, gear, oil temperature, range, oil pressure, chassis state) show "No effect in this firmware" and do not change. Back returns to the catalog.
-Back returns to the menu where the page opened. Pages opened from Advanced return to Advanced.
+Factory is a vnM page without a code prompt. The page exposes General settings and the compiled Advanced, Fuel tank, Vehicle profile, Odometer, and Service commands pages.
+The page also exposes the existing ADB, Debug logging, USB image preview, Screen grid, and Car model options actions. Actions require explicit activation.
+Factory runs the vendor service-list query on entry. General settings run the separate status query on entry; the original page waited 50 ms.
+General settings show all 19 controls. Seven controls that no compiled page or native code reads (sub tank, eco, gear, oil temperature, range, oil pressure, chassis state) show "No effect in this firmware" and do not change.
+Back returns to the Factory row where the page opened. A compiled page opened from Advanced settings returns to Advanced settings.
 The old factory gate has no route from System Settings. All 13 former code literals are empty in the copied Launcher.
 Linux login credentials, keys, service defaults, and captured backups remain unchanged.
 Selecting a USB debug action can change USB debug state. Merely opening the menu leaves that state unchanged.

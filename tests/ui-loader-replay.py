@@ -18,7 +18,7 @@ GENERATOR = BASE / "tools" / "prepare_ui_candidate.py"
 DECODER_PATH = BASE / "tools" / "decode_qml_units.py"
 SOURCE = BASE / "installed" / "capture-04" / "rootfs" / "usr" / "bin" / "Launcher"
 OUTPUT_PARENT = BASE / "analysis" / "capture-04"
-OUTPUT = OUTPUT_PARENT / "ui-candidate-menu-v1"
+OUTPUT = OUTPUT_PARENT / "ui-candidate-menu-v2"
 RESULT = OUTPUT_PARENT / "ui-loader-replay-results.json"
 SCHEMA = BASE / "evidence" / "qt-5.14.2" / "qv4instr_moth_p.h"
 EXPECTED_SOURCE_SHA256 = "2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b"
@@ -47,10 +47,8 @@ LOADERS = {
 }
 
 
-# Copied with no cache redirect: vnM hosts vnF, vnF opens vnB, and Global opens vnS.
+# Copied with no cache redirect: Global opens vnS.
 COPIES = [
-    {"source": BASE / "patches" / "capture-04" / "etc" / "vnF.qml", "destination": "etc/vnF.qml"},
-    {"source": BASE / "patches" / "capture-04" / "etc" / "vnB.qml", "destination": "etc/vnB.qml"},
     {"source": BASE / "patches" / "capture-04" / "etc" / "vnS.qml", "destination": "etc/vnS.qml"},
 ]
 MODIFIED_UNITS = ["Trucks/menu/MenuPage.qml", "Trucks/menu/system/MenuSystemFactory.qml", "main.qml"]

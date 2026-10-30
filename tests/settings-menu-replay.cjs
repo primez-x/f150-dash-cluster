@@ -10,31 +10,25 @@ const reportPath = path.join(base, 'analysis/capture-04/settings-menu-candidate.
 const fixtures = path.join(base, 'evidence/fixtures/capture-04');
 const pages = path.join(base, 'patches/capture-04/etc');
 const expected = [
-  'Factory rows forward all 19 indexes to the existing setter.',
-  'General settings Back, Left, and the Back row return to the factory catalog on release.',
-  'Factory Up/Down wraps without changes on press or hold.',
-  'Factory source contains no gate, odometer, shell, or update route.',
-  'Mode release advances selection. Mode hold activates the selected row.',
-  'Repeated mode hold events preserve vendor repeated activation and release advance.',
-  'Page completion selects the first row after Repeater creates the controls.',
-  'Factory completion starts the original 50 ms one-shot system inquiry.'
+  'Factory is a native vnM page with one shell inquiry on entry.',
+  'General settings shows the 19 vendor rows, sends the vendor setter for rows with an effect, and shows a reason for the rest.',
+  'General settings runs the original system inquiry once on entry, without arguments.',
+  'Compiled Factory pages open on release and return to the Factory row with their compiled Back values.',
+  'ADB, Debug logging, USB image preview, Car model options, and Screen grid send the vendor values.',
+  'Factory code contains no vendor code gate and loads no retired Factory file.'
 ];
 const report = {schema_version: 2, authority: 'PC source and reduced decoded vendor metadata replay',
   command: 'node tests/settings-menu-replay.cjs', expected_cases: expected,
   source_verification: 'failed', qt_verification: 'Root owns Qt 5.14.2 checks.',
   vehicle_verification: 'Not run', cases: 0,
   page_contracts: {
-    factory_catalog: {base: 'qrc:/Trucks/common/ItemInfo.qml', width:820, height:510,
-      controls:'15 labeled settings and diagnostic entries plus Back',
-      verification:'Host Qt owns actual catalog key and action checks.',
-      return:'menuSettingsPageIndex=0'},
-    general: {base: 'qrc:/Trucks/common/ItemInfo.qml', width: 820, height: 510,
-      controls: '19 vendor rows plus Back', setter: 'mGlobalId.item.setFactory(index)',
-      return: 'menuSettingsSubPageItemSetup=0',
-      context: ['mGlobalId', 'mTranslationId'],
-      navigation: 'Back now resets the subpage index and returns to the direct catalog.'},
-    keys: 'Inherited ItemInfo.key(key,state) dispatches overridden key_back/up/down/left/right/enter/modes methods.',
-    states: 'General preserves vendor state behavior. The catalog activates a mode hold once and consumes the matching release.'
+    factory: {owner: 'patches/capture-04/etc/vnM.qml', page: 'factory',
+      controls: 'General settings, five compiled setup pages, ADB, Debug logging, USB image preview, Screen grid, Car model options',
+      return: 'Back returns to System'},
+    general: {owner: 'patches/capture-04/etc/vnM.qml', page: 'general', controls: '19 vendor rows',
+      setter: 'mGlobalId.item.setFactory(index)', context: ['mGlobalId', 'mTranslationId']},
+    compiled_pages: 'vnM hosts FactorySeniorSetting, FactoryOdoSetup, FactoryTankSetup, FactoryVehicleModel, and FactoryShellCmd by menuSettingsSubPageItemSetup.',
+    keys: 'vnM key(code,state) acts on release. Qt owns the press, hold, and Modes checks.'
   }, limitations: [
     'Source replay does not prove QML component rendering or native context lookup.',
     'Loader offsets and identities come from reduced metadata fixtures. This replay does not verify native binary bytes.',
@@ -84,10 +78,9 @@ try {
     return {path: 'evidence/fixtures/capture-04/' + name, sha256,
       authority: 'Reduced decoded metadata; no native byte verification'};
   });
-  const catalogText = fs.readFileSync(path.join(pages, 'vnF.qml'), 'utf8');
-  check(catalogText.includes('mFactoryMenu'), 'Factory entry exposes a direct settings catalog');
-  check(!/mFactoryPasswd|mPasswdSelect|PasswdTumber|key_enter_hold/.test(catalogText), 'Direct catalog contains no vendor code gate');
-  const factoryText = fs.readFileSync(path.join(pages, 'vnB.qml'), 'utf8');
+  const menuText = fs.readFileSync(path.join(pages, 'vnM.qml'), 'utf8');
+  check(!/mFactoryPasswd|mPasswdSelect|PasswdTumber|key_enter_hold/.test(menuText), 'Factory page contains no vendor code gate');
+  check(!/vnF\.qml|vnB\.qml/.test(menuText.replace(/\/\/.*$/gm, '')), 'Menu code loads no retired Factory file');
   const lifecycleBytes = fs.readFileSync(path.join(fixtures, 'settings-page-lifecycle.json'));
   const lifecycleHash = crypto.createHash('sha256').update(lifecycleBytes).digest('hex');
   check(lifecycleHash === '624ca9646190d349c685a6244bd237894cbfbe31c4dd26835c6a762f10c0bba6', 'Lifecycle fixture SHA-256');
@@ -108,65 +101,98 @@ try {
   check(JSON.stringify(queryCode.filter(op => op.references && op.references.index)
     .map(op => op.references.index).slice(0, 2)) === JSON.stringify(['mEventHandleId', 'item']), 'Original inquiry target');
   check(queryCode.some(op => op.name === 'CallPropertyLookup' && op.references.lookupIndex === 'systemInquire' && op.args.argc === 0), 'Original inquiry has no arguments');
-  const rootCode = factoryLifecycle.functions.find(fn => fn.index === factoryLifecycle.root_completion_function).bytecode;
-  check(rootCode.some(op => op.references && op.references.index === 'mPostActionTimerId') &&
-    rootCode.some(op => op.name === 'CallPropertyLookup' && op.references.lookupIndex === 'restart' && op.args.argc === 0), 'Original completion starts the timer');
-  report.lifecycle_contract = {factory: {delay_ms: 50, repeat: false,
-    start: 'Root Component.onCompleted calls mPostActionTimerId.restart()',
+  report.lifecycle_contract = {factory: {original_delay_ms: 50, candidate: 'vnM.openPage("general") calls the inquiry once on entry',
     target: 'mEventHandleId.item.systemInquire()', arguments: [],
     timer_anchor: 'qrc:/Trucks/menu/system/factory/FactoryGenericSetup.qml:381',
-    call_anchor: 'qrc:/Trucks/menu/system/factory/FactoryGenericSetup.qml:385',
-    start_anchor: 'qrc:/Trucks/menu/system/factory/FactoryGenericSetup.qml:391'},
-    boundary: 'Source callback replay verifies the command target and schedule request. Qt owns actual timer scheduling.'};
-  const queryCalls = [];
-  let queryStarts = 0;
-  // Rows that no compiled page or native code reads show a reason and change nothing.
-  const noEffect = [6, 10, 11, 12, 13, 16, 17];
-  const factory = methods(factoryText, {mPressed: 0, mNoEffect: noEffect,
-    mFactoryRows: {currentIndex: 0, count: 20},
-    mGlobalId: {item: {menuSettingsPageIndex: 1, menuSettingsSubPageItemSetup:5, setFactory(index) { factory.calls.push(index); }}},
-    mPostActionTimerId: {restart() { queryStarts++; }},
-    mEventHandleId: {item: {systemInquire(...args) { queryCalls.push(args); }}},
-    calls: []});
-  const timerMatch = factoryText.match(/\bTimer\s*\{/);
-  check(Boolean(timerMatch), 'Factory preserves the vendor startup query timer');
-  const timerBlock = declaration('function callback() ' + factoryText.slice(timerMatch.index + 5), 'callback');
-  check(/\bid:\s*mPostActionTimerId\b/.test(timerBlock) && /\binterval:\s*50\b/.test(timerBlock), 'Factory timer identity and 50 ms delay');
-  check(!/\brepeat:\s*true\b/.test(timerBlock) && !/\brunning:\s*true\b/.test(timerBlock), 'Factory timer starts only through completion');
-  factory.mFactoryRows.currentIndex = 19;
-  vm.runInContext(handler(factoryText, 'Component.onCompleted:'), factory);
-  check(factory.mFactoryRows.currentIndex === 0, 'Factory opens on the first setting');
-  check(queryStarts === 1 && queryCalls.length === 0, 'Factory completion schedules one delayed query');
-  vm.runInContext(handler(timerBlock, 'onTriggered:'), factory);
-  check(queryCalls.length === 1 && queryCalls[0].length === 0, 'Factory timer calls the original inquiry without arguments');
-  check(/mNoEffect:\s*\[6, 10, 11, 12, 13, 16, 17\]/.test(factoryText), 'Factory rows with no effect');
-  for (let index = 0; index < 19; index++) {
-    factory.mFactoryRows.currentIndex = index;
-    const before = factory.calls.length;
-    factory.key_enter(1); factory.key_enter(2);
-    check(factory.calls.length === before, 'Factory press/hold must not change a value');
-    factory.key_enter(0);
-    if (noEffect.includes(index)) check(factory.calls.length === before, 'Factory row with no effect ' + index);
-    else check(factory.calls[factory.calls.length - 1] === index, 'Factory index ' + index);
-  }
-  factory.mFactoryRows.currentIndex = 19;
-  factory.key_enter(0);
-  check(factory.mGlobalId.item.menuSettingsSubPageItemSetup === 0, 'General settings Back row returns to the catalog');
-  for (const name of ['key_back', 'key_left']) {
-    factory.mGlobalId.item.menuSettingsSubPageItemSetup = 5;
-    factory[name](1); factory[name](2);
-    check(factory.mGlobalId.item.menuSettingsSubPageItemSetup === 5, name + ' press/hold');
-    factory[name](0);
-    check(factory.mGlobalId.item.menuSettingsSubPageItemSetup === 0, name + ' release');
-  }
-  factory.mFactoryRows.currentIndex = 0; factory.key_up(0);
-  check(factory.mFactoryRows.currentIndex === 19, 'Factory wrap up');
-  factory.key_down(0);
-  check(factory.mFactoryRows.currentIndex === 0, 'Factory wrap down');
-  check(!/Passwd|FactoryOdo|FactoryShell|setUpdate|setOdo|setShell/.test(factoryText), 'Normal factory scope');
-  check(/mFactoryItems\[index\]/.test(factoryText) && /mFactoryItemsState\[index\]/.test(factoryText), 'Reuse vendor rows');
+    call_anchor: 'qrc:/Trucks/menu/system/factory/FactoryGenericSetup.qml:385'},
+    boundary: 'Source replay verifies the command target and arguments. The 50 ms delay of the original page is not kept.'};
 
-  // Reuse the existing decoded-instruction runner, without replaying unrelated cases.
+  // vnM engine in a VM. Property bindings and Connections handlers are read from vnM.qml and run as getters and setters.
+  const binding = name => {
+    const match = new RegExp('readonly property \\w+ ' + name + ': ').exec(menuText);
+    assert.ok(match, 'Missing binding ' + name);
+    const lines = menuText.slice(match.index + match[0].length).split('\n');
+    let expression = lines[0];
+    // Continuation lines are indented deeper than the property, or close a bracket at the property indent.
+    for (let i = 1; i < lines.length && (/^\s{5,}\S/.test(lines[i]) || /^\s{4}[\])}]/.test(lines[i])); i++) expression += '\n' + lines[i];
+    return expression;
+  };
+  const literal = name => vm.runInNewContext('(' + binding(name) + ')');
+  const noEffect = literal('mFactoryNoEffect');
+  check(JSON.stringify(noEffect) === JSON.stringify([6, 10, 11, 12, 13, 16, 17]), 'Factory rows with no effect');
+  const titles = Array.from({length: 19}, (unused, index) => 'Setting ' + index);
+  let states = Array(19).fill(0);
+  const calls = [];
+  const log = [];
+  const g = {menuBarIndex: 1, language: 0, gpsAutoSetRtcEnabled: 0, getRtcTime() { return '12:00'; }, getAmPm() { return ''; },
+    uartDebugEnabled: 0, mediaImageEnabled: 0, modelCarSelection: false, screenGridEnabled: 0,
+    fordSetupInfoChanged: false, mainTentChanged: false, swcUp: 1, swcDown: 2, swcBack: 3, swcLeft: 4, swcEnter: 5, swcRight: 6,
+    swcModes: 7, setFactory(index) { calls.push(index); states[index] = index === 7 ? (states[index] + 1) % 5 : (states[index] ? 0 : 1); }};
+  const e = {systemInquire(...args) { log.push(['systemInquire', ...args]); },
+    shellCmdInquire(...args) { log.push(['shellCmdInquire', ...args]); }, adb(value) { log.push(['adb', value]); }};
+  const timer = {stop() {}, restart() {}};
+  const menu = methods(menuText, {Number, String, Math, mTrucksModel: 1,
+    mGlobalId: {item: g}, mTranslationId: {item: {mSystemLanguages: ['English'], mFactoryItems: titles, get mFactoryItemsState() { return states; }}},
+    mEventHandleId: {item: e}, mArmTimer: timer, mSentTimer: timer, mFordReadBack: timer, mServiceReadBack: timer,
+    mPath: ['home', 'system', 'factory'], mCursors: [1, 5], mCursor: 0, mPressed: false, mHeldKey: -1, mEditing: false,
+    mEditValue: 0, mEditStart: 0, mEditFields: [], mEditField: 0, mArmedRow: -1, mSentRow: -1, mFactoryEntry: 0,
+    mFactoryNoEffect: noEffect, mDebugLevels: literal('mDebugLevels'), mDebugTexts: literal('mDebugTexts'),
+    mFactoryUrls: literal('mFactoryUrls'), mTitles: literal('mTitles')});
+  for (const name of ['mPage', 'mRows', 'mFocusRow', 'mHostedUrl']) {
+    const expression = binding(name);
+    Object.defineProperty(menu, name, {get() { return vm.runInContext(expression, menu); }});
+  }
+  for (const name of ['menuSettingsPageIndex', 'menuSettingsSubPageItemSetup']) {
+    const body = handler(menuText, 'on' + name[0].toUpperCase() + name.slice(1) + 'Changed:');
+    let current = 0;
+    Object.defineProperty(g, name, {get() { return current; },
+      set(next) { if (next !== current) { current = next; vm.runInContext(body, menu); } }});
+  }
+  const open = title => {
+    menu.mCursor = menu.mRows.findIndex(row => row.title === title);
+    assert.ok(menu.mCursor >= 0, 'Missing row ' + title);
+    menu.release(g.swcEnter);
+  };
+  const factoryTitles = ['General settings', 'Advanced settings', 'Fuel tank setup', 'Vehicle profile', 'Odometer setup',
+    'Service commands', 'ADB debugging: enable', 'ADB debugging: disable', 'Debug logging', 'USB image preview', 'Screen grid',
+    'Car model options'];
+  check(JSON.stringify(menu.mRows.map(row => row.title)) === JSON.stringify(factoryTitles), 'Factory rows and order');
+  menu.closePage();
+  check(menu.mPage === 'system', 'Factory Back returns to System');
+  open('Factory');
+  check(menu.mPage === 'factory' && JSON.stringify(log) === JSON.stringify([['shellCmdInquire']]), 'Factory entry runs one shell inquiry');
+  check(g.menuSettingsPageIndex === 0 && g.menuSettingsSubPageItemSetup === 0, 'Factory is a native page');
+
+  // General settings.
+  log.length = 0;
+  open('General settings');
+  check(menu.mPage === 'general' && JSON.stringify(log) === JSON.stringify([['systemInquire']]), 'General entry runs one system inquiry without arguments');
+  const general = menu.mRows;
+  check(general.length === 19 && general.every((row, index) => row.title === titles[index]), 'General shows the 19 vendor rows');
+  for (let index = 0; index < 19; index++) {
+    const row = general[index];
+    if (noEffect.includes(index)) check(row.kind === 'unavailable' && row.value === 'No effect in this firmware', 'General row with no effect ' + index);
+    else check(row.kind === 'toggle' && row.op === 'factory' && row.arg === index, 'General row ' + index);
+  }
+  check(general[7].value === '200' && general[7].current === undefined && general[0].value === 'Off' && general[0].current === 0, 'General start values');
+  check(/\["200", "210", "240", "260", "290"\]/.test(menuText), 'General row-seven labels match the decoded vendor binding');
+  for (let index = 0; index < 19; index++) {
+    menu.mCursor = index;
+    const before = calls.length;
+    menu.release(g.swcEnter);
+    if (noEffect.includes(index)) check(calls.length === before, 'General row with no effect sends nothing ' + index);
+    else check(calls[calls.length - 1] === index, 'General setter index ' + index);
+  }
+  check(menu.mRows[0].value === 'On' && menu.mRows[0].current === 1 && menu.mRows[7].value === '210', 'General rows follow the setting');
+  menu.mCursor = 0;
+  menu.release(g.swcUp);
+  check(menu.mCursor === 18, 'General Up wraps');
+  menu.release(g.swcDown);
+  check(menu.mCursor === 0, 'General Down wraps');
+  menu.release(g.swcBack);
+  check(menu.mPage === 'factory' && menu.mCursor === 0, 'General Back returns to the Factory row');
+
+  // Reuse the existing decoded-instruction runner for the vendor setter parity.
   const runnerText = fs.readFileSync(path.join(base, 'tests/unit-state-replay.cjs'), 'utf8');
   const vendorFactory = JSON.parse(fs.readFileSync(path.join(fixtures, 'factory-generic-key-enter.json')));
   const originalFactoryEnter = vm.runInNewContext('(' + declaration(runnerText, 'enter') + ')', {
@@ -178,73 +204,8 @@ try {
   for (let index = 0; index < 19; index++) {
     originalFactory.mMenuFuncId.currentIndex = index; originalFactoryEnter(originalFactory);
   }
-  check(JSON.stringify(originalFactory.calls.filter(index => !noEffect.includes(index))) === JSON.stringify(factory.calls),
+  check(JSON.stringify(originalFactory.calls.filter(index => !noEffect.includes(index))) === JSON.stringify(calls),
     'Vendor factory setter parity for rows with an effect');
-  originalFactory.mMenuFuncId.currentIndex = 19; originalFactoryEnter(originalFactory);
-  check(originalFactory.mGlobalId.item.menuSettingsPageIndex === 1 &&
-    originalFactory.mGlobalId.item.menuSettingsSubPageItemSetup === 0, 'Original factory Back keeps the gate parent page');
-  const modeBytes = fs.readFileSync(path.join(fixtures, 'mode-key-functions.json'));
-  const modeHash = crypto.createHash('sha256').update(modeBytes).digest('hex');
-  check(modeHash === 'f143b3ecbf011dd3427f1444b11383fe00ba8ec2cb3b6a2f68f425cacce68d3c', 'Mode fixture SHA-256');
-  const modeFixture = JSON.parse(modeBytes);
-  const runnerSource = declaration(runnerText, 'enter');
-  const modeRunnerSource = runnerSource.replace('const regs = {6: 0};', 'const regs = {6: scope.replayState};');
-  check(modeRunnerSource !== runnerSource, 'Mode runner accepts the replay event state');
-  const modeSequences = [[0], [1, 0], [1, 2, 0], [1, 2, 2, 0], [1, 2, 2, 2, 0],
-    [1, 2, 2, 2, 2, 0], [1, 2, 3, 0], [1, 2, 2, 0, 1, 0]];
-  report.mode_key_replay = [];
-  const modeUnit = modeFixture.units.find(unit => unit.qrc_path === vendorFactory.qrc_path);
-  check(Boolean(modeUnit), 'Mode unit identity factory');
-  check(modeUnit.compiled_unit_sha256 === vendorFactory.compiled_unit_sha256, 'Mode unit matches the Enter fixture');
-  const runMode = vm.runInNewContext('(' + modeRunnerSource + ')', {menu: modeUnit.functions[0]});
-  for (const sequence of modeSequences) {
-    const actions = [];
-    const vendorActions = [];
-    const candidate = methods(factoryText, {
-      mPressed: 0, mNoEffect: noEffect, calls: [], value: false, mFactoryRows: {currentIndex: 0, count: 20},
-      mGlobalId: {item: {setFactory(index) { candidate.calls.push(index); candidate.value = !candidate.value; }}}
-    });
-    const vendor = {
-      Number, mPressed: 0, calls: [], value: false, mMenuBackId: {mIndex: 100},
-      mMenuFuncId: {currentIndex: 0, count: 20, itemAt(index) { return {mIndex: index}; }},
-      mGlobalId: {item: {setFactory(index) { vendor.calls.push(index); vendor.value = !vendor.value; }}}
-    };
-    const view = candidate.mFactoryRows;
-    const vendorView = vendor.mMenuFuncId;
-    const enterMethod = candidate.key_enter;
-    const downMethod = candidate.key_down;
-    candidate.key_enter = state => { actions.push(['enter', state, view.currentIndex]); return enterMethod(state); };
-    candidate.key_down = state => { actions.push(['down', state, view.currentIndex]); return downMethod(state); };
-    vendor.key_enter = state => {
-      vendorActions.push(['enter', state, vendorView.currentIndex]);
-      return originalFactoryEnter(vendor);
-    };
-    vendor.key_down = state => {
-      vendorActions.push(['down', state, vendorView.currentIndex]);
-      if (state === 0) vendorView.currentIndex = (vendorView.currentIndex + 1) % vendorView.count;
-      return state === 0 ? 1 : 0;
-    };
-    for (const state of sequence) {
-      candidate.key_modes(state); vendor.replayState = state; runMode(vendor);
-      check(JSON.stringify(actions) === JSON.stringify(vendorActions), 'Mode action parity factory');
-      check(view.currentIndex === vendorView.currentIndex, 'Mode selection parity factory');
-      check(JSON.stringify(candidate.calls) === JSON.stringify(vendor.calls), 'Mode mutation parity factory');
-      check(candidate.value === vendor.value, 'Factory repeated toggle parity');
-    }
-    report.mode_key_replay.push({page: 'factory', sequence, parity: 'passed',
-      activations: actions.filter(action => action[0] === 'enter').length,
-      advances: actions.filter(action => action[0] === 'down').length});
-  }
-  report.mode_key_fixture = {path: 'evidence/fixtures/capture-04/mode-key-functions.json',
-    export_bytes: modeBytes.length, export_sha256: modeHash,
-    recipe: 'Select key_modes from FactoryGenericSetup and MenuSystemUnits. Retain unit qrc path and SHA-256, function index, name, source location, code offset, code SHA-256, and resolved bytecode. Omit all other functions and string tables.',
-    sources: [{source: 'analysis/capture-04/qml-cache/085-Trucks_menu_system_factory_FactoryGenericSetup.qml.json',
-      source_sha256: '6b19ec3407da3cfa8c33c17d03df401ca851ce81ada40a79d3d137ef9195560c'},
-    {source: 'analysis/capture-04/qml-cache/073-Trucks_menu_system_MenuSystemUnits.qml.json',
-      source_sha256: 'f6efb07133345d7aa9b4bc9bfe3a51db345719d9c3d0742debd5f1994e71ea33'}]};
-  report.mode_key_limit = 'Repeated state-2 events activate repeatedly, then state-0 advances, matching vendor functions. Native event repetition and release suppression remain unverified. No debounce change was made.';
-  const speedLabels = factoryText.match(/\["200",\s*"210",\s*"240",\s*"260",\s*"290"\]/);
-  check(Boolean(speedLabels), 'Factory row-seven labels match decoded vendor binding');
   const stateArray = vendorFactory.translation_state_array;
   const stateProperties = [...stateArray.expression.matchAll(/mGlobalId\.item\.(\w+)/g)].map(match => match[1]);
   check(stateProperties.length === 19, 'Decoded Translation supplies 19 factory states');
@@ -254,30 +215,66 @@ try {
       'mTranslationId.item.mFactoryItemsState[' + row.row + ']';
     check(row.expression === expectedExpression, 'Original state source for factory row ' + row.row);
   }
-  check(factoryText.includes('mFactoryItemsState[index]'), 'Candidate reuses the original Translation state array');
+  check(/t\.mFactoryItemsState/.test(menuText) && /t\.mFactoryItems\[i\]/.test(menuText), 'Candidate reuses the original Translation rows and states');
   report.factory_state_reconciliation = {rows: 19, source: stateArray.source,
     source_sha256: stateArray.source_sha256, compiled_unit_sha256: stateArray.compiled_unit_sha256,
     function_index: stateArray.function_index, code_sha256: stateArray.code_sha256,
     row7_state_property: stateProperties[7], result: 'All row state sources match vendor bindings.'};
-  report.factory_vendor_evidence = {authority: 'One-time decoded binding review; row-seven labels also checked by portable source replay',
-    unit: vendorFactory.qrc_path, compiled_unit_sha256: vendorFactory.compiled_unit_sha256,
-    source_metadata_sha256: '6b19ec3407da3cfa8c33c17d03df401ca851ce81ada40a79d3d137ef9195560c',
-    source_metadata: 'analysis/capture-04/qml-cache/085-Trucks_menu_system_factory_FactoryGenericSetup.qml.json',
-    row_objects: '2 through 20 are settings; object 21 is Back', settings: 19, back: 1,
-    widgets: {switches: 18, selectors: 1, back: 1},
-    model_visibility: 'No row visible/enabled bindings, model references, or removeItem/takeItem calls occur in the decoded unit.',
-    row7: {labels: [200, 210, 240, 260, 290], labels_anchor: 'qrc:/Trucks/menu/system/factory/FactoryGenericSetup.qml:128',
-      data_binding: 'mSpeedMaxIndex[mGlobalId.item.mLc76VehicleSpeedMaxIndex]', data_anchor: 'qrc:/Trucks/menu/system/factory/FactoryGenericSetup.qml:207'},
-    differences: ['Candidate uses 19 MenuSetupButton controls instead of 18 switches and one selector. Current boolean values use ON/OFF text.'],
-    startup_query: 'The candidate preserves the original delayed, one-shot systemInquire call. Source lifecycle replay checks the target, empty arguments, delay, and completion trigger.',
-    regression_result: 'No setting-count, model-filter, row-seven-label, or startup-query regression found. The widget presentation difference remains explicit.'};
-  factory.mFactoryRows.currentIndex = 0; factory.key_modes(0);
-  check(factory.mFactoryRows.currentIndex === 1, 'Modes release advances');
-  const modeCallsBefore = factory.calls.length;
-  factory.key_modes(2);
-  check(factory.calls.length === modeCallsBefore + 1, 'Modes hold activates');
-  // vnM hosts vnF directly (file:/etc/vnF.qml); the System Settings loader redirect is retired.
-  report.pages = ['vnF.qml', 'vnB.qml'].map(name => ({path: 'patches/capture-04/etc/' + name,
+
+  // Compiled Factory pages. Odometer, Fuel tank, and Vehicle profile return with value 1, the others with 0.
+  const urls = menu.mFactoryUrls;
+  for (const [title, value, back] of [['Advanced settings', 1, 0], ['Fuel tank setup', 3, 1], ['Vehicle profile', 4, 1],
+                                      ['Odometer setup', 2, 1], ['Service commands', 6, 0]]) {
+    open(title);
+    check(menu.mPage === 'fsub' + value && g.menuSettingsSubPageItemSetup === value && g.menuSettingsPageIndex === 1 &&
+      menu.mHostedUrl === urls[value] && /^qrc:\/Trucks\/menu\/system\/factory\/Factory\w+\.qml$/.test(urls[value]), 'Compiled page opens ' + title);
+    g.menuSettingsSubPageItemSetup = back;
+    check(menu.mPage === 'factory' && menu.mRows[menu.mCursor].title === title && g.menuSettingsSubPageItemSetup === 0 &&
+      g.menuSettingsPageIndex === 0 && menu.mHostedUrl === '', 'Compiled page Back returns to the Factory row ' + title);
+  }
+  open('Advanced settings');
+  g.menuSettingsSubPageItemSetup = 2;
+  check(menu.mPage === 'fsub1' && menu.mHostedUrl === urls[2], 'Advanced settings opens Odometer setup in place');
+  g.menuSettingsSubPageItemSetup = 1;
+  check(menu.mPage === 'fsub1' && menu.mHostedUrl === urls[1], 'Odometer Back returns to Advanced settings');
+  g.menuSettingsSubPageItemSetup = 5;
+  check(menu.mPage === 'factory' && g.menuSettingsSubPageItemSetup === 0, 'A page value with no compiled page returns to Factory');
+  open('Service commands');
+  g.menuSettingsPageIndex = 0;
+  check(menu.mPage === 'factory' && g.menuSettingsSubPageItemSetup === 0, 'A compiled page that leaves the settings page returns to Factory');
+  open('Vehicle profile');
+  menu.closeMenu();
+  check(g.menuBarIndex === 0 && menu.mPage === 'factory' && g.menuSettingsSubPageItemSetup === 0 && g.menuSettingsPageIndex === 0,
+    'Closing the menu closes a compiled page');
+  g.menuBarIndex = 1;
+
+  // Tools.
+  for (const [title, value] of [['ADB debugging: enable', 1], ['ADB debugging: disable', 0]]) {
+    log.length = 0;
+    open(title);
+    check(JSON.stringify(log) === JSON.stringify([['adb', value]]), 'ADB command ' + value);
+  }
+  open('Debug logging');
+  check(menu.mEditing && menu.mEditValue === 0, 'Debug logging opens the editor at the current level');
+  menu.release(g.swcDown); menu.release(g.swcDown); menu.release(g.swcDown);
+  check(g.uartDebugEnabled === 0, 'Debug logging edit sends nothing before OK');
+  menu.release(g.swcEnter);
+  check(g.uartDebugEnabled === 4 && menu.mFocusRow.value === 'UART transmit', 'Debug logging sets the vendor value');
+  g.uartDebugEnabled = 3;
+  check(menu.mFocusRow.value === 'Value 3' && menu.mFocusRow.current === -1 && menu.mFocusRow.start === 2, 'Debug logging outside the list');
+  menu.release(g.swcEnter); menu.release(g.swcBack);
+  check(g.uartDebugEnabled === 3 && !menu.mEditing, 'Debug logging cancel keeps the value');
+  g.uartDebugEnabled = 0;
+  open('USB image preview');
+  check(g.mediaImageEnabled === 1, 'USB image preview on');
+  menu.release(g.swcEnter);
+  check(g.mediaImageEnabled === 0, 'USB image preview off');
+  open('Car model options');
+  check(g.modelCarSelection === true && menu.mFocusRow.current === 1, 'Car model options toggle');
+  open('Screen grid');
+  check(g.screenGridEnabled === 1 && g.menuBarIndex === 0, 'Screen grid shows the grid and closes the menu');
+
+  report.pages = ['vnM.qml'].map(name => ({path: 'patches/capture-04/etc/' + name,
     sha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(pages, name))).digest('hex')}));
   report.source_verification = 'passed';
 } catch (error) {

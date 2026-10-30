@@ -1,7 +1,7 @@
 import QtQuick 2.12
 import "qrc:/Trucks/common"
 
-// Settings menu. Replaces the compiled MenuItemsList and every page under the list: Vehicle, System, and Service.
+// Settings menu. Replaces the compiled MenuItemsList and every page under the list: Vehicle, System, Service, and Factory.
 // MenuPage hosts this file in a 1720x511 slot and calls key(keycode, state). MenuPage reads nothing else.
 // Two blocks: the engine (state, rows, keys, native calls) and the view. The view reads engine properties only.
 // Fixes: vehicle.md #1-#9, system.md #1, #3-#8, #10, #14, #15, shell-service.md S1-S9, K2 (analysis/capture-04/menu-audit).
@@ -27,7 +27,7 @@ ItemInfo {
     readonly property var mRows: pageRows(mPage, mArmedRow, mSentRow)
     readonly property var mFocusRow: mCursor<mRows.length?mRows[mCursor]:null
     readonly property string mHostedUrl: mPage==="gforce"?"qrc:/Trucks/menu/vehicle/MenuVehicleGForce.qml":
-                                         mPage==="factory"?"file:/etc/vnF.qml":""
+                                         mPage.indexOf("fsub")===0?mFactoryUrls[mGlobalId.item.menuSettingsSubPageItemSetup]||"":""
     readonly property string mPathText: mPath.map(pageTitle).join(" › ")
     readonly property string mEditText: mEditing?editText():""
     readonly property bool mF150: Number(mTrucksModel)===1 && mGlobalId.item.vehicleModel===1
@@ -60,8 +60,19 @@ ItemInfo {
         "home": "Settings", "vehicle": "Vehicle", "lighting": "Lighting", "locks": "Locks", "assist": "Driver assist",
         "remote": "Remote start", "reset": "Reset", "gforce": "G-force", "system": "System", "language": "Language",
         "datetime": "Date and time", "units": "Units", "display": "Display", "version": "Version", "factory": "Factory",
-        "service": "Service"
+        "general": "General settings", "fsub1": "Advanced settings", "fsub2": "Odometer setup", "fsub3": "Fuel tank setup",
+        "fsub4": "Vehicle profile", "fsub6": "Service commands", "service": "Service"
     })
+    // Compiled Factory pages by menuSettingsSubPageItemSetup value. The pages move between each other with the same value.
+    // Value 5 was the old General settings page. vnM owns General settings now.
+    readonly property var mFactoryUrls: ["", "qrc:/Trucks/menu/system/factory/FactorySeniorSetting.qml",
+        "qrc:/Trucks/menu/system/factory/FactoryOdoSetup.qml", "qrc:/Trucks/menu/system/factory/FactoryTankSetup.qml",
+        "qrc:/Trucks/menu/system/factory/FactoryVehicleModel.qml", "", "qrc:/Trucks/menu/system/factory/FactoryShellCmd.qml"]
+    property int mFactoryEntry: 0       // the Factory page value that opened the hosted Factory page
+    // No compiled page or native code reads these General settings in this firmware (Global.setFactory cases).
+    readonly property var mFactoryNoEffect: [6, 10, 11, 12, 13, 16, 17]
+    readonly property var mDebugLevels: [0, 1, 2, 4, 8]
+    readonly property var mDebugTexts: ["Off", "Warnings", "UART receive", "UART transmit", "MCU"]
 
     Component.onCompleted: {
         mGlobalId.item.menuBarItemIndex=0
@@ -72,14 +83,21 @@ ItemInfo {
             mCursor=Math.max(0, mRows.length-1)
     }
     // A hosted page returns to the parent page when the hosted page sets menuSettingsPageIndex to 0.
+    // A compiled Factory page returns when the page sets menuSettingsSubPageItemSetup to 0. Odometer, Fuel tank, and
+    // Vehicle profile set 1 (their old parent, Advanced settings). Value 1 also returns when one of them opened the page.
     Connections {
         target: mGlobalId.item
         onMenuSettingsPageIndexChanged: {
             if(mHostedUrl!=="" && mGlobalId.item.menuSettingsPageIndex===0)
                 closePage()
         }
+        onMenuSettingsSubPageItemSetupChanged: {
+            var value=mGlobalId.item.menuSettingsSubPageItemSetup
+            if(mPage.indexOf("fsub")===0 && (!mFactoryUrls[value] || (value===1 && mFactoryEntry>=2 && mFactoryEntry<=4)))
+                closePage()
+        }
     }
-    // Hosted page (G-force or Factory). The engine owns the Loader and forwards keys to the page.
+    // Hosted page (G-force or a compiled Factory page). The engine owns the Loader and forwards keys to the page.
     // A replacement view may move the Loader; x is the only view setting.
     Loader {
         id: mHostedLoader
@@ -189,12 +207,20 @@ ItemInfo {
         mPath=mPath.concat([page])
         mCursor=0
         var e=mEventHandleId.item
+        var g=mGlobalId.item
+        if(page.indexOf("fsub")===0) {
+            mFactoryEntry=Number(page.slice(4))
+            g.menuSettingsPageIndex=1
+            g.menuSettingsSubPageItemSetup=mFactoryEntry
+            return
+        }
         switch(page) {
         case "vehicle": if(mF150) e.seniorF150_11_14_SetupInquire(); break
         case "service": e.maintenacneInquire(); break
         case "version": e.versionInquire(); break
-        case "gforce":
-        case "factory": mGlobalId.item.menuSettingsPageIndex=1; break
+        case "factory": e.shellCmdInquire(); break
+        case "general": e.systemInquire(); break
+        case "gforce": g.menuSettingsPageIndex=1; break
         }
     }
     function closePage() {
@@ -203,13 +229,21 @@ ItemInfo {
             return
         }
         dropState()
+        var leaving=mPage
         var parentRow=mCursors[mCursors.length-1]
         mCursors=mCursors.slice(0, -1)
         mPath=mPath.slice(0, -1)
         mCursor=parentRow
+        // The path changes first, so these writes do not close a second page.
+        if(leaving.indexOf("fsub")===0) {
+            mGlobalId.item.menuSettingsSubPageItemSetup=0
+            mGlobalId.item.menuSettingsPageIndex=0
+        }
     }
     function closeMenu() {
         dropState()
+        if(mPage.indexOf("fsub")===0)
+            closePage()
         mGlobalId.item.menuBarIndex=0
     }
     function dropState() {
@@ -289,7 +323,11 @@ ItemInfo {
                     makeRow("page", "Units", "", {"page": "units"}),
                     makeRow("page", "Display", "", {"page": "display"}),
                     makeRow("page", "Version", "", {"page": "version"}),
-                    makeRow("hosted", "Factory", "", {"page": "factory"})]
+                    makeRow("page", "Factory", "", {"page": "factory"})]
+        case "factory":
+            return factoryRows()
+        case "general":
+            return generalRows()
         case "language":
             return t.mSystemLangPickUp.map(function(code) {
                 return makeRow("select", t.mSystemLanguages[code], code===g.language?"Selected":"", {"op": "language", "arg": code})
@@ -478,6 +516,45 @@ ItemInfo {
                              unavailableRow("Follow vehicle units", "Unavailable for this vehicle model")]
     }
 
+    // ----- Factory -----
+    // Rows and actions: ported from the Factory catalog (vnF.qml). The five setup pages stay compiled pages.
+    function factoryRows() {
+        var g=mGlobalId.item
+        var debug=g.uartDebugEnabled
+        var level=mDebugLevels.indexOf(debug)
+        return [makeRow("page", "General settings", "", {"page": "general"}),
+                makeRow("hosted", "Advanced settings", "", {"page": "fsub1"}),
+                makeRow("hosted", "Fuel tank setup", "", {"page": "fsub3"}),
+                makeRow("hosted", "Vehicle profile", "", {"page": "fsub4"}),
+                makeRow("hosted", "Odometer setup", "", {"page": "fsub2"}),
+                makeRow("hosted", "Service commands", "", {"page": "fsub6"}),
+                makeRow("command", "ADB debugging: enable", "", {"op": "adb", "arg": 1}),
+                makeRow("command", "ADB debugging: disable", "", {"op": "adb", "arg": 0}),
+                makeRow("choice", "Debug logging", level>=0?mDebugTexts[level]:"Value "+debug,
+                        {"op": "debug", "options": mDebugLevels, "texts": mDebugTexts, "start": nearest(mDebugLevels, debug),
+                         "current": level}),
+                makeRow("toggle", "USB image preview", g.mediaImageEnabled?"On":"Off", {"op": "preview", "current": g.mediaImageEnabled?1:0}),
+                makeRow("command", "Screen grid", "", {"op": "grid"}),
+                makeRow("toggle", "Car model options", g.modelCarSelection?"On":"Off", {"op": "model", "current": g.modelCarSelection?1:0})]
+    }
+    // Rows: ported from the General settings page (vnB.qml). OK sends Global.setFactory(index), which flips the setting.
+    // Row 7 steps through five speed scale values.
+    function generalRows() {
+        var t=mTranslationId.item
+        var states=t.mFactoryItemsState
+        var rows=[]
+        for(var i=0; i<19; i++) {
+            var title=t.mFactoryItems[i]
+            if(mFactoryNoEffect.indexOf(i)>=0)
+                rows.push(unavailableRow(title, "No effect in this firmware"))
+            else if(i===7)
+                rows.push(makeRow("toggle", title, ["200", "210", "240", "260", "290"][states[i]], {"op": "factory", "arg": i}))
+            else
+                rows.push(makeRow("toggle", title, states[i]?"On":"Off", {"op": "factory", "arg": i, "current": states[i]?1:0}))
+        }
+        return rows
+    }
+
     // ----- Service -----
     function serviceName(id) {
         var t=mTranslationId.item
@@ -553,6 +630,13 @@ ItemInfo {
         case "command":
             if(row.op==="follow" && g.followUnit)
                 mEventHandleId.item.followVehicleUnits()
+            else if(row.op==="adb")
+                mEventHandleId.item.adb(row.arg)
+            else if(row.op==="grid") {
+                // The grid covers the whole screen. The menu closes, so the next key press returns to the dashboard.
+                g.screenGridEnabled=1
+                closeMenu()
+            }
             break
         case "select":
             if(row.op==="language")
@@ -592,6 +676,9 @@ ItemInfo {
             g.overSpeedWarningEnabled=g.overSpeedWarningEnabled?0:1
             e.setOverSpeedWarningEnabled(g.overSpeedWarningEnabled)
             break
+        case "factory": g.setFactory(row.arg); break
+        case "preview": g.mediaImageEnabled=g.mediaImageEnabled?0:1; break
+        case "model": g.modelCarSelection=!g.modelCarSelection; break
         }
     }
     function editStep(step) {
@@ -652,6 +739,7 @@ ItemInfo {
         case "warnSpeed": mEventHandleId.item.setOverSpeedWarningSpeed(value); break
         case "svcInterval": serviceSend("mileage", row.arg, value); break
         case "svcItem": serviceSend("item", row.arg, value); break
+        case "debug": g.uartDebugEnabled=value; break
         }
     }
     // Maintenance sends. One read-back inquiry follows the last send.
@@ -764,11 +852,13 @@ ItemInfo {
         readonly property int hintHeight: 44
         readonly property var widths: [340, 470]
         readonly property int depth: mPath.length
+        // At most three columns fit. A deeper page moves the oldest columns off the left side.
+        readonly property int first: Math.max(0, depth-3)
         readonly property int lastX: columnX(depth-1)
         function columnX(level) {
             var x=0
-            for(var i=0; i<level; i++)
-                x+=widths[Math.min(i, widths.length-1)]
+            for(var i=first; i<level; i++)
+                x+=widths[Math.min(i-first, widths.length-1)]
             return x
         }
         function hints() {
@@ -786,7 +876,7 @@ ItemInfo {
             color: "#0b0e12"
             opacity: 0.94
         }
-        // A hosted page (G-force, Factory) takes the place of the deepest column.
+        // A hosted page (G-force or a compiled Factory page) takes the place of the deepest column.
         Binding {
             target: mHostedLoader
             property: "x"
@@ -803,13 +893,15 @@ ItemInfo {
                 // Back shortens mCursors before mPath, so a parent column can briefly have no saved row.
                 readonly property int focusRow: last?mCursor:(mCursors[level]!==undefined?mCursors[level]:0)
                 readonly property int rowHeight: last?68:60
+                // The narrow first column shows titles only. The values stay in the wider columns.
+                readonly property bool compact: !last && level===mView.first
                 readonly property int headHeight: 54
                 readonly property int visibleRows: Math.floor((height-headHeight)/rowHeight)
                 readonly property int firstRow: Math.max(0, Math.min(focusRow-visibleRows+2, rows.length-visibleRows))
                 x: mView.columnX(level)
-                width: last?menuRoot.width-x:mView.widths[Math.min(level, mView.widths.length-1)]
+                width: last?menuRoot.width-x:mView.widths[Math.min(level-mView.first, mView.widths.length-1)]
                 height: menuRoot.height-mView.hintHeight
-                visible: !(last && mHostedUrl!=="")
+                visible: level>=mView.first && !(last && mHostedUrl!=="")
 
                 Rectangle {
                     anchors.right: parent.right
@@ -894,6 +986,7 @@ ItemInfo {
                                         readonly property var row: mRow.row
                                         readonly property bool focused: mRow.focused
                                         readonly property bool editing: mRow.editing
+                                        readonly property bool compact: mColumn.compact
                                         sourceComponent: mRow.armed?mArmedText:mRow.sent?mSentText:mRow.na?mReasonText:
                                                          (row.kind==="page" || row.kind==="hosted")?mOpenValue:
                                                          row.seg && (editing || row.current>=0)?mSegments:
@@ -1016,10 +1109,11 @@ ItemInfo {
                 readonly property var row: parent.row
                 readonly property bool focused: parent.focused
                 readonly property bool editing: parent.editing
+                readonly property bool compact: parent.compact
                 spacing: 14
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    visible: text!==""
+                    visible: text!=="" && !compact
                     text: row.value
                     font.family: mView.family
                     font.pixelSize: 28

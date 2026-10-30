@@ -17,11 +17,24 @@ HEALTH_WAIT=90
 SETTLE_WAIT=20
 LOG_WAIT=180
 
-# Captured original Launcher (capture-04) and the ui-candidate-menu-v1 files.
+# Captured original Launcher (capture-04) and the ui-candidate-menu-v2 files.
 ORIGINAL_SHA256=2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b
 CANDIDATE_SHA256=3aee8242a8cb167069750bb721f34b5ab66e48cf634fe7c3fcb81b75abd49d8a
-ETC_FILES="vnB.qml vnF.qml vnG.qml vnM.qml vnS.qml vnV.qml"
+# Launcher files of earlier releases (space separated). An install replaces them.
+PREVIOUS_LAUNCHERS=""
+ETC_FILES="vnG.qml vnM.qml vnS.qml vnV.qml"
+# /etc files that only an earlier release installed. An install and a rollback remove them.
+RETIRED_FILES="vnB.qml vnF.qml"
 etc_sha256() {
+    case "$1" in
+        vnG.qml) echo ce54efec52bfda1778234c1939f29dae6c703d1aa3315856260e37543edaf33e ;;
+        vnM.qml) echo 4cc896802f39aac63b0069d2cade407b1b6d66cc91fcae9d0c3243487b71127b ;;
+        vnS.qml) echo 4d285e170e0de495842a247faf83c2d62834ceea8c1e25be7c56de45ee8bfa45 ;;
+        vnV.qml) echo ef6d29dae3b736fa8239930c62cb582abc5c302441d47e35ac0f8c18634829c1 ;;
+    esac
+}
+# /etc files of earlier releases (space separated per file). menu-v1: the first cluster install, 2026-10-30.
+etc_previous() {
     case "$1" in
         vnB.qml) echo cf4c014945f604b5a0da27d70ec0849a54fb57c972bd9ca55c3f0effd8504aee ;;
         vnF.qml) echo e3b79fe488506ec3d1c096f3b545df1c166a3e9928f773b1b6507a63e1eb1e12 ;;
@@ -31,11 +44,16 @@ etc_sha256() {
         vnV.qml) echo ef6d29dae3b736fa8239930c62cb582abc5c302441d47e35ac0f8c18634829c1 ;;
     esac
 }
+# 0 when word $1 is in list $2.
+listed() {
+    case " $2 " in *" $1 "*) return 0 ;; esac
+    return 1
+}
 
 MARKERS="VIKNAV-UI-INSTALL.txt VIKNAV-UI-ROLLBACK.txt VIKNAV-UI-LOG.txt VIKNAV-UI-RECORD.txt"
 marker_token() {
     case "$1" in
-        VIKNAV-UI-INSTALL.txt) echo VIKNAV_UI_INSTALL_MENU_V1 ;;
+        VIKNAV-UI-INSTALL.txt) echo VIKNAV_UI_INSTALL ;;
         VIKNAV-UI-ROLLBACK.txt) echo VIKNAV_UI_ROLLBACK_CAPTURE04 ;;
         VIKNAV-UI-LOG.txt) echo VIKNAV_UI_LOG ;;
         VIKNAV-UI-RECORD.txt) echo VIKNAV_UI_RECORD ;;
@@ -168,25 +186,31 @@ remove_staged() {
     done
     rm -f "$R/usr/bin/.Launcher.new"
 }
-# 0 when every /etc file is absent or the candidate file. Sets etc_present to the count of candidate files
-# and etc_total to the count of owned files.
+# Stops the script when an owned /etc file is not a known release file. Sets etc_present to the count of
+# current files, etc_total to the count of current owned files, and etc_old to the count of earlier-release files.
 check_etc() {
     etc_present=0
     etc_total=0
-    for f in $ETC_FILES; do
-        etc_total=$((etc_total + 1))
+    etc_old=0
+    for f in $ETC_FILES $RETIRED_FILES; do
+        listed "$f" "$ETC_FILES" && etc_total=$((etc_total + 1))
         target=$R/etc/$f
         [ -e "$target" ] || [ -L "$target" ] || continue
-        [ -f "$target" ] && [ ! -L "$target" ] && [ "$(hash_of "$target")" = "$(etc_sha256 "$f")" ] || abort "unknown /etc/$f"
-        etc_present=$((etc_present + 1))
+        [ -f "$target" ] && [ ! -L "$target" ] || abort "unknown /etc/$f"
+        h=$(hash_of "$target")
+        if listed "$f" "$ETC_FILES" && [ "$h" = "$(etc_sha256 "$f")" ]; then
+            etc_present=$((etc_present + 1))
+        elif listed "$h" "$(etc_previous "$f")"; then
+            etc_old=$((etc_old + 1))
+        else
+            abort "unknown /etc/$f"
+        fi
     done
 }
 check_launcher() {
     launcher=$(hash_of "$LAUNCHER")
-    case "$launcher" in
-        "$ORIGINAL_SHA256"|"$CANDIDATE_SHA256") ;;
-        *) abort "unknown Launcher" ;;
-    esac
+    [ "$launcher" = "$ORIGINAL_SHA256" ] || [ "$launcher" = "$CANDIDATE_SHA256" ] || listed "$launcher" "$PREVIOUS_LAUNCHERS" ||
+        abort "unknown Launcher"
 }
 # Restore /private/Launcher from a tar of the directory. The old directory stays until the new one is in place.
 restore_settings() {
@@ -215,7 +239,7 @@ restore_original() {
     launcher_stop
     remove_staged
     stage "$P/original/Launcher" "$LAUNCHER" "$ORIGINAL_SHA256" 777 && mv -f "$R/usr/bin/.Launcher.new" "$LAUNCHER" || return 1
-    for f in $ETC_FILES; do
+    for f in $ETC_FILES $RETIRED_FILES; do
         rm -f "$R/etc/$f" || return 1
     done
     restore_settings "$1" || return 1
@@ -256,7 +280,7 @@ do_install() {
     done
     check_launcher
     check_etc
-    if [ "$launcher" = "$CANDIDATE_SHA256" ] && [ "$etc_present" -eq "$etc_total" ]; then
+    if [ "$launcher" = "$CANDIDATE_SHA256" ] && [ "$etc_present" -eq "$etc_total" ] && [ "$etc_old" -eq 0 ]; then
         finish ALREADY_INSTALLED
         exit 0
     fi
@@ -265,11 +289,12 @@ do_install() {
     [ "$free" -ge "$MIN_FREE_KB" ] || abort "low space"
 
     launcher_stop
-    # The settings database is closed now. Keep the first pre-install copy for a later rollback.
+    # The settings database is closed now. Keep the first copy from the original Launcher for a later rollback.
+    # An upgrade from an earlier release keeps that copy and never replaces the copy with release settings.
     if ! tar -cf "$out/private-Launcher.tar" -C "$R/private" Launcher 2>>"$out/install.log" || ! tar -tf "$out/private-Launcher.tar" >/dev/null 2>&1; then
         fail_restart "settings backup"
     fi
-    if [ ! -e "$P/settings-before-install.tar" ]; then
+    if [ "$launcher" = "$ORIGINAL_SHA256" ] && [ ! -e "$P/settings-before-install.tar" ]; then
         cp "$out/private-Launcher.tar" "$P/settings-before-install.tar" \
             && [ "$(hash_of "$P/settings-before-install.tar")" = "$(hash_of "$out/private-Launcher.tar")" ] || fail_restart "settings backup"
     fi
@@ -282,11 +307,17 @@ do_install() {
     for f in $ETC_FILES; do
         mv -f "$R/etc/.$f.new" "$R/etc/$f" || rollback_now "move /etc/$f"
     done
+    for f in $RETIRED_FILES; do
+        rm -f "$R/etc/$f" || rollback_now "remove /etc/$f"
+    done
     mv -f "$R/usr/bin/.Launcher.new" "$LAUNCHER" || rollback_now "move Launcher"
     sync
     [ "$(hash_of "$LAUNCHER")" = "$CANDIDATE_SHA256" ] || rollback_now "verify Launcher"
     for f in $ETC_FILES; do
         [ "$(hash_of "$R/etc/$f")" = "$(etc_sha256 "$f")" ] || rollback_now "verify /etc/$f"
+    done
+    for f in $RETIRED_FILES; do
+        [ ! -e "$R/etc/$f" ] || rollback_now "verify /etc/$f removed"
     done
     log "files installed"
 
@@ -304,7 +335,7 @@ do_rollback() {
     payload_check original/Launcher "$ORIGINAL_SHA256"
     check_launcher
     check_etc
-    if [ "$launcher" = "$ORIGINAL_SHA256" ] && [ "$etc_present" -eq 0 ]; then
+    if [ "$launcher" = "$ORIGINAL_SHA256" ] && [ "$etc_present" -eq 0 ] && [ "$etc_old" -eq 0 ]; then
         finish ALREADY_ORIGINAL
         exit 0
     fi
@@ -320,7 +351,7 @@ do_log() {
     [ ! -f "$R/var/log/Launcher.log" ] || cp "$R/var/log/Launcher.log" "$out/var-Launcher.log" 2>/dev/null
     {
         sha256sum "$LAUNCHER"
-        for f in $ETC_FILES; do
+        for f in $ETC_FILES $RETIRED_FILES; do
             [ ! -e "$R/etc/$f" ] || sha256sum "$R/etc/$f"
         done
         date

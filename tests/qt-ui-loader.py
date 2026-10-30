@@ -198,8 +198,6 @@ def child(phase, fixture, candidate_dir=None):
     external["file:///etc/vnG.qml"].write_text(marker("external-global", props))
     external["file:///etc/vnV.qml"].write_text(marker("external-vehicle"))
     if phase == "settings-pages":
-        external["file:///etc/vnB.qml"] = fixture / "Factory.qml"
-        external["file:///etc/vnF.qml"] = fixture / "Catalog.qml"
         external["file:///etc/qmldir"] = fixture / "isolated-etc-qmldir"
         external["file:///etc/qmldir"].write_text("")
     if phase == "patched-settings-redirects":
@@ -361,7 +359,7 @@ def settings_pages(fixture, result, app, engine, callbacks, intercepted, denied,
     result["precompiled_ui_dependencies"] = precompiled
     require(all((entry['ready'] for entry in precompiled)), precompiled)
     pages = []
-    for name, alias in (("vnB.qml", "Factory.qml"), ("vnF.qml", "Catalog.qml"), ("vnM.qml", "Menu.qml"), ("vnS.qml", "Grid.qml")):
+    for name, alias in (("vnM.qml", "Menu.qml"), ("vnS.qml", "Grid.qml")):
         source = ROOT / "patches/capture-04/etc" / name
         content = source.read_bytes()
         copy = fixture / alias
@@ -638,24 +636,6 @@ Window {
             loop.exec_()
             image = grab.image()
         return image, "QQuickItem.grabToImage"
-    def select_page(index):
-        window.setProperty("pageUrl", QtCore.QUrl.fromLocalFile(pages[index]["copy"]).toString())
-        advance()
-        page = window.property("page")
-        verify("page instantiated: " + pages[index]["source"], page is not None)
-        count = (20,17)[index]
-        candidates = [obj for obj in page.findChildren(QtCore.QObject)
-                      if obj.metaObject().className().startswith("SwipeView") and obj.property("count") == count]
-        if not candidates:
-            result.update(passed=False, runtime_tree=[dict(type=obj.metaObject().className(),
-                          count=obj.property("count"), currentIndex=obj.property("currentIndex"))
-                          for obj in page.findChildren(QtCore.QObject) if obj.property("count") is not None])
-            print(json.dumps(result), flush=True)
-        swipe = candidates[0]
-        verify("initial selection is first row", value(swipe,"currentIndex") == 0)
-        rows = QtQml.QQmlListReference(swipe, b"contentChildren", engine)
-        verify("actual row count " + str(count), rows.isValid() and rows.count() == count)
-        return page, swipe, [rows.at(i) for i in range(rows.count())]
     global_state = window.property("globalState")
     event_state = window.property("eventState")
     if result["phase"] == "patched-settings-redirects":
@@ -708,131 +688,6 @@ Window {
         window.setProperty("visible", False)
         print(json.dumps(result), flush=True)
         return 0 if result["passed"] else 1
-    page, swipe, rows = select_page(0)
-    QtTest.QTest.qWait(80)
-    result["startup_query_observations"] = {"first_factory_count": len(value(event_state,"queryCalls"))}
-    verify("factory startup query occurs once", value(event_state,"queryCalls") == ["systemInquire"])
-    verify("factory titles and Back", [value(row,"mTitle") for row in rows] == titles + ["Back"])
-    title_layouts = []
-    for row in rows:
-        label = value(row,"mTitle")
-        text_items = [obj for obj in row.findChildren(QtCore.QObject)
-                      if obj.property("text") == label and obj.property("contentWidth") is not None]
-        title_layouts.append(dict(title=label, data=value(row,"mData"),
-                                  widths=[dict(width=obj.property("width"), content_width=obj.property("contentWidth")) for obj in text_items]))
-    verify("factory title labels fit actual text bounds", all(entry["widths"] and all(item["width"] >= item["content_width"]-0.5 for item in entry["widths"]) for entry in title_layouts))
-    result["factory_title_layouts"] = title_layouts
-    press(QtCore.Qt.Key_Down, False)
-    verify("Down press preserves index", value(swipe,"currentIndex") == 0)
-    release(QtCore.Qt.Key_Down)
-    verify("Down release advances", value(swipe,"currentIndex") == 1)
-    press(QtCore.Qt.Key_Up)
-    press(QtCore.Qt.Key_Up)
-    verify("Up wraps to Back", value(swipe,"currentIndex") == 19)
-    press(QtCore.Qt.Key_Down)
-    verify("Down wraps to first", value(swipe,"currentIndex") == 0)
-    press(QtCore.Qt.Key_Return, False)
-    verify("Enter press has no setter call", value(global_state,"factoryCalls") == [] and value(page,"mPressed") == 1)
-    release(QtCore.Qt.Key_Return)
-    verify("Enter release calls factory setter", value(global_state,"factoryCalls") == [0] and value(page,"mPressed") == 0)
-    for index in range(1,19):
-        press(QtCore.Qt.Key_Down)
-        press(QtCore.Qt.Key_Return)
-    no_effect = [6, 10, 11, 12, 13, 16, 17]
-    verify("factory actions skip rows with no effect", value(global_state,"factoryCalls") == [i for i in range(19) if i not in no_effect])
-    verify("rows with no effect show the reason", all(value(rows[i],"mData") == "No effect in this firmware" for i in no_effect)
-           and value(rows[0],"mData") in ("ON","OFF"))
-    press(QtCore.Qt.Key_Down)
-    press(QtCore.Qt.Key_Return)
-    verify("general Back returns to catalog", value(global_state,"menuSettingsSubPageItemSetup") == 0 and len(value(global_state,"factoryCalls")) == 12)
-    catalog, menu, catalog_rows = select_page(1)
-    QtTest.QTest.qWait(350)
-    verify("catalog startup query preserves vendor schedule", value(event_state,"shellQueries") == ["shellCmdInquire"])
-    verify("catalog startup leaves diagnostic settings unchanged", value(event_state,"adbCalls") == [] and
-           value(global_state,"uartDebugEnabled") == 0 and value(global_state,"mediaImageEnabled") == 0 and
-           value(global_state,"modelCarSelection") is False)
-    expected_titles = ["General settings","Advanced settings","Fuel tank setup","Vehicle profile","Odometer setup",
-                       "Service commands","ADB debugging: enable","ADB debugging: disable","Debug logging: off",
-                       "Debug logging: warnings","Debug logging: UART receive","Debug logging: UART transmit",
-                       "Debug logging: MCU","USB image preview: enable","Screen grid","Car model options","Back"]
-    verify("catalog exposes all settings and tools", [value(row,"mTitle") for row in catalog_rows] == expected_titles)
-    press(QtCore.Qt.Key_Up)
-    verify("catalog Up wraps to Back", menu.property("currentIndex") == 16)
-    press(QtCore.Qt.Key_Down)
-    verify("catalog Down wraps to General", menu.property("currentIndex") == 0)
-    press(QtCore.Qt.Key_Down,False)
-    verify("catalog Down press preserves selection", menu.property("currentIndex") == 0)
-    release(QtCore.Qt.Key_Down)
-    verify("catalog Down release advances", menu.property("currentIndex") == 1)
-    for row_index, expected_page in enumerate((5,1,3,4,2,6)):
-        menu.setProperty("currentIndex", row_index)
-        press(QtCore.Qt.Key_Return, False)
-        verify("page opens only on release " + str(expected_page), value(global_state,"menuSettingsSubPageItemSetup") == 0)
-        release(QtCore.Qt.Key_Return)
-        verify("direct page route " + str(expected_page), value(global_state,"menuSettingsSubPageItemSetup") == expected_page)
-        if expected_page == 5:
-            child_views = [obj for obj in catalog.findChildren(QtCore.QObject)
-                           if obj.metaObject().className().startswith("SwipeView") and obj.property("count") == 20]
-            verify("general route loads the actual candidate page", len(child_views) == 1 and child_views[0].property("currentIndex") == 0)
-        else:
-            verify("service route loads a safe marker " + str(expected_page), catalog.findChild(QtCore.QObject,"vendor-page-"+str(expected_page)) is not None)
-        press(QtCore.Qt.Key_Escape)
-        expected_parent = 0
-        verify("direct Back returns to catalog " + str(expected_page), value(global_state,"menuSettingsSubPageItemSetup") == expected_parent)
-        if expected_parent:
-            press(QtCore.Qt.Key_Escape)
-        verify("return to the direct catalog " + str(expected_page), value(global_state,"menuSettingsSubPageItemSetup") == 0)
-    menu.setProperty("currentIndex",1)
-    press(QtCore.Qt.Key_Return)
-    global_state.setProperty("menuSettingsSubPageItemSetup",3)
-    press(QtCore.Qt.Key_Escape)
-    verify("nested tank Back preserves Advanced parent", value(global_state,"menuSettingsSubPageItemSetup") == 1)
-    press(QtCore.Qt.Key_Escape)
-    verify("Advanced Back returns to catalog", value(global_state,"menuSettingsSubPageItemSetup") == 0)
-    for row_index, argument in ((6,1),(7,0)):
-        menu.setProperty("currentIndex",row_index)
-        before = list(value(event_state,"adbCalls"))
-        press(QtCore.Qt.Key_Return,False)
-        verify("USB debug command waits for release " + str(argument), value(event_state,"adbCalls") == before)
-        release(QtCore.Qt.Key_Return)
-        verify("explicit USB debug command " + str(argument), value(event_state,"adbCalls") == before+[argument])
-    for row_index, mode in enumerate((0,1,2,4,8),8):
-        menu.setProperty("currentIndex",row_index)
-        press(QtCore.Qt.Key_Return)
-        verify("debug mode exact vendor value " + str(mode), value(global_state,"uartDebugEnabled") == mode)
-        verify("debug selection feedback " + str(mode), value(catalog_rows[row_index],"mData") == "Selected")
-    menu.setProperty("currentIndex",13)
-    press(QtCore.Qt.Key_Return)
-    verify("explicit image preview enable", value(global_state,"mediaImageEnabled") == 1)
-    menu.setProperty("currentIndex",14)
-    press(QtCore.Qt.Key_Return, False)
-    verify("screen grid waits for release", value(global_state,"screenGridEnabled") == 0)
-    release(QtCore.Qt.Key_Return)
-    verify("screen grid shows and closes the menu", value(global_state,"screenGridEnabled") == 1 and value(global_state,"menuBarIndex") == 0)
-    global_state.setProperty("screenGridEnabled", 0)
-    global_state.setProperty("menuBarIndex", 1)
-    menu.setProperty("currentIndex",15)
-    press(QtCore.Qt.Key_Return)
-    verify("explicit model options toggle", value(global_state,"modelCarSelection") is True)
-    def mode_event(state):
-        QtCore.QMetaObject.invokeMethod(catalog,"key",QtCore.Qt.QueuedConnection,
-            QtCore.Q_ARG("QVariant",value(global_state,"swcModes")),QtCore.Q_ARG("QVariant",state))
-        advance()
-    for state in (1,2,2,2,0):
-        mode_event(state)
-    verify("mode hold activates once and consumes release", value(global_state,"modelCarSelection") is False and
-           menu.property("currentIndex") == 15)
-    menu.setProperty("currentIndex",0)
-    for state in (1,2,2,0):
-        mode_event(state)
-    verify("mode entry reaches General without a release advance", value(global_state,"menuSettingsSubPageItemSetup") == 5 and
-           any(obj.metaObject().className().startswith("SwipeView") and obj.property("count") == 20 and obj.property("currentIndex") == 0
-               for obj in catalog.findChildren(QtCore.QObject)))
-    press(QtCore.Qt.Key_Escape)
-    menu.setProperty("currentIndex",16)
-    press(QtCore.Qt.Key_Return)
-    verify("catalog Back reaches System Settings", value(global_state,"menuSettingsPageIndex") == 0)
-    result["factory_catalog_scope"] = "Actual catalog and General candidate. Other vendor pages use safe markers with recorded Back contracts. Diagnostic methods record arguments only."
     # Settings menu engine (vnM). Failure modes, each with a check below:
     # - Keys: action on press; no wrap; Left/Right/Modes mapped wrong; Back skips or stays at the top; Back hold leaves the menu open;
     #   a release after a hold acts again; repeated hold events act twice; a held key eats the next real tap; state 3 acts.
@@ -843,7 +698,11 @@ Window {
     # - Clock: set row editable while GPS sets the clock; Feb day accepted past the month end; unpadded string; cancel sends.
     # - Display, Units, Service: wrong commit value; unit side effects; no-data text; wrong custom name; reset without confirm.
     # - Hosted pages: keys not forwarded; no return on menuSettingsPageIndex 0; a Modes hold leaves the hosted guard stuck.
-    menu_url = QtCore.QUrl.fromLocalFile(pages[2]["copy"]).toString()
+    # - Factory: an inquiry missing or repeated; a press or highlight acts; a row with no effect sends; a compiled page does
+    #   not open, stays open after its Back, or leaves menuSettingsSubPageItemSetup set; a nested compiled page closes early;
+    #   Back hold leaves a compiled page value behind; a debug level outside the vendor list; the grid leaves the menu open.
+    titles_general = titles
+    menu_url = QtCore.QUrl.fromLocalFile(pages[0]["copy"]).toString()
     menu_state = {}
     def load_menu():
         window.setProperty("pageUrl", "")
@@ -889,9 +748,6 @@ Window {
         return [entry for entry in calls_since(mark) if not str(entry[0]).endswith("Inquire")]
     def inquiries(mark, name):
         return [entry for entry in calls_since(mark) if entry[0] == name]
-    def hosted_catalog():
-        return [obj for obj in menu_state["page"].findChildren(QtCore.QObject)
-                if obj.metaObject().className().startswith("SwipeView") and obj.property("count") == 17]
     def wait_until(predicate, limit_ms):
         # QML Timers follow the animation clock, which can lag real time in the offscreen harness. Poll up to a bound.
         start = time.monotonic()
@@ -1155,23 +1011,112 @@ Window {
     verify("menu System rows", titles() == ["Language", "Date and time", "Units", "Display", "Version", "Factory"])
     tap("Down", 5)
     verify("menu Version and Factory highlight sends nothing", calls_since(mark) == [])
+    mark = len(log())
     tap("Enter")
-    catalog_views = hosted_catalog()
-    verify("menu Factory hosts the owned catalog", len(catalog_views) == 1 and value(global_state, "menuSettingsPageIndex") == 1)
-    tap("Down")
-    verify("menu keys forward to Factory", catalog_views[0].property("currentIndex") == 1)
-    tap("Up")
-    swc("Modes", 1)
-    swc("Modes", 2)
-    verify("menu Modes hold enters the Factory row", value(global_state, "menuSettingsSubPageItemSetup") == 5)
-    swc("Modes", 0)
+    verify("menu Factory is a native page with one shell inquiry", m("mPath") == ["home", "system", "factory"] and
+           calls_since(mark) == [["shellCmdInquire"]] and value(global_state, "menuSettingsPageIndex") == 0)
+    verify("menu Factory rows", titles() == ["General settings", "Advanced settings", "Fuel tank setup", "Vehicle profile",
+                                             "Odometer setup", "Service commands", "ADB debugging: enable",
+                                             "ADB debugging: disable", "Debug logging", "USB image preview", "Screen grid",
+                                             "Car model options"])
+    verify("menu Factory entry leaves the tools unchanged", value(event_state, "adbCalls") == [] and
+           value(global_state, "uartDebugEnabled") == 0 and value(global_state, "mediaImageEnabled") == 0 and
+           value(global_state, "modelCarSelection") is False)
+    # General settings: a native page with the 19 vendor rows.
+    no_effect = [6, 10, 11, 12, 13, 16, 17]
+    mark = len(log())
+    tap("Enter")
+    verify("menu General settings runs one system inquiry", m("mPath")[-1] == "general" and calls_since(mark) == [["systemInquire"]])
+    verify("menu General settings rows", titles() == titles_general)
+    verify("menu General rows with no effect show the reason", all(rows()[i]["kind"] == "unavailable" and
+           rows()[i]["value"] == "No effect in this firmware" for i in no_effect) and values()[0] == "Off" and values()[7] == "200")
+    for index in range(19):
+        before = list(value(global_state, "factoryCalls"))
+        swc("Enter", 1)
+        verify("menu General press sends nothing " + str(index), value(global_state, "factoryCalls") == before)
+        swc("Enter", 0)
+        tap("Down")
+    verify("menu General sends the vendor setter for rows with an effect",
+           value(global_state, "factoryCalls") == [i for i in range(19) if i not in no_effect])
+    verify("menu General rows follow the setting", values()[0] == "On" and rows()[0]["current"] == 1 and values()[7] == "210")
     tap("Back")
-    verify("menu Factory sub page Back", value(global_state, "menuSettingsSubPageItemSetup") == 0)
-    tap("Modes")
-    verify("menu Factory Modes tap still moves after a hold", hosted_catalog()[0].property("currentIndex") == 1)
+    verify("menu General Back returns to the Factory row", m("mPath")[-1] == "factory" and m("mCursor") == 0)
+    # Compiled Factory pages: the stubs keep the compiled Back contract (1 for Odometer, Fuel tank, Vehicle profile).
+    for title, page_value in (("Advanced settings", 1), ("Fuel tank setup", 3), ("Vehicle profile", 4),
+                              ("Odometer setup", 2), ("Service commands", 6)):
+        focus(title)
+        cursor = m("mCursor")
+        swc("Enter", 1)
+        verify("menu Factory page opens only on release " + str(page_value), value(global_state, "menuSettingsSubPageItemSetup") == 0)
+        swc("Enter", 0)
+        verify("menu Factory hosts the compiled page " + str(page_value),
+               m("mPath")[-1] == "fsub" + str(page_value) and value(global_state, "menuSettingsSubPageItemSetup") == page_value and
+               value(global_state, "menuSettingsPageIndex") == 1 and
+               menu_state["page"].findChild(QtCore.QObject, "vendor-page-" + str(page_value)) is not None)
+        tap("Back")
+        verify("menu compiled page Back returns to the Factory row " + str(page_value),
+               m("mPath")[-1] == "factory" and m("mCursor") == cursor and value(global_state, "menuSettingsSubPageItemSetup") == 0 and
+               value(global_state, "menuSettingsPageIndex") == 0)
+    focus("Advanced settings")
+    tap("Enter")
+    global_state.setProperty("menuSettingsSubPageItemSetup", 3)
+    advance()
+    verify("menu Advanced settings can open Fuel tank setup", m("mPath")[-1] == "fsub1" and
+           menu_state["page"].findChild(QtCore.QObject, "vendor-page-3") is not None)
     tap("Back")
-    QtTest.QTest.qWait(20)
-    verify("menu Factory Back returns to the Factory row", m("mPath") == ["home", "system"] and m("mCursor") == 5 and not hosted_catalog())
+    verify("menu nested Fuel tank Back returns to Advanced settings", m("mPath")[-1] == "fsub1" and
+           value(global_state, "menuSettingsSubPageItemSetup") == 1)
+    tap("Back")
+    verify("menu Advanced settings Back returns to Factory", m("mPath")[-1] == "factory" and value(global_state, "menuSettingsSubPageItemSetup") == 0)
+    focus("Fuel tank setup")
+    tap("Enter")
+    swc("Back", 1)
+    swc("Back", 2)
+    verify("menu Back hold in a compiled page closes the menu and the page", value(global_state, "menuBarIndex") == 0 and
+           m("mPath")[-1] == "factory" and value(global_state, "menuSettingsSubPageItemSetup") == 0)
+    swc("Back", 0)
+    global_state.setProperty("menuBarIndex", 1)
+    for title, argument in (("ADB debugging: enable", 1), ("ADB debugging: disable", 0)):
+        focus(title)
+        before = list(value(event_state, "adbCalls"))
+        swc("Enter", 1)
+        verify("menu ADB command waits for release " + str(argument), value(event_state, "adbCalls") == before)
+        swc("Enter", 0)
+        verify("menu ADB command " + str(argument), value(event_state, "adbCalls") == before + [argument])
+    focus("Debug logging")
+    verify("menu Debug logging shows the level", row("Debug logging")["value"] == "Off")
+    tap("Enter")
+    tap("Down", 2)
+    verify("menu Debug logging edit", m("mEditText") == "‹ UART receive ›" and value(global_state, "uartDebugEnabled") == 0)
+    tap("Enter")
+    verify("menu Debug logging sets the vendor value", value(global_state, "uartDebugEnabled") == 2 and
+           row("Debug logging")["value"] == "UART receive")
+    tap("Enter")
+    tap("Down", 3)
+    tap("Enter")
+    verify("menu Debug logging wraps to Off", value(global_state, "uartDebugEnabled") == 0)
+    focus("USB image preview")
+    tap("Enter")
+    verify("menu USB image preview on", value(global_state, "mediaImageEnabled") == 1 and row("USB image preview")["current"] == 1)
+    tap("Enter")
+    verify("menu USB image preview off", value(global_state, "mediaImageEnabled") == 0)
+    focus("Car model options")
+    for state in (1, 2, 2, 0):
+        swc("Modes", state)
+    verify("menu Modes hold toggles Car model options once", value(global_state, "modelCarSelection") is True and
+           m("mCursor") == titles().index("Car model options"))
+    tap("Enter")
+    verify("menu Car model options off", value(global_state, "modelCarSelection") is False)
+    focus("Screen grid")
+    swc("Enter", 1)
+    verify("menu Screen grid waits for release", value(global_state, "screenGridEnabled") == 0)
+    swc("Enter", 0)
+    verify("menu Screen grid shows the grid and closes the menu", value(global_state, "screenGridEnabled") == 1 and
+           value(global_state, "menuBarIndex") == 0)
+    global_state.setProperty("screenGridEnabled", 0)
+    global_state.setProperty("menuBarIndex", 1)
+    tap("Back")
+    verify("menu Factory Back returns to the Factory row", m("mPath") == ["home", "system"] and m("mCursor") == 5)
     mark = len(log())
     focus("Version")
     tap("Enter")
@@ -1437,9 +1382,17 @@ Window {
     texts = item_texts(sip.cast(menu_state["page"], QtQuick.QQuickItem))
     verify("menu view shows unit segments and the follow note", {"km/h", "mph", "°C", "°F", "Follow"} <= texts)
     preview("units", "vnM locked view; System > Units.")
+    tap("Back")
+    open_path("Factory", "General settings")
+    texts = item_texts(sip.cast(menu_state["page"], QtQuick.QQuickItem))
+    verify("menu view moves the oldest column off at the fourth level", {"Factory", "General settings"} <= texts and
+           "Settings" not in texts and "No effect in this firmware" in texts)
+    preview("general", "vnM locked view; System > Factory > General settings.")
+    tap("Back")
+    preview("factory", "vnM locked view; System > Factory.")
     # Screen grid (vnS): the page fills the window and shows the size, the frame legend, and point labels.
     window.resize(1920, 720)
-    window.setProperty("pageUrl", QtCore.QUrl.fromLocalFile(pages[3]["copy"]).toString())
+    window.setProperty("pageUrl", QtCore.QUrl.fromLocalFile(pages[1]["copy"]).toString())
     advance()
     grid = window.property("page")
     verify("grid fills the window", grid is not None and grid.property("width") == 1920 and grid.property("height") == 720)
@@ -1455,37 +1408,8 @@ Window {
                         width=image.width(), height=image.height(), label="vnS screen grid at 1920 x 720."))
     window.setProperty("pageUrl", "")
     advance()
-    result["menu_scope"] = ("vnM engine on host Qt with safe stubs. G-force uses a stub with the compiled Back contract; "
-                            "Factory hosts the owned vnF copy. Native calls record arguments only.")
-    # Capture fixture previews with actual cached component geometry and safe state.
-    for page_index, title in ((0,"General settings"),(1,"Factory menu")):
-        page, swipe, rows = select_page(page_index)
-        window.setProperty("previewTitle", "Host Qt fixture preview - " + title)
-        verify("preview row0 checked and released", value(rows[0],"mChecked") and not value(rows[0],"mClicked"))
-        for height in (932,720):
-            window.resize(1920,height)
-            window.show()
-            content = swipe.property("contentItem")
-            for unused in range(40):
-                QtTest.QTest.qWait(20)
-                if not content.property("moving") and abs(content.property("contentY") - content.property("originY")) < 0.5:
-                    break
-            verify("preview selected row settled", abs(content.property("contentY") - content.property("originY")) < 0.5)
-            image, render_method = capture()
-            if image.isNull():
-                result.update(passed=False, runtime_checks=checks,
-                              render_gap="Window and content-item captures returned null on offscreen QPA.",
-                              window_state=dict(visible=window.isVisible(),exposed=window.isExposed(),
-                                                width=window.width(),height=window.height()))
-                print(json.dumps(result), flush=True)
-                return 1
-            verify("preview background is opaque", image.pixelColor(0,0).alpha() == 255)
-            target = fixture / ("preview-" + str(page_index) + "-1920x" + str(height) + ".png")
-            verify("preview saved " + str(height), not image.isNull() and image.save(str(target)))
-            renders.append(dict(path=str(target), method=render_method, sha256=hashlib.sha256(target.read_bytes()).hexdigest(),
-                                width=image.width(), height=image.height(),
-                                selected_row_y=rows[0].mapToItem(swipe, QtCore.QPointF(0,0)).y(),
-                                label="Host Qt fixture preview; captured UI and safe context stubs."))
+    result["menu_scope"] = ("vnM engine on host Qt with safe stubs. G-force and the compiled Factory pages use stubs with the "
+                            "compiled Back contract. Native calls record arguments only.")
     for page in pages:
         page["source_bytes_unchanged"] = hashlib.sha256(Path(page["source"]).read_bytes()).hexdigest() == page["sha256"]
     verify("page source bytes unchanged", all(page["source_bytes_unchanged"] for page in pages))
@@ -1508,7 +1432,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--child", choices=PHASES)
     parser.add_argument("--fixture")
-    parser.add_argument("--candidate-dir", default=str(ROOT / "analysis/capture-04/ui-candidate-menu-v1"))
+    parser.add_argument("--candidate-dir", default=str(ROOT / "analysis/capture-04/ui-candidate-menu-v2"))
     args = parser.parse_args()
     if args.child:
         return child(args.child, Path(args.fixture), args.candidate_dir)

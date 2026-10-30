@@ -11,18 +11,22 @@ import os
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools/usb-install/encrypt.sh"
 BUSYBOX = ROOT / "tools/busybox/busybox"
-CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v1"
+CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v2"
 ORIGINAL = ROOT / "installed/capture-04/rootfs/usr/bin/Launcher"
 RESULT = ROOT / "analysis/capture-04/usb-install-replay-results.json"
-ETC = ["vnB.qml", "vnF.qml", "vnG.qml", "vnM.qml", "vnS.qml", "vnV.qml"]
+ETC = ["vnG.qml", "vnM.qml", "vnS.qml", "vnV.qml"]
+# The first cluster install (menu-v1). The upgrade cases start from these files.
+V1_ETC = ROOT / "analysis/capture-04/usb-install-menu-v1/drive/viknav-ui/etc"
+RETIRED = ["vnB.qml", "vnF.qml"]
 APPLETS = ["awk", "cat", "chmod", "cp", "date", "df", "grep", "head", "mkdir", "mv", "rm", "sha256sum", "sync", "tar", "wc"]
-MARKERS = {"install": ("VIKNAV-UI-INSTALL.txt", "VIKNAV_UI_INSTALL_MENU_V1"),
+MARKERS = {"install": ("VIKNAV-UI-INSTALL.txt", "VIKNAV_UI_INSTALL"),
            "rollback": ("VIKNAV-UI-ROLLBACK.txt", "VIKNAV_UI_ROLLBACK_CAPTURE04"),
            "log": ("VIKNAV-UI-LOG.txt", "VIKNAV_UI_LOG"),
            "record": ("VIKNAV-UI-RECORD.txt", "VIKNAV_UI_RECORD")}
@@ -39,6 +43,7 @@ FAILURE_MODES = [
     "The restarted Launcher holds the USB drive (working directory or output stream)",
     "Log collection changes the cluster",
     "The recorder misses new Launcher log lines, runs twice, or keeps running after the drive is gone",
+    "An upgrade from an earlier release is refused, keeps a retired file, or replaces the stock settings backup",
 ]
 
 sha = lambda data: hashlib.sha256(data).hexdigest()
@@ -162,7 +167,7 @@ class Case:
         launcher = sha((self.root / "usr/bin/Launcher").read_bytes())
         state = "original" if launcher == sha(ORIGINAL_BYTES) else "candidate" if launcher == sha(CANDIDATE_BYTES) else "other"
         etc = {name: (self.root / "etc" / name).exists() and sha((self.root / "etc" / name).read_bytes()) == sha(ETC_BYTES[name]) for name in ETC}
-        present = [name for name in ETC if (self.root / "etc" / name).exists()]
+        present = [name for name in ETC + RETIRED if (self.root / "etc" / name).exists()]
         if state == "candidate" and all(etc.values()):
             return "candidate"
         if state == "original" and not present:
@@ -171,6 +176,22 @@ class Case:
 
     def settings(self):
         return (self.root / "private/Launcher/settings.db").read_bytes()
+
+    def install_v1(self):
+        """Put the cluster in the menu-v1 state, with the stock settings backup on the drive."""
+        (self.root / "usr/bin/Launcher").write_bytes(CANDIDATE_BYTES)
+        for path in V1_ETC.iterdir():
+            (self.root / "etc" / path.name).write_bytes(path.read_bytes())
+        (self.root / "private/Launcher/settings.db").write_bytes(b"settings of v1\n")
+        stock = self.t / "stock"
+        (stock / "Launcher").mkdir(parents=True)
+        (stock / "Launcher/settings.db").write_bytes(SETTINGS)
+        with tarfile.open(self.usb / "viknav-ui/settings-before-install.tar", "w", format=tarfile.USTAR_FORMAT) as tar:
+            tar.add(stock / "Launcher", arcname="Launcher")
+        return self
+
+    def backup(self):
+        return sha((self.usb / "viknav-ui/settings-before-install.tar").read_bytes())
 
     def leftovers(self):
         return sorted(str(p.relative_to(self.root)) for p in self.root.rglob(".*.new"))
@@ -357,6 +378,46 @@ def main():
             return [c.status(), c.device(), c.starts(), (c.out / "Launcher.log").exists(),
                     "Launcher check: running" in (c.out / "installed-sha256.txt").read_text()]
         check("log-changes-nothing", 9, ["LOGGED", "candidate", 1, True, True], log_only)
+
+        def upgrade():
+            c = new().install_v1()
+            before = c.backup()
+            install(c)
+            return [c.status(), c.device(), c.starts(), [n for n in RETIRED if (c.root / "etc" / n).exists()],
+                    c.backup() == before, c.leftovers()]
+        check("upgrade-from-v1", 11, ["INSTALLED", "candidate", 1, [], True, []], upgrade)
+
+        def upgrade_again():
+            c = install(new().install_v1())
+            c.run()
+            return [c.status(), c.device(), c.starts()]
+        check("upgrade-again-no-restart", 6, ["ALREADY_INSTALLED", "candidate", 1], upgrade_again)
+
+        def retired_left():
+            c = install(new())
+            (c.root / "etc/vnF.qml").write_bytes((V1_ETC / "vnF.qml").read_bytes())
+            c.run()
+            return [c.status(), c.device(), c.starts()]
+        check("retired-file-removed", 11, ["INSTALLED", "candidate", 2], retired_left)
+
+        def unknown_retired():
+            c = new().install_v1()
+            (c.root / "etc/vnB.qml").write_text("other\n")
+            install(c)
+            return [c.status(), c.starts()]
+        check("unknown-retired-file-refused", 1, ["ABORTED unknown /etc/vnB.qml", 0], unknown_retired)
+
+        def upgrade_unhealthy():
+            c = install(new().install_v1(), "vnerror")
+            return [c.status(), c.device(), c.settings() == b"settings of v1\n", (c.usb / "INSTALL-BLOCKED.txt").exists()]
+        check("upgrade-unhealthy-rolls-back", 4, ["ROLLED_BACK new QML error", "original", True, True], upgrade_unhealthy)
+
+        def rollback_v1():
+            c = new().install_v1()
+            c.marker("rollback")
+            c.run()
+            return [c.status(), c.device(), c.settings() == SETTINGS, c.leftovers()]
+        check("rollback-from-v1", 7, ["ROLLED_BACK by request", "original", True, []], rollback_v1)
 
         def record():
             c = new()

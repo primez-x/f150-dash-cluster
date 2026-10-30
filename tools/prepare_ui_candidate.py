@@ -16,7 +16,7 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parents[1]
 DECODER_PATH = BASE / "tools" / "decode_qml_units.py"
 SOURCE_DEFAULT = BASE / "installed" / "capture-04" / "rootfs" / "usr" / "bin" / "Launcher"
-OUTPUT_DEFAULT = BASE / "analysis" / "capture-04" / "ui-candidate-menu-v1"
+OUTPUT_DEFAULT = BASE / "analysis" / "capture-04" / "ui-candidate-menu-v2"
 ANALYSIS_ROOT = (BASE / "analysis").resolve()
 SCHEMA_PATH = BASE / "evidence" / "qt-5.14.2" / "qv4instr_moth_p.h"
 LAYOUT_PATH = BASE / "evidence" / "fixtures" / "capture-04" / "launcher-layout.json"
@@ -49,9 +49,6 @@ PATCHES = (
     },
 )
 SOURCE_FILES = {item["destination"]: item["source_path"] for item in PATCHES}
-# vnM hosts the Factory menu vnF, and vnF opens vnB. Both load by file URL, with no cache redirect.
-SOURCE_FILES["etc/vnF.qml"] = BASE / "patches/capture-04/etc/vnF.qml"
-SOURCE_FILES["etc/vnB.qml"] = BASE / "patches/capture-04/etc/vnB.qml"
 # Global loads the Factory screen grid vnS by file URL.
 SOURCE_FILES["etc/vnS.qml"] = BASE / "patches/capture-04/etc/vnS.qml"
 ELF_HEADER = struct.Struct("<16sHHIQQQIHHHHHH")
