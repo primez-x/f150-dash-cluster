@@ -236,14 +236,14 @@ const fuel4 = (s, at) => fuel({ pct: s.fuel, range: s.range, at, light: fuelLigh
 const digits = n => String(n).split("").map(d => `<i>${d}</i>`).join("");
 
 // Daily A crescents: speed left, tachometer right, coolant and oil arcs inside (90 px in, from t[0] to t[1]).
-// a0 is the speed zero angle and a1 the speed maximum (0 = up, clockwise); the tachometer mirrors at x 960.
+// a0 is the speed zero angle and a1 the speed maximum (0 = up, clockwise); the tachometer mirrors at x 960. temps false drops the arcs.
 // With cruise set, a marker on the speed scale shows the set speed in the cruise readout colour.
-function crescents(s, { cx = 800, cy = 470, r = 560, a0 = 238, a1 = 305, t = [238, 290] } = {}) {
+function crescents(s, { cx = 800, cy = 470, r = 560, a0 = 238, a1 = 305, t = [238, 290], temps = true } = {}) {
   const sp = { cx, cy, r, a0, a1, max: 120 };
   let g = crescent({ ...sp, major: 10, labelStep: 20, value: s.speed, field: "speed", labelSide: 1 }) +
     crescent({ cx: 1920 - cx, cy, r, a0: 360 - a0, a1: 360 - a1, max: TACHO_MAX / 1000, major: 1, labelStep: 1, value: s.rpm / 1000, redFrom: REDLINE / 1000, field: "tacho rpm" }) +
-    tempArc({ cx, cy, r: r - 90, from: t[0], to: t[1], T: s.T.coolant }) +
-    tempArc({ cx: 1920 - cx, cy, r: r - 90, from: 360 - t[0], to: 360 - t[1], T: s.T.oil });
+    (temps ? tempArc({ cx, cy, r: r - 90, from: t[0], to: t[1], T: s.T.coolant }) +
+    tempArc({ cx: 1920 - cx, cy, r: r - 90, from: 360 - t[0], to: 360 - t[1], T: s.T.oil }) : "");
   if (s.cruise === "set") {
     const a = sp.a0 + (sp.a1 - sp.a0) * s.cruiseSet / sp.max, p = (r, da = 0) => polar(sp.cx, sp.cy, r, a + da).map(v => v.toFixed(1)).join(" ");
     g += `<path data-field="cruiseSpeedSet" d="M${p(sp.r + 30)} L${p(sp.r + 46, -1.4)} L${p(sp.r + 46, 1.4)} Z" fill="var(--ok)"/>`;

@@ -1,0 +1,7 @@
+/* Round 10: fuel at bottom center on every layout. Loads after round-08/kit8.css. */
+.fc { top: 712px; display: flex; align-items: center; gap: 10px; white-space: nowrap; transform: translateY(-50%); }
+
+/* Temperature stack in a corner pocket: icon, label, and value per row. */
+.tstack { display: flex; flex-direction: column; gap: 10px; }
+.tstack .row { display: flex; align-items: center; justify-content: flex-end; gap: 12px; white-space: nowrap; }
+.tstack .rv { font-size: 34px; }

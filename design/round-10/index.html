@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 10</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+  table { border-collapse: collapse; margin-top: 10px; }
+  td, th { padding: 4px 14px; text-align: right; border-bottom: 1px solid #222a33; color: #c9d1da; }
+  th:first-child, td:first-child { text-align: left; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 10 · Fuel bottom center</h1>
+<p>The same layouts as <a href="../round-09/">round 9</a>, with fuel at bottom center instead of the bottom-right corner. Compare the two rounds,
+  then pick the fuel position and A or B for each layout.</p>
+<ul>
+  <li>Checked from the driver seat: the strip above the steering column cover is easy to see. The cover itself still hides the screen below y 752
+    (traced from the photo), so bottom center means the strip just above the cover.</li>
+  <li>Fuel module: one line along the cover top. The level sits left of E, the band fills from E to F (left to right, as on a linear fuel gauge),
+    and the range sits right of F. Low fuel turns the line amber, and the low-fuel light turns the line red.</li>
+  <li>The corner bands end at x 500 to leave room for the fuel line.</li>
+  <li>Daily A option A: coolant and oil leave the crescents for the bottom-right corner (two bands and a value stack). Instant economy stays bottom left.</li>
+  <li>Daily A option B: the right wing foot carries no band; the RPM scale ends there.</li>
+  <li>Daily B option A: the card moves to the bottom right; the corner pocket under the card stays empty.
+    Daily B option B: instant economy takes the bottom-right corner, and the card keeps the upper right.</li>
+  <li>Towing: the trailer brake returns to the bottom-right corner (round 8 form). Grade moves to the upper right.</li>
+</ul>
+<h2>Daily A · pick A or B</h2>
+<div class="grid">
+  <div><h3>A · Economy left, temperatures right, fuel center</h3><a href="daily-a-a.html"><img src="shots/daily-a-a-normal.png" alt=""></a></div>
+  <div><h3>B · Wings, economy left, fuel center</h3><a href="daily-a-b.html"><img src="shots/daily-a-b-normal.png" alt=""></a></div>
+  <div><h3>A · low-fuel light (reserve)</h3><a href="daily-a-a.html?scene=reserve"><img src="shots/daily-a-a-reserve.png" alt=""></a></div>
+  <div><h3>B · low-fuel light (reserve)</h3><a href="daily-a-b.html?scene=reserve"><img src="shots/daily-a-b-reserve.png" alt=""></a></div>
+</div>
+<h2>Daily B · pick A or B</h2>
+<div class="grid">
+  <div><h3>A · Economy left, card right, fuel center</h3><a href="daily-b-a.html"><img src="shots/daily-b-a-normal.png" alt=""></a></div>
+  <div><h3>B · Temperature fan left, economy right, fuel center</h3><a href="daily-b-b.html"><img src="shots/daily-b-b-normal.png" alt=""></a></div>
+  <div><h3>A · 45 miles to empty</h3><a href="daily-b-a.html?scene=lowfuel"><img src="shots/daily-b-a-lowfuel.png" alt=""></a></div>
+  <div><h3>B · 45 miles to empty</h3><a href="daily-b-b.html?scene=lowfuel"><img src="shots/daily-b-b-lowfuel.png" alt=""></a></div>
+</div>
+<h2>Towing · pick A or B</h2>
+<div class="grid">
+  <div><h3>A · RPM and boost left, trailer brake right, fuel center</h3><a href="tow-a.html"><img src="shots/tow-a-normal.png" alt=""></a></div>
+  <div><h3>B · RPM dial left, trailer brake dial right, fuel center</h3><a href="tow-b.html"><img src="shots/tow-b-normal.png" alt=""></a></div>
+  <div><h3>A · braking</h3><a href="tow-a.html?scene=braking"><img src="shots/tow-a-braking.png" alt=""></a></div>
+  <div><h3>B · braking</h3><a href="tow-b.html?scene=braking"><img src="shots/tow-b-braking.png" alt=""></a></div>
+  <div><h3>A · low-fuel light (reserve)</h3><a href="tow-a.html?scene=reserve"><img src="shots/tow-a-reserve.png" alt=""></a></div>
+  <div><h3>B · low-fuel light (reserve)</h3><a href="tow-b.html?scene=reserve"><img src="shots/tow-b-reserve.png" alt=""></a></div>
+</div>
+</body>
+</html>
