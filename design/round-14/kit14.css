@@ -1,0 +1,3 @@
+/* Round 14: fewer numbers. Loads after round-13/kit13.css. */
+.tb13 .rv.slot { height: 40px; }
+.emarks { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }

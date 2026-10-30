@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 14</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+  table { border-collapse: collapse; margin-top: 10px; }
+  td, th { padding: 4px 14px; text-align: right; border-bottom: 1px solid #222a33; color: #c9d1da; }
+  th:first-child, td:first-child { text-align: left; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 14 · Towing A with fewer numbers</h1>
+<p>Towing A from <a href="../round-10/">round 10</a> is locked. Round 14 starts from <a href="../round-13/">round 13</a>
+  and removes numbers. Secondary readings show a number only when the reading needs attention. Pick A or B.</p>
+<ul>
+  <li>Both: temperature bars show no value at rest. A value appears over a bar when the reading is warm, hot, cold, or missing.
+    The bars do not move when a value appears.</li>
+  <li>Both: the tire diagram is gone while every tire is normal. A low tire brings back the diagram with the low pressure only.</li>
+  <li>Both: the engine corner keeps the RPM band, the boost band, and the tach and turbo symbols, with no RPM or boost number.</li>
+  <li>Both: the fuel band keeps E and F and adds quarter marks, with a longer mark and a ½ label at the middle.
+    The percent is gone; the range in miles stays.</li>
+  <li>Numbers at rest, A: speed, gear, grade, the card value, trailer brake gain, and range (with the clock and outside temperature: 19 numbers in round 13, 8 in round 14 A, 7 in round 14 B).</li>
+  <li>B: the same as A without the paged card and without trailer distance. Numbers at rest: speed, gear, grade, trailer brake gain, and range.</li>
+</ul>
+<div class="grid">
+  <div><h3>A · Fewer numbers, card</h3><a href="tow-a.html"><img src="shots/tow-a-normal.png" alt=""></a></div>
+  <div><h3>B · Fewest numbers, no card</h3><a href="tow-b.html"><img src="shots/tow-b-normal.png" alt=""></a></div>
+  <div><h3>A · transmission hot, differential warm</h3><a href="tow-a.html?scene=hottrans"><img src="shots/tow-a-hottrans.png" alt=""></a></div>
+  <div><h3>B · transmission hot, differential warm</h3><a href="tow-b.html?scene=hottrans"><img src="shots/tow-b-hottrans.png" alt=""></a></div>
+  <div><h3>A · right rear tire low</h3><a href="tow-a.html?scene=lowtire"><img src="shots/tow-a-lowtire.png" alt=""></a></div>
+  <div><h3>B · right rear tire low</h3><a href="tow-b.html?scene=lowtire"><img src="shots/tow-b-lowtire.png" alt=""></a></div>
+  <div><h3>A · low fuel</h3><a href="tow-a.html?scene=lowfuel"><img src="shots/tow-a-lowfuel.png" alt=""></a></div>
+  <div><h3>B · braking</h3><a href="tow-b.html?scene=braking"><img src="shots/tow-b-braking.png" alt=""></a></div>
+  <div><h3>A · card page 2: trip</h3><a href="tow-a.html?page=1"><img src="shots/tow-a-page1.png" alt=""></a></div>
+  <div><h3>A · card page 3: economy</h3><a href="tow-a.html?page=2"><img src="shots/tow-a-page2.png" alt=""></a></div>
+  <div><h3>A · true size</h3><a href="tow-a.html?view=physical&amp;ruler=1"><img src="shots/tow-a-physical.png" alt=""></a></div>
+  <div><h3>B · true size</h3><a href="tow-b.html?view=physical&amp;ruler=1"><img src="shots/tow-b-physical.png" alt=""></a></div>
+</div>
+</body>
+</html>
