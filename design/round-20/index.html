@@ -48,6 +48,13 @@ compass is a reference for the data only, not for the behaviour.</p>
   <li>At 5 mph and under, hold the last heading and dim the tape.</li>
 </ul>
 <p>Check: the demo turned through north for 9 s; the N mark moved at most 6.9 px per 100 ms, with no jump.</p>
+<h2>Clock: GPS time, time zone, and daylight saving time</h2>
+<ul>
+  <li>The cluster clock is the MCU clock (message 0x32). The relay cuts power to the MCU, so the MCU clock loses the time.</li>
+  <li>The firmware sets the clock from GPS time (UTC, in the RMC sentence) with the time zone and daylight saving time, then writes the time to the MCU (setRtc).</li>
+  <li>Until the first GPS time after power-up, the clock shows dashes and the heading tape dims. A wrong time is worse than no time.</li>
+  <li>After a time zone change, the zone shows beside the time for 10 seconds, so a clock that moves by an hour has a reason.</li>
+</ul>
 <h2>A · Numbers</h2>
 <div class="grid">
   <div><h3>highway: heading tape (NE) beside the clock, altitude beside the outside temperature</h3><a href="tow-a.html?"><img src="shots/tow-a-normal.png" alt=""></a></div>
@@ -59,6 +66,8 @@ compass is a reference for the data only, not for the behaviour.</p>
   <div><h3>roll 21°, left side down: roll in red</h3><a href="tow-a.html?scene=tilthot"><img src="shots/tow-a-tilthot.png" alt=""></a></div>
   <div><h3>hot transmission and roll 13°: the temperature wins; the level symbol shows amber beside the dots</h3><a href="tow-a.html?scene=tiltstack"><img src="shots/tow-a-tiltstack.png" alt=""></a></div>
   <div><h3>4L at 6 mph on a 12 % grade: the climb focus jumps to the level page</h3><a href="tow-a.html?scene=d4l"><img src="shots/tow-a-d4l.png" alt=""></a></div>
+  <div><h3>after power-up, before the first GPS time: dashes, and the heading tape dims</h3><a href="tow-a.html?clock=wait"><img src="shots/tow-a-clockwait.png" alt=""></a></div>
+  <div><h3>10 seconds after a time zone change: the zone beside the time</h3><a href="tow-a.html?clock=zone"><img src="shots/tow-a-clockzone.png" alt=""></a></div>
   <div><h3>true size</h3><a href="tow-a.html?view=physical&amp;ruler=1"><img src="shots/tow-a-physical.png" alt=""></a></div>
 </div>
 <h2>B · Truck images</h2>
@@ -72,6 +81,8 @@ compass is a reference for the data only, not for the behaviour.</p>
   <div><h3>roll 21°, left side down: roll in red</h3><a href="tow-b.html?scene=tilthot"><img src="shots/tow-b-tilthot.png" alt=""></a></div>
   <div><h3>hot transmission and roll 13°: the temperature wins; the level symbol shows amber beside the dots</h3><a href="tow-b.html?scene=tiltstack"><img src="shots/tow-b-tiltstack.png" alt=""></a></div>
   <div><h3>4L at 6 mph on a 12 % grade: the climb focus jumps to the level page</h3><a href="tow-b.html?scene=d4l"><img src="shots/tow-b-d4l.png" alt=""></a></div>
+  <div><h3>after power-up, before the first GPS time: dashes, and the heading tape dims</h3><a href="tow-b.html?clock=wait"><img src="shots/tow-b-clockwait.png" alt=""></a></div>
+  <div><h3>10 seconds after a time zone change: the zone beside the time</h3><a href="tow-b.html?clock=zone"><img src="shots/tow-b-clockzone.png" alt=""></a></div>
   <div><h3>true size</h3><a href="tow-b.html?view=physical&amp;ruler=1"><img src="shots/tow-b-physical.png" alt=""></a></div>
 </div>
 </body>

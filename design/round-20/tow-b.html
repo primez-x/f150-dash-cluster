@@ -76,6 +76,7 @@ place(`
   <div class="abs corner r ${s.braking ? "on" : "idle"}" style="right:48px;top:640px" data-field="${BRAKE_FIELD}"><span class="k">${s.braking ? `<span class="state">BRAKING</span>` : ""}${sym("trailerBrake", 44)}</span></div>
   ${fuelCenter(s, { level: false, quarters: true })}
 `);
+clockState(s);
 if (params.has("turn")) turnDemo(s);
 finish(s);
 </script>

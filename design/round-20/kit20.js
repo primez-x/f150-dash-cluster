@@ -114,3 +114,18 @@ function turnDemo(s) {
   requestAnimationFrame(step);
 }
 const altitude = s => `<div class="abs tb alt" data-field="getAltitude(): GPS altitude with a fix, otherwise mAltitude (barometer); metres, shown in feet">${s.altFt.toLocaleString("en-US")}<small>ft</small></div>`;
+
+// Clock. The cluster clock is the MCU clock (message 0x32), and the MCU clock stops when the relay cuts power. The firmware sets
+// the clock from GPS time (UTC in the RMC sentence) with the time zone and daylight saving time, then writes the clock to the
+// MCU (setRtc). Until the first GPS time after power-up, the clock shows dashes: a wrong time is worse than no time.
+// After a time zone change, the zone shows beside the time for 10 seconds, so a clock that moves by an hour has a reason.
+// ?clock=wait|zone overrides the clock state for any scene.
+function clockState(s) {
+  const st = params.get("clock") || s.clock;
+  if (!st) return;
+  const el = document.querySelector('.tb[data-field="native RTC clock"]');
+  el.dataset.field = "MCU clock (0x32 rtcInfoNotify), set from GPS UTC (RMC) with the time zone and DST";
+  // No GPS yet after power-up: no heading either, so the tape dims as when held.
+  if (st === "wait") { el.innerHTML = `<span class="clkwait">--:--</span>`; document.querySelector(".hdgtape").classList.add("held"); }
+  if (st === "zone") el.innerHTML = `9:42<small class="zone">CT</small>`;
+}

@@ -23,3 +23,6 @@
 .hdgtape text.card { font-weight: 600; fill: #c9d1da; }
 .hdgtape.held { opacity: .4; }
 .alt { right: 178px; color: #8a929c; }
+/* Clock states: dashes until the first GPS time; the zone beside the time for 10 seconds after a time zone change. */
+.clkwait { color: #4a525c; }
+.tb small.zone { color: #c9d1da; font-weight: 600; letter-spacing: 1px; }
