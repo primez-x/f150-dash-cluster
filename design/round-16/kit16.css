@@ -1,0 +1,24 @@
+/* Round 16: paged towing panel. Loads after round-15/kit15.css. */
+.fslot.pair { justify-content: space-between; padding: 0 30px; box-sizing: border-box; }
+
+/* Page symbols. Off screen: quiet grey, or the state colour when the page needs attention. */
+.tabs { display: flex; justify-content: space-between; padding: 0 40px; box-sizing: border-box; }
+.tab { position: relative; display: flex; flex-direction: column; align-items: center; }
+.tab .sym { color: #4a525c; }
+.tab.on .sym { color: #c9d1da; }
+.tab.on::after { content: ""; position: absolute; top: 52px; width: 36px; height: 4px; border-radius: 2px; background: #8a929c; }
+.tab.warm .sym, .tab.low .sym { color: var(--caution); }
+.tab.hot .sym { color: var(--hot); }
+.tab.cold .sym { color: var(--cold); }
+.tab.live .sym { color: var(--accent); }
+
+/* Option B: the page symbol at the panel top, dots under the panel, alert symbols beside the dots. */
+.ptitle .sym { color: #8a929c; }
+.pnav { display: flex; justify-content: center; align-items: center; gap: 28px; }
+.pnav .dots { display: flex; gap: 8px; align-items: center; }
+.pnav .dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, .18); }
+.pnav .dots i.on { width: 22px; border-radius: 4px; background: #8a929c; }
+
+/* Gear: a secondary reading, not a second hero. Grey, and sized for every layout from round 16 on (gear(s, GEAR_SIZE) in kit16.js). */
+.gear4 { color: #aab2bb; }
+.gear4 sup { color: #8a929c; }

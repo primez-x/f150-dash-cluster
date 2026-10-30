@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 17</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 17 · Towing A: primary fixed, secondary paged</h1>
+<p>Towing A from <a href="../round-10/">round 10</a> is locked. Round 17 splits the readings in two tiers. Pick A or B.</p>
+<ul>
+  <li>Primary, always on screen: speed, gear, the four temperature bars, both corner bands, and the fuel line.</li>
+  <li>Secondary, one page at a time in a paged panel: trailer, tires, engine, trip. The steering wheel left / right keys change the page.
+    Each page holds three values at most.</li>
+  <li>Conditions from <a href="../round-15/">round 15</a> still apply. A low tire jumps the panel to tires, live trailer braking to trailer,
+    and a climb or descent to engine. A temperature condition shows every temperature value in place, because the temperatures are always on screen.</li>
+  <li>A page off screen that needs attention shows the page symbol beside the page dots in the state colour.</li>
+  <li>The gear is a secondary reading now: grey and 60 px (was white and 120 px).</li>
+  <li>A · Panel under the speed (x 200 to 860). B · Panel under the temperatures (x 1060 to 1720).</li>
+</ul>
+
+<h2>A · Panel under the speed</h2>
+<div class="grid">
+  <div><h3>page 1: trailer</h3><a href="tow-a.html?page=0"><img src="shots/tow-a-page0.png" alt=""></a></div>
+  <div><h3>page 2: tires</h3><a href="tow-a.html?page=1"><img src="shots/tow-a-page1.png" alt=""></a></div>
+  <div><h3>page 3: engine</h3><a href="tow-a.html?page=2"><img src="shots/tow-a-page2.png" alt=""></a></div>
+  <div><h3>page 4: trip</h3><a href="tow-a.html?page=3"><img src="shots/tow-a-page3.png" alt=""></a></div>
+  <div><h3>transmission hot</h3><a href="tow-a.html?scene=hottrans"><img src="shots/tow-a-hottrans.png" alt=""></a></div>
+  <div><h3>low tire: the panel jumps to tires</h3><a href="tow-a.html?scene=lowtire"><img src="shots/tow-a-lowtire.png" alt=""></a></div>
+  <div><h3>braking: the panel jumps to trailer</h3><a href="tow-a.html?scene=braking"><img src="shots/tow-a-braking.png" alt=""></a></div>
+  <div><h3>climb: the panel jumps to engine</h3><a href="tow-a.html?scene=climb"><img src="shots/tow-a-climb.png" alt=""></a></div>
+  <div><h3>braking and transmission hot, driver on the trip page</h3><a href="tow-a.html?scene=stack&amp;page=3"><img src="shots/tow-a-stack.png" alt=""></a></div>
+  <div><h3>low fuel</h3><a href="tow-a.html?scene=lowfuel"><img src="shots/tow-a-lowfuel.png" alt=""></a></div>
+  <div><h3>cold start</h3><a href="tow-a.html?scene=cold"><img src="shots/tow-a-cold.png" alt=""></a></div>
+  <div><h3>true size</h3><a href="tow-a.html?view=physical&amp;ruler=1"><img src="shots/tow-a-physical.png" alt=""></a></div>
+</div>
+
+<h2>B · Panel under the temperatures</h2>
+<div class="grid">
+  <div><h3>page 1: trailer</h3><a href="tow-b.html?page=0"><img src="shots/tow-b-page0.png" alt=""></a></div>
+  <div><h3>page 2: tires</h3><a href="tow-b.html?page=1"><img src="shots/tow-b-page1.png" alt=""></a></div>
+  <div><h3>page 3: engine</h3><a href="tow-b.html?page=2"><img src="shots/tow-b-page2.png" alt=""></a></div>
+  <div><h3>page 4: trip</h3><a href="tow-b.html?page=3"><img src="shots/tow-b-page3.png" alt=""></a></div>
+  <div><h3>transmission hot</h3><a href="tow-b.html?scene=hottrans"><img src="shots/tow-b-hottrans.png" alt=""></a></div>
+  <div><h3>low tire: the panel jumps to tires</h3><a href="tow-b.html?scene=lowtire"><img src="shots/tow-b-lowtire.png" alt=""></a></div>
+  <div><h3>braking: the panel jumps to trailer</h3><a href="tow-b.html?scene=braking"><img src="shots/tow-b-braking.png" alt=""></a></div>
+  <div><h3>climb: the panel jumps to engine</h3><a href="tow-b.html?scene=climb"><img src="shots/tow-b-climb.png" alt=""></a></div>
+  <div><h3>braking and transmission hot, driver on the trip page</h3><a href="tow-b.html?scene=stack&amp;page=3"><img src="shots/tow-b-stack.png" alt=""></a></div>
+  <div><h3>low fuel</h3><a href="tow-b.html?scene=lowfuel"><img src="shots/tow-b-lowfuel.png" alt=""></a></div>
+  <div><h3>cold start</h3><a href="tow-b.html?scene=cold"><img src="shots/tow-b-cold.png" alt=""></a></div>
+  <div><h3>true size</h3><a href="tow-b.html?view=physical&amp;ruler=1"><img src="shots/tow-b-physical.png" alt=""></a></div>
+</div>
+</body>
+</html>

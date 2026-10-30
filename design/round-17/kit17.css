@@ -1,0 +1,11 @@
+/* Round 17: the paged panel for secondary readings. Loads after round-16/kit16.css. */
+.card.sec { display: flex; flex-direction: column; justify-content: center; padding: 12px 34px 34px; }
+.card.sec .body { display: flex; flex-direction: column; justify-content: center; flex: 1; }
+.card.sec .cells { display: flex; align-items: center; justify-content: space-between; }
+.card.sec.trailer .cells { justify-content: space-around; }
+.card.sec .icell .rv { font-size: 42px; }
+.card.sec .icell.on .rv, .card.sec .icell.on .sym { color: var(--accent); }
+.card.sec .bmeter { position: relative; margin: 18px 40px 0; }
+.card.sec .tp { width: 380px; margin: 0 auto; column-gap: 40px; }
+.card.sec .tp .rv { font-size: 34px; }
+.card.sec .pnav { position: absolute; left: 0; right: 0; bottom: 10px; }
