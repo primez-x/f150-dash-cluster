@@ -1528,6 +1528,12 @@ Item {
     }
     function resetOilLife(){
         //console.log("[resetOilLife]")
+        if(Number(mTrucksModel)===1 && mGlobalId.item.vehicleModel===1){
+            // 2011-2014 F150: the vendor sends the oil life value from Vehicle > Assist row 59 with this Ford setup id.
+            mGlobalId.item.fordSetupInfo[59]=100
+            setFordSetup(14, mGlobalId.item.f150_11_14_param_id(59), 100)
+            return
+        }
         mHandleId.setOilLifeReset2()
     }
     /////////////////////////////

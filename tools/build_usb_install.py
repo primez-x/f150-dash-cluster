@@ -28,7 +28,7 @@ ORIGINAL = ROOT / "installed/capture-04/rootfs/usr/bin/Launcher"
 UPDATER = ROOT / "installed/capture-04/rootfs/etc/mdev/update.sh"
 ZIP_TOOL = ROOT / "tools/infozip/usr/bin/zip"
 OUTPUT_DEFAULT = ROOT / "analysis/capture-04/usb-install-trip-units-v1"
-ETC = ["vnB.qml", "vnF.qml", "vnG.qml", "vnU.qml", "vnV.qml"]
+ETC = ["vnB.qml", "vnF.qml", "vnG.qml", "vnR.qml", "vnU.qml", "vnV.qml"]
 
 sha = lambda data: hashlib.sha256(data).hexdigest()
 

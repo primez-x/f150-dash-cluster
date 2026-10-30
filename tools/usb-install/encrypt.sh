@@ -19,15 +19,16 @@ LOG_WAIT=180
 
 # Captured original Launcher (capture-04) and the ui-candidate-trip-units-v1 files.
 ORIGINAL_SHA256=2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b
-CANDIDATE_SHA256=74f3d2ecfe80bbf2b8d58d7812ba277af5289f9dc48cae73d14f59944d6d6005
-ETC_FILES="vnB.qml vnF.qml vnG.qml vnU.qml vnV.qml"
+CANDIDATE_SHA256=3eba51863cb158ec24cd119662f031ee9e7afc198ec8c78820c4cf96113c8ed4
+ETC_FILES="vnB.qml vnF.qml vnG.qml vnR.qml vnU.qml vnV.qml"
 etc_sha256() {
     case "$1" in
         vnB.qml) echo 02e74078b79bb0e7b33fff1b0f0e7182d0e940b1fca951b405528d6b2e72758c ;;
         vnF.qml) echo b9db48d55d04d3dc941d32142a6c435cfa89d9f184029bab5ea9b63621879f84 ;;
         vnG.qml) echo 0cf5a2cea48a6142f0f4b506fddd20b3e5ed2ee42ab69555a32d2aaf4c1185dd ;;
+        vnR.qml) echo ea3330ebac065193722f89651ba91a584aff7c23e4aa66320560214f6f9601f0 ;;
         vnU.qml) echo 10aec2382811d6120f70d88c1640ce8009c2a867c4ae473e878b217beddada80 ;;
-        vnV.qml) echo 6f597e92383c8ab97b8626d611dee7936559e5a7f872ef30554fe8f74b075389 ;;
+        vnV.qml) echo 2e83a44174a549b13e5fa45a0ba46d2fd21b18b9950826034e97b6b5fd1e9c55 ;;
     esac
 }
 
@@ -167,10 +168,13 @@ remove_staged() {
     done
     rm -f "$R/usr/bin/.Launcher.new"
 }
-# 0 when every /etc file is absent or the candidate file. Sets etc_present to the count of candidate files.
+# 0 when every /etc file is absent or the candidate file. Sets etc_present to the count of candidate files
+# and etc_total to the count of owned files.
 check_etc() {
     etc_present=0
+    etc_total=0
     for f in $ETC_FILES; do
+        etc_total=$((etc_total + 1))
         target=$R/etc/$f
         [ -e "$target" ] || [ -L "$target" ] || continue
         [ -f "$target" ] && [ ! -L "$target" ] && [ "$(hash_of "$target")" = "$(etc_sha256 "$f")" ] || abort "unknown /etc/$f"
@@ -252,7 +256,7 @@ do_install() {
     done
     check_launcher
     check_etc
-    if [ "$launcher" = "$CANDIDATE_SHA256" ] && [ "$etc_present" -eq 5 ]; then
+    if [ "$launcher" = "$CANDIDATE_SHA256" ] && [ "$etc_present" -eq "$etc_total" ]; then
         finish ALREADY_INSTALLED
         exit 0
     fi

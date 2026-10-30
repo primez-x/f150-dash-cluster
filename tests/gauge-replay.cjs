@@ -219,6 +219,23 @@ for (const metric of [1, 0]) for (const [raw, expected] of [[0, '0'], [1000, met
   check(`oil-life-trip/metric${metric}/raw${raw}/shown`, expected, () => String(context.trucksOilLifeTrip));
   check(`oil-life-trip/metric${metric}/raw${raw}/raw-preserved`, raw, () => context.trucksOilLifeTripRaw);
 }
+// Oil-life reset. The 2011-2014 F150 profile (truck model 1, vehicle model 1) uses the vendor's own Ford setup
+// command from Vehicle > Assist row 59. Other profiles keep the vendor command.
+const oilParam = new vm.Script('(function(index){' + extract(texts['Global.qml'], 'function f150_11_14_param_id(') + '})');
+for (const [model, vehicle, expected] of [[1, 1, [['ford', 14, 8, 100]]], [8, 0, [['reset2']]], [1, 0, [['reset2']]], [1, 2, [['reset2']]], [7, 0, [['reset2']]]]) {
+  const sent = [];
+  const item = {vehicleModel: vehicle, fordSetupInfo: new Array(90).fill(30)};
+  const oilContext = vm.createContext({mTrucksModel: String(model), Qt: {platform: {os: 'linux'}}, console: {log() {}}, mGlobalId: {item},
+    mHandleId: {setOilLifeReset2: () => sent.push(['reset2']), setFordSetup: (v, id, data) => sent.push(['ford', v, id, data])}},
+    {codeGeneration: {strings: false, wasm: false}});
+  item.f150_11_14_param_id = oilParam.runInContext(oilContext, {timeout: 100});
+  for (const name of ['resetOilLife', 'setFordSetup']) {
+    const args = name === 'setFordSetup' ? 'vehicle, id, data' : '';
+    new vm.Script('function ' + name + '(' + args + '){' + extract(texts['VehicleEvent.qml'], 'function ' + name + '(') + '}').runInContext(oilContext, {timeout: 100});
+  }
+  check(`oil-life-reset/model${model}/vehicle${vehicle}/command`, expected, () => { oilContext.resetOilLife(); return sent; });
+  check(`oil-life-reset/model${model}/vehicle${vehicle}/shown-value`, model === 1 && vehicle === 1 ? 100 : 30, () => item.fordSetupInfo[59]);
+}
 const transitions = [];
 for (const [from, to] of [[12.3, 32767], [32767, 5], [12.3, 32766], [32766, 5]]) {
   context.consumptionUnit = 0;
@@ -231,7 +248,7 @@ for (const [from, to] of [[12.3, 32767], [32767, 5], [12.3, 32766], [32766, 5]])
 }
 const hash = folder => Object.fromEntries(['Global.qml', 'VehicleEvent.qml'].map(name => [name, crypto.createHash('sha256').update(fs.readFileSync(path.join(folder, name))).digest('hex')]));
 const results = phase === 'patched' && fs.existsSync(resultPath) ? JSON.parse(fs.readFileSync(resultPath, 'utf8')) : {};
-results.failureModes = ['Incorrect pressure scale for bar, kgf/cm2, and psi', 'Wrong wheel after front or rear swap', 'Unavailable pressure loses placeholder', 'Small RPM updates retain stale values, including 100 to zero', 'DPC handler throws before all four values refresh', 'Metric consumption modes select wrong fuel volume units', 'US MPG mode selects metric or imperial volume', 'Unavailable fuel loses placeholder or unit', 'Fuel readings outside 0..100 reach the gauges or lose the raw byte', 'The low-fuel warning ignores the fuel percent or an invalid reading', 'One invalid tank changes sibling validity', 'Flow mode receives distance-consumption conversion or labels', 'Hidden or unavailable consumption becomes a real number', 'Raw consumption animation interpolates sentinel transitions', 'Flow readings reach pages labeled with a distance-consumption unit', 'Travel or idle minutes lose the leading zero', 'Oil-life trip ignores the distance unit or shows the unavailable sentinel as a number'];
+results.failureModes = ['Incorrect pressure scale for bar, kgf/cm2, and psi', 'Wrong wheel after front or rear swap', 'Unavailable pressure loses placeholder', 'Small RPM updates retain stale values, including 100 to zero', 'DPC handler throws before all four values refresh', 'Metric consumption modes select wrong fuel volume units', 'US MPG mode selects metric or imperial volume', 'Unavailable fuel loses placeholder or unit', 'Fuel readings outside 0..100 reach the gauges or lose the raw byte', 'The low-fuel warning ignores the fuel percent or an invalid reading', 'One invalid tank changes sibling validity', 'Flow mode receives distance-consumption conversion or labels', 'Hidden or unavailable consumption becomes a real number', 'Raw consumption animation interpolates sentinel transitions', 'Flow readings reach pages labeled with a distance-consumption unit', 'Travel or idle minutes lose the leading zero', 'Oil-life trip ignores the distance unit or shows the unavailable sentinel as a number', 'Oil-life reset sends no command or the wrong command for the truck profile'];
 results.scope = 'Actual QML source blocks and scalar bindings in isolated Node VM with mocked measurement getters. Sentinel animation replay models the declared raw Behavior endpoints. No Qt renderer, animation engine, device accuracy, or active compiled-consumer proof.';
 results.conversionReference = 'https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b9';
 results[phase] = {source, hashes: hash(source), count: rows.length, passed: rows.filter(row => row.pass).length, failed: rows.filter(row => !row.pass).length, rows, rpmStates, dpcStates, lpkStates, transitions};

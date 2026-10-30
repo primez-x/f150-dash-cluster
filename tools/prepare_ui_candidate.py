@@ -54,6 +54,14 @@ PATCHES = (
         "destination": "etc/vnF.qml",
         "source_path": BASE / "patches" / "capture-04" / "etc" / "vnF.qml",
     },
+    {
+        "unit_qrc_path": "Trucks/menu/vehicle/MenuVehicleSettings.qml",
+        "old_string": "qrc:/Trucks/menu/vehicle/MenuVehicleResetSettings.qml",
+        "new_string": "file:/etc/vnR.qml",
+        "record_file_offset": 5011520,
+        "destination": "etc/vnR.qml",
+        "source_path": BASE / "patches" / "capture-04" / "etc" / "vnR.qml",
+    },
 )
 SOURCE_FILES = {item["destination"]: item["source_path"] for item in PATCHES}
 SOURCE_FILES["etc/vnB.qml"] = BASE / "patches/capture-04/etc/vnB.qml"
@@ -173,7 +181,7 @@ def patch_strings(binary: bytes, units: dict[str, dict[str, object]]) -> tuple[b
             }
         )
     changed = {index for index, (left, right) in enumerate(zip(binary, candidate)) if left != right}
-    require(changed and changed <= permitted_offsets, "binary changes escaped the four permitted string records")
+    require(changed and changed <= permitted_offsets, "binary changes escaped the five permitted string records")
     return bytes(candidate), patch_rows, permitted_offsets
 
 
@@ -255,7 +263,8 @@ def build_candidate(source: Path, output: Path) -> dict[str, object]:
     before_units, before_spans, before_registry = decode_binary(decoder, source_bytes, schema)
     gate = json.loads(GATE_FIXTURE.read_text(encoding="utf-8"))
     modified_units = {item["unit_qrc_path"] for item in PATCHES} | {gate["unit_qrc_path"]}
-    require(modified_units == {"main.qml", "Trucks/menu/system/MenuSystemSettings.qml", "Trucks/menu/system/MenuSystemFactory.qml"}, "unexpected affected cache unit set")
+    require(modified_units == {"main.qml", "Trucks/menu/system/MenuSystemSettings.qml", "Trucks/menu/system/MenuSystemFactory.qml",
+                               "Trucks/menu/vehicle/MenuVehicleSettings.qml"}, "unexpected affected cache unit set")
     for path in modified_units:
         require(path in before_units, f"affected cache unit missing: {path}")
         start, size = before_spans[path]

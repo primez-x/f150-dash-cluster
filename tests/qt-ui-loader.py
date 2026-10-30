@@ -137,7 +137,7 @@ def child(phase, fixture, candidate_dir=None):
                    "MenuItemSelectButton.qml", "GlowImage.qml", "GlowText.qml",
                    "FuelConsumptionUnit.qml", "TripUnit.qml", "TemperatureUnit.qml", "PressureUnit.qml"]
         if phase == "patched-settings-redirects":
-            require(original_digest == "74f3d2ecfe80bbf2b8d58d7812ba277af5289f9dc48cae73d14f59944d6d6005", "Direct factory candidate identity mismatch")
+            require(original_digest == "3eba51863cb158ec24cd119662f031ee9e7afc198ec8c78820c4cf96113c8ed4", "Direct factory candidate identity mismatch")
             allowed = [name for name in allowed if name not in ("FuelConsumptionUnit.qml", "TripUnit.qml", "TemperatureUnit.qml", "PressureUnit.qml", "MenuItemSelectButton.qml")]
             allowed.append("MenuListProgressbar.qml")
         for name in allowed:
@@ -354,7 +354,7 @@ def settings_pages(fixture, result, app, engine, callbacks, intercepted, denied,
     result["precompiled_ui_dependencies"] = precompiled
     require(all((entry['ready'] for entry in precompiled)), precompiled)
     pages = []
-    for name, alias in (("vnB.qml", "Factory.qml"), ("vnU.qml", "Units.qml"), ("vnF.qml", "Catalog.qml")):
+    for name, alias in (("vnB.qml", "Factory.qml"), ("vnU.qml", "Units.qml"), ("vnF.qml", "Catalog.qml"), ("vnR.qml", "Reset.qml")):
         source = ROOT / "patches/capture-04/etc" / name
         content = source.read_bytes()
         copy = fixture / alias
@@ -409,6 +409,9 @@ Window {
             property int followUnit: 1
             property int speedUnitOverride: 0
             property int tempUnitOverride: 0
+            property int vehicleModel: 1
+            property var fordSetupInfo: []
+            function f150_11_14_param_id(index) { return index===59?8:index }
             property var mFuelUnit: ["L/100km", "km/L", "MPG"]
             property var factoryCalls: []
             property int factoryRouteCreations: 0
@@ -443,6 +446,12 @@ Window {
             function shellCmdInquire() { shellQueries=shellQueries.concat(["shellCmdInquire"]) }
             function adb(value) { adbCalls=adbCalls.concat([value]) }
             function setUnit2(type, value) { calls=calls.concat([[type,value]]) }
+            property var resetCalls: []
+            function resetTrip(trip) { resetCalls=resetCalls.concat([["trip",trip]]) }
+            function resetSinceReset() { resetCalls=resetCalls.concat([["since"]]) }
+            function tpmsReset() { resetCalls=resetCalls.concat([["tpms"]]) }
+            function setFordSetup(vehicle, id, data) { resetCalls=resetCalls.concat([["ford",vehicle,id,data]]) }
+            function resetOilLife() { resetCalls=resetCalls.concat([["oil"]]) }
             function followVehicleUnits() {
                 calls=calls.concat([["follow"]])
                 g.speedUnitOverride=0; g.tempUnitOverride=0
@@ -466,6 +475,13 @@ Window {
             property string mSystemVersion: "Version"
             property string mSystemFactory: "Factory"
             property var mSystemSetupUnits: ["Fuel economy", "Speed and distance", "Temperature", "Tyre pressure"]
+            property var reset: ["Fixture", "Reset"]
+            property string mResetTripInfo: "Reset trip info"
+            property var mResetTpms: ["Fixture", "Reset TPMS"]
+            property var mResetFactory: ["Fixture", "Factory reset"]
+            property var mResetKey: ["Fixture", "Learn key"]
+            property string mCalibrateCompass: "Calibrate compass"
+            function getVehicleSettingsItem(index) { return index===59?"Oil Life":"Item "+index }
             function getSystemUnit(index) {
                 return [g.mFuelUnit[g.consumptionUnit], g.metricSystem?"km/h":"MPH",
                         g.temperatureUnit?"Celsius":"Fahrenheit", ["kPa","bar","kg/cm2","psi"][g.pressureUnit]][index]
@@ -521,7 +537,7 @@ Window {
         advance()
         page = window.property("page")
         verify("page instantiated: " + pages[index]["source"], page is not None)
-        count = (20,6,16)[index]
+        count = (20,6,16,7)[index]
         candidates = [obj for obj in page.findChildren(QtCore.QObject)
                       if obj.metaObject().className().startswith("SwipeView") and obj.property("count") == count]
         if not candidates:
@@ -655,6 +671,41 @@ Window {
     press(QtCore.Qt.Key_Down)
     press(QtCore.Qt.Key_Return)
     verify("units Back route", value(global_state,"menuSettingsPageIndex") == 0)
+    # Vehicle > Reset for the fixture profile (truck model 1, vehicle model 1: 2011-2014 F150).
+    global_state.setProperty("menuSettingsPageIndex", 6)
+    reset_page, reset_swipe, reset_rows = select_page(3)
+    verify("reset rows keep vendor Ford rows and add Oil Life", [value(row,"mTitle") for row in reset_rows] ==
+           ["Reset TripA","Reset TripB","Reset trip info","Reset TPMS","Factory reset","Oil Life","Back"])
+    press(QtCore.Qt.Key_Up)
+    verify("reset Up wraps to Back", value(reset_swipe,"currentIndex") == 6)
+    press(QtCore.Qt.Key_Down)
+    verify("reset Down wraps to first", value(reset_swipe,"currentIndex") == 0)
+    press(QtCore.Qt.Key_Return, False)
+    verify("reset Enter press sends nothing", value(event_state,"resetCalls") == [] and value(reset_page,"mPressed") == 1)
+    release(QtCore.Qt.Key_Return)
+    verify("reset Enter release resets Trip A", value(event_state,"resetCalls") == [["trip",0]] and value(reset_page,"mPressed") == 0)
+    for unused in range(4):
+        press(QtCore.Qt.Key_Down)
+        press(QtCore.Qt.Key_Return)
+    press(QtCore.Qt.Key_Down)
+    press(QtCore.Qt.Key_Return)
+    verify("reset actions match vendor commands and reach oil life", value(event_state,"resetCalls") ==
+           [["trip",0],["trip",1],["since"],["tpms"],["ford",14,18,1],["oil"]])
+    press(QtCore.Qt.Key_Down)
+    press(QtCore.Qt.Key_Return)
+    verify("reset Back returns to Vehicle settings", value(global_state,"menuSettingsPageIndex") == 0 and len(value(event_state,"resetCalls")) == 6)
+    for vehicle, expected in ((0, ["Reset TripA","Reset TripB","Reset trip info","Reset TPMS","Back"]),
+                              (2, ["Reset TripA","Reset TripB","Reset trip info","Reset TPMS","Factory reset","Learn key","Reset TPMS","Calibrate compass","Back"])):
+        global_state.setProperty("vehicleModel", vehicle)
+        window.setProperty("pageUrl", "")
+        advance()
+        window.setProperty("pageUrl", QtCore.QUrl.fromLocalFile(pages[3]["copy"]).toString())
+        advance()
+        other = window.property("page")
+        other_swipe = next(obj for obj in other.findChildren(QtCore.QObject) if obj.metaObject().className().startswith("SwipeView"))
+        other_rows = QtQml.QQmlListReference(other_swipe, b"contentChildren", engine)
+        verify("reset rows for Ford vehicle model " + str(vehicle), [value(other_rows.at(i),"mTitle") for i in range(other_rows.count())] == expected)
+    global_state.setProperty("vehicleModel", 1)
     catalog, menu, catalog_rows = select_page(2)
     QtTest.QTest.qWait(350)
     verify("catalog startup query preserves vendor schedule", value(event_state,"shellQueries") == ["shellCmdInquire"])

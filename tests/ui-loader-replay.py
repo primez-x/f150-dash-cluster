@@ -51,6 +51,13 @@ LOADERS = {
         "source": BASE / "patches" / "capture-04" / "etc" / "vnF.qml",
         "destination": "etc/vnF.qml",
     },
+    "qrc:/Trucks/menu/vehicle/MenuVehicleResetSettings.qml": {
+        "file_offset": 5011520,
+        "replacement": "file:/etc/vnR.qml",
+        "unit_qrc_path": "Trucks/menu/vehicle/MenuVehicleSettings.qml",
+        "source": BASE / "patches" / "capture-04" / "etc" / "vnR.qml",
+        "destination": "etc/vnR.qml",
+    },
 }
 
 
@@ -138,7 +145,7 @@ def inspect_candidate(directory: Path, decoder) -> dict[str, object]:
     patches = manifest["patches"]
     require(manifest.get("factory_code_removal", {}).get("records_cleared") == 13,
             "candidate retains vendor factory code records")
-    require(len(patches) == 4, f"expected four loader patches, found {len(patches)}")
+    require(len(patches) == 5, f"expected five loader patches, found {len(patches)}")
     patch_by_old = {patch["old_string"]: patch for patch in patches}
     require(set(patch_by_old) == set(LOADERS), "manifest loader set mismatch")
     allowed = set()
@@ -175,13 +182,14 @@ def inspect_candidate(directory: Path, decoder) -> dict[str, object]:
         allowed.update(range(record+4,record+8))
         allowed.update(range(record+24,record+34))
     changed = {index for index, (left, right) in enumerate(zip(original, candidate)) if left != right}
-    require(changed and changed <= allowed, "binary changes escaped the four loader and thirteen code records")
+    require(changed and changed <= allowed, "binary changes escaped the five loader and thirteen code records")
     validations = manifest["validation"]
     require(validations["cache_units_before"] == validations["cache_units_after"] == 198, "cache unit count mismatch")
-    require(validations["modified_units"] == 3, "modified cache unit count mismatch")
-    require(validations["modified_unit_paths"] == ["Trucks/menu/system/MenuSystemFactory.qml", "Trucks/menu/system/MenuSystemSettings.qml", "main.qml"], "modified cache unit path set mismatch")
+    require(validations["modified_units"] == 4, "modified cache unit count mismatch")
+    require(validations["modified_unit_paths"] == ["Trucks/menu/system/MenuSystemFactory.qml", "Trucks/menu/system/MenuSystemSettings.qml",
+                                                   "Trucks/menu/vehicle/MenuVehicleSettings.qml", "main.qml"], "modified cache unit path set mismatch")
     require(validations["cache_hash_checked_unit_paths"] == validations["modified_unit_paths"], "cache hash validation path set mismatch")
-    require(validations["other_units_unchanged"] == 195, "other cache unit count mismatch")
+    require(validations["other_units_unchanged"] == 194, "other cache unit count mismatch")
     for key in (
         "registry_unchanged",
         "binary_size_unchanged",
@@ -334,7 +342,7 @@ def main() -> int:
         "device_execution": False,
     }
     write_result(result)
-    print("PASS: UI candidate replay completed; 198 units decoded, four loaders redirected, thirteen factory codes cleared.")
+    print("PASS: UI candidate replay completed; 198 units decoded, five loaders redirected, thirteen factory codes cleared.")
     print(f"Result: {RESULT}")
     print(f"Candidate: {OUTPUT}")
     return 0
