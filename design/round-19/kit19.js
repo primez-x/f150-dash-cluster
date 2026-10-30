@@ -8,6 +8,8 @@ SCENES.d4l = s => Object.assign(s, { drive: "4L", speed: 6, gearNum: 1, rpm: 140
 SCENES.locker = s => Object.assign(SCENES.d4l(s), { locker: true });
 // Cruise set during an alert: the alert banner covers the cruise readout; the set-speed mark stays on the speed scale.
 SCENES.alertcruise = s => Object.assign(SCENES.hottrans(s), { cruise: "set" });
+// Width check: three speed digits, the widest speed readout.
+SCENES.fast = s => Object.assign(s, { speed: 104, rpm: 3100 });
 
 // Drive chip: 2H is the quiet outline chip. 4A, 4H, and 4L fill (kit8). The rear locker adds an amber chip with a padlock.
 SYM.padlock = `<rect x="13" y="24" width="28" height="22" rx="4" fill="#000"/><path d="M19 24v-6a8 8 0 0 1 16 0v6"/>`;

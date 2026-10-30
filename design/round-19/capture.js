@@ -14,7 +14,7 @@ async (page) => {
     await page.evaluate(() => document.fonts.ready);
   };
   const shots = [["normal", "scene=normal"], ["set", "scene=cruise"], ["acc", "scene=cruise&cruise=acc"], ["lim", "scene=normal&cruise=lim"],
-    ["d4a", "scene=d4a"], ["d4h", "scene=d4h"], ["d4l", "scene=d4l"], ["locker", "scene=locker"], ["alert", "scene=alertcruise"]];
+    ["d4a", "scene=d4a"], ["d4h", "scene=d4h"], ["d4l", "scene=d4l"], ["locker", "scene=locker"], ["alert", "scene=alertcruise"], ["fast", "scene=fast"]];
   for (const name of ["tow-a", "tow-b"]) {
     for (const [tag, q] of shots) {
       await open(`round-19/${name}.html?${q}&still=1`, 1920, 932);

@@ -19,9 +19,9 @@
 <link rel="stylesheet" href="../round-18/kit18.css">
 <link rel="stylesheet" href="kit19.css">
 <style>
-  .speed { right: 836px; top: 156px; text-align: right; font-size: 210px; letter-spacing: -4px; }
+  .speed { left: 960px; top: 156px; transform: translateX(-50%); text-align: center; font-size: 210px; letter-spacing: -4px; }
   .sunit { left: 960px; top: 404px; transform: translateX(-50%); font: var(--small) "BMW Type Global"; letter-spacing: 8px; color: var(--sub); }
-  .gblk { left: 1124px; top: 200px; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+  .gblk { left: 1264px; top: 200px; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
   .state { font: 600 var(--small) "BMW Type Global"; letter-spacing: 4px; color: var(--accent); }
   .tp { column-gap: 40px; }
 </style>
@@ -48,6 +48,8 @@
 // Speed scale: a straight ruler under the speed digits, 0 to 100 mph, with the cruise set speed as a mark.
 // Drive mode: the chip under the gear (2H outline; 4A, 4H, 4L filled) and an amber padlock chip for the rear locker.
 // Cruise: the stock readout at top center, above the speed, shows the cruise symbol and the set speed only.
+// Speed digits center on x 960. The gear and the temperature bars sit outside the width of three digits (x 688 to 1232),
+// so one, two, and three digits all stay centered and nothing moves.
 const s = state("tow"), F = focusOf(s);
 if (params.has("cruise")) s.cruise = params.get("cruise");
 const allT = F === "temps" || F === "warmup";
@@ -63,8 +65,8 @@ place(`
   <div class="abs big speed" data-field="speed">${digits(s.speed)}</div>
   <div class="abs sunit" data-field="vehicleSpeedUnit">MPH</div>
   <div class="abs gblk">${gear(s, GEAR_SIZE)}<div class="drow">${driveChip(s)}</div></div>
-  ${tBarsK(s, ["trans", "coolant"], allT, "left:430px;top:186px;width:230px")}
-  ${tBarsK(s, ["oil", "diff"], allT, "left:1260px;top:186px;width:230px")}
+  ${tBarsK(s, ["trans", "coolant"], allT, "left:270px;top:186px;width:230px")}
+  ${tBarsK(s, ["oil", "diff"], allT, "left:1420px;top:186px;width:230px")}
   ${secPanel(s, F, PANEL_C)}
   ${engineMarks("left:48px;top:640px")}
   <div class="abs corner r ${s.braking ? "on" : "idle"}" style="right:48px;top:640px" data-field="${BRAKE_FIELD}"><span class="k">${s.braking ? `<span class="state">BRAKING</span>` : ""}${sym("trailerBrake", 44)}</span></div>
