@@ -23,7 +23,9 @@ Live demo: <a href="tow-a.html?scene=cruise&adjust=1">set speed steps up three t
   <li>Arrow: green, on top of the bar at the set speed, pointing down. A dark outline keeps the arrow apart from the ticks.</li>
   <li>Number: green, above the arrow. A change shows the number at once; the number holds 3 s after the last change, then fades over 0.6 s.</li>
   <li>The large cruise readout under MPH is gone. In reverse, R still takes the center row.</li>
-  <li>Truck check: the firmware cruise state values for on, set, and adjusting are not verified on the truck, and neither is whether the set speed stays stored after a cancel.</li>
+  <li>Field roles come from the stock cruise widget: <code>cruiseState</code> is cruise on (symbol), <code>cruiseSpeedSet</code> is engaged (the stock SET label),
+    <code>cruiseSetSpeedState</code> says a stored speed exists, and <code>cruiseSpeed</code> is the set speed. The stock widget keeps showing the stored speed after a cancel,
+    so the amber resume arrow follows stock behavior. Truck check: the values that the CAN adapter sends for these fields.</li>
 </ul>
 <p><strong>Pick: both, locked (2026-10-30).</strong> The cruise symbol beside MPH (amber while on but not set, with MPH in grey; green while set) and the MPH label in green while set. While cruise is on but not set, an amber arrow marks the last set speed, the speed that Resume returns to. A cancel turns the arrow, the symbol, and MPH red for 1 s, then fades them to the amber state (<a href="tow-a.html?scene=cruise&cancel=1">live demo</a>).</p>
 <ul>

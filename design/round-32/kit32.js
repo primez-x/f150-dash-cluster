@@ -3,11 +3,27 @@
 // User direction (2026-10-30): cruise shows a small arrow on the speed bar at the set speed. While the driver raises or
 // lowers the set speed, the number shows above the arrow, then goes away quietly. A small cue near MPH shows that cruise
 // is on, in place of the large cruise readout under MPH.
-// - Arrow: green, on top of the bar, pointing down at the set speed (cruiseSpeedSet). The dark outline keeps the arrow
+//
+// Field roles, from the stock cruise widget (Trucks/common/AccLimitedIndicator.qml, the only cruise display on the stock
+// truck layouts) and Global.qml getCruiseLimSpeed() / getCruiseLimSpeedColor():
+//   cruiseState          cruise on: the stock widget shows the cruise symbol.
+//   cruiseSpeedSet       cruise engaged: the stock widget shows the green SET label. A flag, not a speed.
+//   cruiseSetSpeedState  a stored set speed exists: the stock widget shows the number, else "---".
+//   cruiseSpeed          the set speed in km/h; getCruiseLimSpeed() converts with tripFactor. Green when above 0.
+// The states of this design, from those fields:
+//   off       cruiseState 0                                   nothing
+//   on        cruiseState 1, cruiseSpeedSet 0, no stored speed amber symbol, grey MPH, no arrow
+//   resume    cruiseState 1, cruiseSpeedSet 0, stored speed    amber symbol, grey MPH, amber arrow at cruiseSpeed
+//   set       cruiseSpeedSet 1                                green symbol, green MPH, green arrow at cruiseSpeed
+//   cancel    cruiseSpeedSet 1 to 0 while cruiseState stays 1   red flash, then the resume state
+//   adjust    cruiseSpeed changes while cruiseSpeedSet is 1     the number above the arrow
+// The stock widget shows the stored speed after a cancel (number without SET), so the resume arrow follows stock behavior.
+// Truck check: the CAN adapter values for these fields on this truck are unverified (shared-contracts cruise_contract).
+//
+// - Arrow: green, on top of the bar, pointing down at the set speed (cruiseSpeed). The dark outline keeps the arrow
 //   apart from the ticks. The limiter (cruiseLimState) keeps the white arrow from round 19.
 // - Resume reference: while cruise is on but not set (after a cancel), an amber arrow marks the last set speed, the speed
-//   that Resume returns to. With no earlier set speed (cruise just switched on), no arrow shows.
-//   Truck check: whether cruiseSpeedSet keeps the last set speed after a cancel is unverified.
+//   that Resume returns to. With no stored set speed (cruiseSetSpeedState 0), no arrow shows.
 // - Cancel: when cruise goes from set to on (brake or Cancel), the arrow, the cruise symbol, and MPH turn red, hold 1 s, then
 //   fade over 0.8 s into the resume state (amber arrow, amber symbol, grey MPH). kit32.css runs the change (cancel32).
 //   The "cruisecancel" scene holds the red frame; ?cancel=1 runs a live demo that cancels and resumes every 4 s.
@@ -17,7 +33,6 @@
 //   green while set). B: the MPH label turns green while set; cruise on but not set shows no cue.
 //   Locked (2026-10-30): both, the symbol and the green MPH label. Both is the default; ?cue=a or ?cue=b shows one alone.
 // - ?adjust=1 runs a live demo: the set speed steps up three times and down twice. The "cruiseadj" scene holds the number.
-// Truck check: the cruiseState values for on, set, and adjusting are unverified (shared-contracts cruise_contract).
 const CUE = params.get("cue") || "ab";
 const SET_HOLD_MS = 3000, SET_FADE_MS = 600;
 const CRUISE_ICON = `${IMG}/common/acc/cruise.png`;
@@ -33,8 +48,8 @@ speedRuler = function (s, y = barY()) {
   speedRuler26({ ...s, cruise: "off" }, y);
   const m = cruiseMark(s) || (s.cruise === "available" && s.cruiseSet ? [s.cruiseSet, "var(--caution)"] : null);
   if (!m) return;
-  layer(`<path id="cset-arrow" data-field="cruiseSpeedSet" d="${setArrow(speedX(m[0]), y)}" fill="${m[1]}" stroke="#05070a" stroke-width="3" paint-order="stroke"/>`);
-  place(`<div class="abs cset32${s.adjusting ? " hold" : ""}" style="left:${speedX(m[0])}px;top:${y - 60}px" data-field="cruiseSpeedSet (shows while the set speed changes)">${m[0]}</div>`);
+  layer(`<path id="cset-arrow" data-field="cruiseSpeed getCruiseLimSpeed() · colour from cruiseSpeedSet (SET)" d="${setArrow(speedX(m[0]), y)}" fill="${m[1]}" stroke="#05070a" stroke-width="3" paint-order="stroke"/>`);
+  place(`<div class="abs cset32${s.adjusting ? " hold" : ""}" style="left:${speedX(m[0])}px;top:${y - 60}px" data-field="cruiseSpeed getCruiseLimSpeed() (shows while the set speed changes)">${m[0]}</div>`);
 };
 
 const finish31 = finish;
@@ -42,7 +57,7 @@ finish = function (s) {
   finish31(s);
   document.querySelector(".row25 .cruise")?.remove();
   const unit = document.querySelector(".sunit");
-  if (CUE.includes("a") && s.cruise !== "off") unit.insertAdjacentHTML("afterbegin", `<i class="cr32 ${cruiseSetOn(s) ? "on" : ""}" style="--src:url(${CRUISE_ICON})" data-field="cruiseState"></i>`);
+  if (CUE.includes("a") && s.cruise !== "off") unit.insertAdjacentHTML("afterbegin", `<i class="cr32 ${cruiseSetOn(s) ? "on" : ""}" style="--src:url(${CRUISE_ICON})" data-field="cruiseState · green from cruiseSpeedSet (SET)"></i>`);
   if (CUE.includes("b") && cruiseSetOn(s)) unit.classList.add("cr32b");
   if (s.cancelled) document.body.classList.add("cancel32", "hold");
   if (params.has("adjust") && cruiseSetOn(s)) cruiseDemo(s);
