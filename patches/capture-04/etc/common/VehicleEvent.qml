@@ -621,13 +621,7 @@ Item {
         ////////////////////////////////
         // swcInfoNotify
         ////////////////////////////////
-        onSwcInfoNotify: {
-            mGlobalId.item.swcKey=getSwcKey()
-            mGlobalId.item.swcState=getSwcState()
-            mGlobalId.item.swcChanged=!mGlobalId.item.swcChanged
-            //console.log("[onSwcInfoNotify swcKey:"+mGlobalId.item.swcKey+"]")
-            //console.log("[onSwcInfoNotify swcState:"+mGlobalId.item.swcState+"]")
-        }
+        onSwcInfoNotify: swcInput(getSwcKey(), getSwcState())
         ////////////////////////////////
         // radarInfoNotify
         ////////////////////////////////
@@ -2226,6 +2220,78 @@ Item {
             return
         }
         mHandleId.splash(animation)
+    }
+
+    /////////////////////////////
+    // Wheel key bounce filter. The truck key trace (2026-10-30) shows one Down press as two or three press-release pairs:
+    // each extra press starts 9-20 ms after a release and lasts 10-21 ms. Real presses start 120 ms or more after a release.
+    // A release reaches the pages mSwcSettleMs later. A press inside that time is switch bounce:
+    // - the same key: the key stays down, and the release waits again;
+    // - another key: the press, its hold, and its release are dropped.
+    // Each drop writes one "viknav-key-drop <ms> <code> <state> <reason>" line to the Launcher log. A "bounce" line stands for
+    // the press and the waiting release that the press joins. A clock set backward does not count as a short gap.
+    /////////////////////////////
+    readonly property int mSwcSettleMs: 50
+    property double mSwcReleasedAt: -1000  // time of the last release; -1000 before the first release
+    property int mSwcPendingKey: -1     // released key that waits for the settle time
+    property int mSwcDropKey: -1        // key whose hold and release are dropped
+    Timer {
+        id: mSwcSettleTimer
+        interval: mSwcSettleMs
+        onTriggered: swcFlush()
+    }
+    function swcDeliver(key, state) {
+        var g=mGlobalId.item
+        g.swcKey=key
+        g.swcState=state
+        g.swcChanged=!g.swcChanged
+    }
+    function swcDrop(key, state, reason) {
+        console.log("viknav-key-drop "+Date.now()+" "+key+" "+state+" "+reason)
+    }
+    function swcFlush() {
+        if(mSwcPendingKey<0)
+            return
+        var key=mSwcPendingKey
+        mSwcPendingKey=-1
+        mSwcSettleTimer.stop()
+        swcDeliver(key, 0)
+    }
+    function swcInput(key, state) {
+        var now=Date.now()
+        var gap=now-mSwcReleasedAt
+        if(state===1) {
+            if(gap>=0 && gap<mSwcSettleMs) {
+                if(key===mSwcPendingKey) {
+                    mSwcPendingKey=-1
+                    mSwcSettleTimer.stop()
+                    swcDrop(key, state, "bounce")
+                } else {
+                    swcFlush()
+                    mSwcDropKey=key
+                    swcDrop(key, state, "other-key")
+                }
+                return
+            }
+            // A new press of a dropped key means the release of the dropped press was lost.
+            if(key===mSwcDropKey)
+                mSwcDropKey=-1
+        } else if(key===mSwcDropKey) {
+            if(state===0) {
+                mSwcDropKey=-1
+                mSwcReleasedAt=now
+            }
+            swcDrop(key, state, "other-key")
+            return
+        }
+        swcFlush()
+        if(state===0) {
+            mSwcReleasedAt=now
+            mSwcPendingKey=key
+            mSwcSettleTimer.restart()
+            return
+        }
+        swcDeliver(key, state)
     }
 
     /////////////////////////////

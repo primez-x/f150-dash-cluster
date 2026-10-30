@@ -68,6 +68,7 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - The oil-life trip on the OilLifeinfo page now follows the distance unit. The adapter field is 16 bits; the page shows `---` until the first trailer frame and for 0xFFFF. The field was matched by storage order, and the km unit is an inference. The logger records `trucksOilLifeTripRaw` with `odo`, so one drive confirms the unit.
 - The settings menu is the owned page `/etc/vnM.qml`. MenuPage loads vnM in place of the compiled menu list, so vnM owns Vehicle, System, Service, and Factory. G-force and the five Factory setup pages (Advanced, Fuel tank, Vehicle profile, Odometer, Service commands) are compiled vendor pages that open inside vnM. The menu audit is in `analysis/capture-04/menu-audit/` (private).
 - Each menu key event writes one `viknav-key <ms> <code> <state> <page path> <cursor>` line to `/tmp/Launcher.log`. The install copies the log to the drive (`Launcher-later.log`) 3 minutes after the restart. The lines show repeated, held, or missing wheel events.
+- Wheel key bounce filter (`VehicleEvent.qml`, all pages and the dashboard). The menu-v2 truck trace (2026-10-30) shows one Down press as two or three press-release pairs; each extra press starts 9–20 ms after a release. Real presses start 120 ms or more after a release. A release now reaches the pages 50 ms later. A press of the same key inside that time joins the key press; a press of another key is dropped with its hold and release. Each drop writes a `viknav-key-drop <ms> <code> <state> <reason>` line. The Up key showed no bounce. The replay passes 17 cases against the truck trace.
 - The menu uses the locked round 21 design: layout A (each open page stays on screen as a column), values B (switches, segments, and a percent meter), and confirm A (press OK twice). The accent is blue, and teal while the towing layout is on. The menu uses the BMW Type Global font from `/usr/share/fonts`. At most three columns show; a fourth level (Factory > General settings) moves the oldest column off the left side, and the narrow first column shows titles only.
 - System > Display > Dashboard layout selects one of the six layouts (Layout 1–6 are UI1–UI6), the same set as the OK hold on the dashboard. OK opens the editor, Up and Down change the layout, and OK saves the layout. While Tow/Haul shows the towing layout automatically, the row shows "· Towing"; a layout chosen then stays after Tow/Haul ends.
 - Factory > Screen grid closes the menu and covers the whole screen with a pixel grid (`/etc/vnS.qml`): lines every 20 px, x,y labels, colored frames every 10 px from each edge, the screen size, and the dashboard transform. A photo of the grid maps the area that the bezel and the steering column leave visible. Any wheel key after the first second, or a power cycle, hides the grid. The truck photos (2026-10-30) show a 1920 × 932 screen drawn 1:1; `handoff/claude-dashboard/START-HERE.md` describes the visible area.
@@ -109,6 +110,8 @@ node tests/tow-layout-replay.cjs original
 node tests/tow-layout-replay.cjs patched
 node tests/clock-sync-replay.cjs original
 node tests/clock-sync-replay.cjs patched
+node tests/swc-debounce-replay.cjs original
+node tests/swc-debounce-replay.cjs patched
 node tests/settings-menu-replay.cjs
 ```
 

@@ -30,7 +30,7 @@ etc_sha256() {
         vnG.qml) echo ce54efec52bfda1778234c1939f29dae6c703d1aa3315856260e37543edaf33e ;;
         vnM.qml) echo 0fa4d685121b9c8df22fef7f15a034c3e6452f21868abe7b171e0e20f375935b ;;
         vnS.qml) echo 4d285e170e0de495842a247faf83c2d62834ceea8c1e25be7c56de45ee8bfa45 ;;
-        vnV.qml) echo ef6d29dae3b736fa8239930c62cb582abc5c302441d47e35ac0f8c18634829c1 ;;
+        vnV.qml) echo 4d1c0e629904c709c651368c4b6465d8db3828b5737e11616060af3d7b040c3b ;;
     esac
 }
 # /etc files of earlier releases (space separated per file). menu-v1: the first cluster install, 2026-10-30.
