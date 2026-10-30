@@ -17,7 +17,7 @@
 <body>
 <h1>F150 cluster · Design round 32 · Towing A · Cruise on the speed bar</h1>
 <p>Your direction: cruise shows a small arrow on the speed bar. While you raise or lower the set speed, the number shows above the arrow, then goes away quietly.
-A small cue near MPH shows that cruise is on. Every shot passes the margin check (<code>capture.js</code>: 14 shots).
+A small cue near MPH shows that cruise is on. Every shot passes the margin check (<code>capture.js</code>: 21 shots).
 Live demo: <a href="tow-a.html?scene=cruise&adjust=1">set speed steps up three times and down twice</a>.</p>
 <ul>
   <li>Arrow: green, on top of the bar at the set speed, pointing down. A dark outline keeps the arrow apart from the ticks.</li>
@@ -25,11 +25,19 @@ Live demo: <a href="tow-a.html?scene=cruise&adjust=1">set speed steps up three t
   <li>The large cruise readout under MPH is gone. In reverse, R still takes the center row.</li>
   <li>Truck check: the firmware cruise state values for on, set, and adjusting are not verified on the truck.</li>
 </ul>
-<p><strong>Pick: open.</strong> A or B: the steady cue while cruise is on.</p>
+<p><strong>Pick: both, locked (2026-10-30).</strong> The cruise symbol beside MPH (grey while on, green while set) and the MPH label in green while set.</p>
 <ul>
   <li>A · A small cruise symbol beside MPH: grey while cruise is on but not set, green while set.</li>
   <li>B · The MPH label turns green while set. Cruise on but not set shows no cue.</li>
 </ul>
+<h2>Locked: both cues</h2>
+<div class="grid">
+  <div><h3>cruise set</h3><a href="tow-a.html?scene=cruise"><img src="shots/tow-a-ab-set.png" alt=""></a></div>
+  <div><h3>adjusting</h3><a href="tow-a.html?scene=cruiseadj"><img src="shots/tow-a-ab-adjust.png" alt=""></a></div>
+  <div><h3>cruise on, not set</h3><a href="tow-a.html?scene=cruiseon"><img src="shots/tow-a-ab-on.png" alt=""></a></div>
+  <div><h3>cruise set during an alert</h3><a href="tow-a.html?scene=alertcruise"><img src="shots/tow-a-ab-alertcruise.png" alt=""></a></div>
+</div>
+<h2>The A and B options</h2>
 <div class="grid">
   <div><h3>A · cruise set: arrow on the bar, steady cue</h3><a href="tow-a.html?cue=a&scene=cruise"><img src="shots/tow-a-a-set.png" alt=""></a></div>
   <div><h3>B · cruise set: arrow on the bar, steady cue</h3><a href="tow-a.html?cue=b&scene=cruise"><img src="shots/tow-a-b-set.png" alt=""></a></div>

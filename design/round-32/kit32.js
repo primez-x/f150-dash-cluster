@@ -9,9 +9,10 @@
 //   SET_HOLD_MS after the last change, then fades over SET_FADE_MS. A new change restarts the hold.
 // - ?cue=a|b, the steady cue while cruise is on. A: a small cruise symbol beside MPH (grey while cruise is on but not set,
 //   green while set). B: the MPH label turns green while set; cruise on but not set shows no cue.
+//   Locked (2026-10-30): both, the symbol and the green MPH label. Both is the default; ?cue=a or ?cue=b shows one alone.
 // - ?adjust=1 runs a live demo: the set speed steps up three times and down twice. The "cruiseadj" scene holds the number.
 // Truck check: the cruiseState values for on, set, and adjusting are unverified (shared-contracts cruise_contract).
-const CUE = params.get("cue") === "b" ? "b" : "a";
+const CUE = params.get("cue") || "ab";
 const SET_HOLD_MS = 3000, SET_FADE_MS = 600;
 const CRUISE_ICON = `${IMG}/common/acc/cruise.png`;
 SCENES.cruiseadj = s => Object.assign(SCENES.cruise(s), { cruiseSet: 66, adjusting: true });
@@ -33,8 +34,8 @@ finish = function (s) {
   finish31(s);
   document.querySelector(".row25 .cruise")?.remove();
   const unit = document.querySelector(".sunit");
-  if (CUE === "a" && s.cruise !== "off") unit.insertAdjacentHTML("afterbegin", `<i class="cr32 ${cruiseSetOn(s) ? "on" : ""}" style="--src:url(${CRUISE_ICON})" data-field="cruiseState"></i>`);
-  if (CUE === "b" && cruiseSetOn(s)) unit.classList.add("cr32b");
+  if (CUE.includes("a") && s.cruise !== "off") unit.insertAdjacentHTML("afterbegin", `<i class="cr32 ${cruiseSetOn(s) ? "on" : ""}" style="--src:url(${CRUISE_ICON})" data-field="cruiseState"></i>`);
+  if (CUE.includes("b") && cruiseSetOn(s)) unit.classList.add("cr32b");
   if (params.has("adjust") && cruiseSetOn(s)) cruiseDemo(s);
 };
 
