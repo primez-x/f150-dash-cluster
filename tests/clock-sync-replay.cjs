@@ -14,7 +14,7 @@ const texts = Object.fromEntries(['Global.qml', 'VehicleEvent.qml'].map(name => 
 const failureModes = [
   'A valid GPS time after power-up does not set the MCU clock',
   'The clock is set again on every GPS fix',
-  'An invalid fix (status V), a bad checksum, or a GPS date before 2026 sets the clock',
+  'An invalid fix (status V), a bad checksum, an invalid date, or a GPS date before 2026 sets the clock',
   'The clock is set while GPS auto time is off',
   'UTC to local time crosses a date, month, or year boundary wrongly',
   'Daylight saving time starts or ends at the wrong instant',
@@ -25,7 +25,9 @@ const failureModes = [
   'A position outside the zone grid, or a fix without a position, loses the zone',
   'After power-up the dashboard shows a wrong time before the first GPS time',
   'A clock with a plausible date (constant power) shows dashes',
-  'The 12-hour format or AM/PM is lost'
+  'The 12-hour format or AM/PM is lost',
+  'A clock set by hand after a power cut shows dashes',
+  'GPS auto time is off by default'
 ];
 
 function extract(text, marker) {
@@ -58,15 +60,18 @@ const functionNames = [...texts['Global.qml'].matchAll(/^\s*function (gpsClock\w
 const globalFunctions = ['getRtcTime', 'getAmPm', ...functionNames].map(name => extract(texts['Global.qml'], 'function ' + name + '(')).filter(Boolean);
 const restoreLines = texts['Global.qml'].split(/\r?\n/).filter(line => /^\s*gpsClock\w+=Funcs\.restore_properity\(/.test(line));
 const syncFunction = extract(texts['VehicleEvent.qml'], 'function syncRtcFromGps(');
+const setRtcFunction = extract(texts['VehicleEvent.qml'], 'function setRtc(');
+// Saved-setting default from the declaration; an int property without a value starts at 0.
+const autoDefault = Number((texts['Global.qml'].match(/^\s*property int gpsAutoSetRtcEnabled(?::\s*(\d+))?/m) || [])[1] || 0);
 const dateTimeHandler = handlerBody(texts['VehicleEvent.qml'], 'onGpsDateTimeInfoNotify:');
 const latLongHandler = handlerBody(texts['VehicleEvent.qml'], 'onGpsLatLongInfoNotify:');
 
 // NMEA RMC sentence with a valid checksum. utc: Date; lat and lon in signed degrees.
-function rmc(utc, lat, lon, {status = 'A', checksum = true} = {}) {
+function rmc(utc, lat, lon, {status = 'A', checksum = true, date: rawDate} = {}) {
   const p = n => String(n).padStart(2, '0');
   const dm = (v, width) => { const a = Math.abs(v), d = Math.floor(a); return String(d).padStart(width, '0') + ((a - d) * 60).toFixed(4).padStart(7, '0'); };
   const time = p(utc.getUTCHours()) + p(utc.getUTCMinutes()) + p(utc.getUTCSeconds()) + '.00';
-  const date = p(utc.getUTCDate()) + p(utc.getUTCMonth() + 1) + p(utc.getUTCFullYear() % 100);
+  const date = rawDate || p(utc.getUTCDate()) + p(utc.getUTCMonth() + 1) + p(utc.getUTCFullYear() % 100);
   const pos = lat === null ? ',,,' : dm(lat, 2) + ',' + (lat < 0 ? 'S' : 'N') + ',' + dm(lon, 3) + ',' + (lon < 0 ? 'W' : 'E');
   const body = 'GNRMC,' + time + ',' + status + ',' + pos + ',0.0,0.0,' + date + ',,,A';
   let sum = 0;
@@ -76,8 +81,9 @@ function rmc(utc, lat, lon, {status = 'A', checksum = true} = {}) {
 
 // One cluster power cycle: the saved settings database, the MCU clock, and the GPS receiver.
 // The mock MCU clock runs with GPS time: each fix first raises the MCU clock notification (0x32) at the MCU time.
-// setRtc moves the MCU clock; skew() moves the MCU clock as a drift or a manual change would.
-function boot(db, {auto = 1, mcu = ['2020-01-10', '00:00'], h24 = 1} = {}) {
+// The actual VehicleEvent setRtc wrapper runs; the native mHandleId.setRtc moves the MCU clock.
+// skew() moves the MCU clock as a drift would.
+function boot(db, {auto = autoDefault, mcu = ['2020-01-10', '00:00'], h24 = 1} = {}) {
   const writes = [];
   const clock = {offset: null, utc: 0};
   const p2 = n => String(n).padStart(2, '0');
@@ -93,11 +99,12 @@ function boot(db, {auto = 1, mcu = ['2020-01-10', '00:00'], h24 = 1} = {}) {
   for (const fn of globalFunctions) vm.runInContext(fn, context, {timeout: 200});
   vm.runInContext(restoreLines.join('\n'), context);
   const item = context;
-  const handle = {getGpsNmea: () => gps.sentence, getGpsIsFixed: () => 'A', getGpsInView: () => 9, getGpsLatitude: () => 0, getGpsLongitude: () => 0};
-  const vctx = vm.createContext({Math, Number, String, console: {log() {}}, mGlobalId: {item}, mHandleId: handle,
-    VehicleEvent: {NMEA_TYPE_RMC: 2}, setRtc(rtc) { writes.push(rtc); clock.offset = Date.parse(rtc.replace(' ', 'T') + 'Z') - clock.utc; showMcu(); }},
+  const handle = {getGpsNmea: () => gps.sentence, getGpsIsFixed: () => 'A', getGpsInView: () => 9, getGpsLatitude: () => 0, getGpsLongitude: () => 0,
+    setRtc(rtc) { writes.push(rtc); clock.offset = Date.parse(rtc.replace(' ', 'T') + 'Z') - clock.utc; showMcu(); }};
+  const vctx = vm.createContext({Math, Number, String, console: {log() {}}, mGlobalId: {item}, mHandleId: handle, VehicleEvent: {NMEA_TYPE_RMC: 2}},
     {codeGeneration: {strings: false, wasm: false}});
   Object.assign(vctx, handle);
+  vm.runInContext(setRtcFunction, vctx, {timeout: 200});
   if (syncFunction) vm.runInContext(syncFunction, vctx, {timeout: 200});
   return {
     writes, item, db,
@@ -107,6 +114,8 @@ function boot(db, {auto = 1, mcu = ['2020-01-10', '00:00'], h24 = 1} = {}) {
     at(utc, lat, lon, opts) { return this.fix(rmc(utc, lat, lon, opts), utc); },
     drive(start, seconds, lat, lon) { for (let s = 0; s < seconds; s++) this.at(new Date(start.getTime() + s * 1000), lat, lon); return writes.length; },
     skew(minutes) { clock.offset += minutes * 60000; showMcu(); },
+    // The Date and time menu: mEventHandleId.item.setRtc(text).
+    menuSet(rtc) { vm.runInContext('setRtc(' + JSON.stringify(rtc) + ')', vctx, {timeout: 200}); },
     clock() { return [item.getRtcTime ? item.getRtcTime() : null, item.getAmPm ? item.getAmPm() : null]; }
   };
 }
@@ -120,7 +129,7 @@ function check(name, mode, expected, run) {
 const T = s => new Date(s);
 const CHI = [41.88, -87.63], FTW = [41.08, -85.14], PHX = [33.45, -112.07], NAVAJO = [36.73, -110.25], REGINA = [50.45, -104.6],
   HNL = [21.31, -157.86], ANC = [61.22, -149.9], STJ = [47.56, -52.71], MEX = [19.43, -99.13], HAVANA = [23.11, -82.37], GULF = [25.0, -90.0];
-const once = (where, utc, opts = {}) => { const c = boot({}, opts); c.at(T(utc), ...where); return c.writes; };
+const once = (where, utc, opts = {}, fixOpts) => { const c = boot({}, opts); c.at(T(utc), ...where, fixOpts); return c.writes; };
 
 check('first-fix-sets-local-time', 0, ['2026-07-15 13:30:05'], () => once(CHI, '2026-07-15T18:30:05Z'));
 check('later-fixes-do-not-rewrite', 1, 1, () => { const c = boot({}); return c.drive(T('2026-07-15T18:30:05Z'), 600, ...CHI); });
@@ -128,6 +137,7 @@ check('status-v-sets-nothing', 2, [], () => { const c = boot({}); c.at(T('2026-0
 check('bad-checksum-sets-nothing', 2, [], () => { const c = boot({}); c.at(T('2026-07-15T18:30:05Z'), ...CHI, {checksum: '00'}); return c.writes; });
 check('sentence-without-checksum-accepted', 2, ['2026-07-15 13:30:05'], () => { const c = boot({}); c.at(T('2026-07-15T18:30:05Z'), ...CHI, {checksum: false}); return c.writes; });
 check('gps-week-rollover-date-rejected', 2, [], () => once(CHI, '2006-11-30T18:30:05Z'));
+check('month-13-rejected', 2, [], () => once(CHI, '2026-07-15T18:30:05Z', {}, {date: '151326'}));
 check('auto-time-off-sets-nothing', 3, [], () => once(CHI, '2026-07-15T18:30:05Z', {auto: 0}));
 check('new-year-crosses-back-a-day', 4, ['2026-12-31 21:30:00'], () => once(CHI, '2027-01-01T03:30:00Z'));
 check('month-end-crosses-back', 4, ['2027-02-28 22:15:00'], () => once(CHI, '2027-03-01T04:15:00Z'));
@@ -164,6 +174,9 @@ check('reset-clock-shows-dashes', 11, ['--:--', ''], () => boot({}, {mcu: ['2020
 check('reset-clock-dashes-without-auto-time', 11, ['--:--', ''], () => boot({}, {auto: 0, mcu: ['2000-01-01', '00:03']}).clock());
 check('clock-shows-after-gps-time', 11, ['13:30', ''], () => { const c = boot({}); c.at(T('2026-07-15T18:30:05Z'), ...CHI); return c.clock(); });
 check('plausible-clock-shows-before-gps', 12, ['9:05', ''], () => boot({}, {mcu: ['2026-10-30', '09:05']}).clock());
+check('manual-set-after-power-cut-shows', 14, ['9:05', ''], () => {
+  const c = boot({}, {auto: 0, mcu: ['2000-01-01', '00:03']}); c.menuSet('2000-01-01 09:05:00'); return c.clock(); });
+check('auto-time-on-by-default', 15, 1, () => autoDefault);
 check('twelve-hour-format', 13, ['1:30', 'PM'], () => { const c = boot({}, {h24: 0}); c.at(T('2026-07-15T18:30:05Z'), ...CHI); return c.clock(); });
 
 const resultPath = path.join(base, 'analysis/capture-04/clock-sync-replay-results.json');

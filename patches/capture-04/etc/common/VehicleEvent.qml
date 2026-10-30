@@ -1530,9 +1530,11 @@ Item {
     /////////////////////////////
     // rtc setup mEventHandleId.item.setRtc
     /////////////////////////////
+    // The Date and time menu and syncRtcFromGps() both write the clock here. The clock shows after a write (Global.qml rtcTrusted).
     function setRtc(rtc){
         console.log("setRtc: "+rtc)
         mHandleId.setRtc(rtc)
+        mGlobalId.item.gpsClockRtcSet=true
     }
     /////////////////////////////
     // GPS clock: write the local time from GPS to the MCU clock (Global.qml gpsClockStep).

@@ -60,8 +60,8 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - The TOW telltale (alarm 90) selects the towing layout (`towDashboard`, now stock UI2). Tow/Haul off returns to the saved driver layout. The tow replay passes 11 cases, and host Qt compiles the source.
 - The MCU source of alarm 90 on this truck is not yet verified. Confirm on the vehicle that the stock TOW telltale lights with Tow/Haul.
 - The GPS clock sets the MCU clock from GPS UTC (NMEA RMC) with the time zone from the GPS position and US and Canada daylight saving time. The MCU clock loses the time when the relay cuts power.
-- The clock replay passes 36 cases. The zone grid matches Python zoneinfo for 45 test cities. Host Qt compiles the source.
-- Until the first GPS time after power-up, the dashboard clock shows dashes, unless the MCU date is plausible. GPS auto time is on by default; the stock Date and time menu still turns GPS auto time off.
+- The clock replay passes 39 cases. The zone grid matches Python zoneinfo for 45 test cities. Host Qt compiles the source.
+- Until the first clock write after power-up (GPS or the Date and time menu), the dashboard clock shows dashes, unless the MCU date is plausible. GPS auto time is on by default; the stock Date and time menu still turns GPS auto time off.
 - Source formatters distinguish L/h fuel flow from distance consumption. Raw consumption values no longer animate through unavailable sentinels.
 - Fuel range-validity flags preserve invalid raw samples for diagnostics. Compiled gauge visibility and unit-label changes remain integration work.
 - Five temperature families preserve documented unavailable states. Native calibration and actual vehicle accuracy remain unverified.
@@ -189,7 +189,7 @@ Check these items on the truck before the GPS clock counts as verified:
 - Which notification (`gpsDateTimeInfoNotify` or `gpsLatLongInfoNotify`) follows an RMC sentence. The source calls the sync from both.
 - The `getGpsNmea(NMEA_TYPE_RMC)` text: a full `$..RMC` sentence, with or without the checksum.
 - The MCU accepts `setRtc("yyyy-MM-dd hh:mm:ss")` with seconds, and the next 0x32 notification shows the new time.
-- The MCU date after a power cut. A year before 2026 shows dashes until the first GPS time.
+- The MCU date after a power cut. A year before 2026 shows dashes until the first GPS time or a manual set.
 - The time from power-up to the first GPS time, under open sky and in a garage.
 - A GPS receiver with the week-rollover fault reports a year before 2026. The clock then never sets.
 
