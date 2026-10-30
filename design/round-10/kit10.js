@@ -3,11 +3,12 @@
 // Fuel module: a band along the cover top from x 660 to 1260 (E left, F right, filling left to right), the level left of E
 // and the range right of F, on one line. Corner bands end at x 500 to leave room for the two readouts.
 const FUEL_C = { x0: 660, n: 13, d: 26, len: 22, w: 9 }, CORNER_X1 = 500;
-function fuelCenter(s) {
+// ends: null draws the band without the E and F letters.
+function fuelCenter(s, { ends = ["E", "F"] } = {}) {
   const half = shroudRail(FUEL_C.x0, 958, FUEL_C.n, FUEL_C.d);
   const pts = [...half, ...half.slice().reverse().map(p => ({ ...p, x: 1920 - p.x, nx: -p.nx }))];
   layer(rail({ n: pts.length, pts, len: FUEL_C.len, w: FUEL_C.w, value: (s.fuel ?? 0) / 100, color: fuelColor(s, QUIET),
-    warnTo: lowPct(s) / 100, glow: false, ends: ["E", "F"], field: "fuelPercentage" }));
+    warnTo: lowPct(s) / 100, glow: false, ends, field: "fuelPercentage" }));
   return `<div class="abs fread fc ${fuelState(s)}" style="right:${1920 - FUEL_C.x0 + 34}px" data-field="fuelPercentage">${fuelIcon}<span class="rv">${dash(s.fuel)}<span class="u">%</span></span></div>` +
     `<div class="abs fread fc ${fuelState(s)}" style="left:${1920 - FUEL_C.x0 + 34}px" data-field="DTE"><span class="rv">${dash(s.range)}<span class="u">mi</span></span></div>`;
 }

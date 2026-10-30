@@ -1,0 +1,29 @@
+/* Round 12: symbols in place of text labels. Loads after round-10/kit10.css. */
+/* Every symbol is a mask in the current text colour: quiet grey at rest, the state colour when a reading needs attention. */
+.sym { display: inline-block; flex: none; color: #8a929c; background: currentColor; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; }
+.temp.cold .sym { color: var(--cold); } .temp.warm .sym { color: var(--warm); } .temp.hot .sym { color: var(--hot); }
+.temp.nodata .sym { color: #4a525c; }
+.dg { font-size: .7em; vertical-align: top; color: #6b7480; margin-left: 2px; }
+.temp.warm .rv, .temp.warm .dg { color: var(--warm); } .temp.hot .rv, .temp.hot .dg { color: var(--hot); }
+
+/* Temperature ring: value centred in the ring, symbol in the gap at the bottom. */
+.tring { width: 0; height: 0; }
+.tring .rv { position: absolute; left: 0; top: -4px; transform: translate(-50%, -50%); font-size: 44px; white-space: nowrap; }
+.tring .sym { position: absolute; left: 0; top: 54px; transform: translate(-50%, -50%); }
+
+/* Symbol and value pairs. */
+.sv { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.sv .rv { font-size: 30px; }
+
+/* One-line paged card. */
+.card.line { display: flex; align-items: center; padding: 0 34px 10px; }
+.card.line .cells { flex: 1; display: flex; align-items: center; justify-content: space-between; }
+.icell { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+.icell .rv { font-size: 38px; }
+.card.line .dots { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; }
+.card.line .cells:has(> :only-child) { justify-content: center; }
+
+/* Corner symbols take the place of the RPM and TRAILER BRAKE labels. Live braking lights the symbol in the accent colour. */
+.corner .k .sym { color: #8a929c; }
+.corner.on .k .sym { color: var(--accent); }
+.corner .sub { display: flex; align-items: center; gap: 8px; }
