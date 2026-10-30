@@ -233,6 +233,8 @@ ItemInfo {
     // ----- Rows -----
     // Row fields: kind (page, hosted, toggle, choice, number, date, action, command, select, info, unavailable), title, value,
     // and per kind: page, op, arg, options, texts, start, min, max, step, unit, color.
+    // View fields: current (index of the value in seg or options, -1 when the value is outside), seg (labels for a segment
+    // control; a toggle without seg is a switch), note (a short state next to the control).
     function makeRow(kind, title, value, extra) {
         var row={"kind": kind, "title": title, "value": value===undefined?"":String(value)}
         for(var name in extra)
@@ -293,17 +295,17 @@ ItemInfo {
                 return makeRow("select", t.mSystemLanguages[code], code===g.language?"Selected":"", {"op": "language", "arg": code})
             })
         case "datetime":
-            return [makeRow("toggle", "GPS sets the clock", g.gpsAutoSetRtcEnabled?"On":"Off", {"op": "gps"}),
+            return [makeRow("toggle", "GPS sets the clock", g.gpsAutoSetRtcEnabled?"On":"Off", {"op": "gps", "current": g.gpsAutoSetRtcEnabled?1:0}),
                     g.gpsAutoSetRtcEnabled?unavailableRow("Set date and time", "Off while GPS sets the clock"):
                                            makeRow("date", "Set date and time", clockText(), {"op": "clock"}),
-                    makeRow("toggle", "Time format", g.rtc24h?"24 h":"12 h", {"op": "format"})]
+                    makeRow("toggle", "Time format", g.rtc24h?"24 h":"12 h", {"op": "format", "seg": ["12 h", "24 h"], "current": g.rtc24h?1:0})]
         case "units":
             return unitRows()
         case "display":
             var warning=g.overSpeedWarningEnabled
             var speed=Number(g.getOverSpeedWaningSpeed(0))
             return [brightnessRow("Day brightness", 0), brightnessRow("Night brightness", 1),
-                    makeRow("toggle", "Speed warning", warning?"On":"Off", {"op": "warn"}),
+                    makeRow("toggle", "Speed warning", warning?"On":"Off", {"op": "warn", "current": warning?1:0}),
                     warning?makeRow("number", "Speed warning at", g.getOverSpeedWaningSpeed(1),
                                     {"op": "warnSpeed", "min": 20, "max": 200, "step": 5, "unit": " "+g.vehicleSpeedUnit,
                                      "start": clamp(Math.round((isNaN(speed)?0:speed)/5)*5, 20, 200)}):
@@ -340,10 +342,17 @@ ItemInfo {
             return unavailableRow(spec.title, "Waiting for truck")
         var raw=Number(g.fordSetupInfo[id])
         var extra={"op": "ford", "arg": id}
-        if(spec.kind==="choice") {
+        if(spec.kind==="toggle") {
+            extra.current=raw===0 || raw===1?raw:-1
+            if(spec.labels)
+                extra.seg=spec.labels.slice(0, 2)
+        } else if(spec.kind==="choice") {
             extra.options=spec.options
             extra.texts=spec.options.map(function(option) { return fordText(spec, option) })
             extra.start=nearest(spec.options, raw)
+            extra.current=spec.options.indexOf(raw)
+            if(spec.options.length<=4)
+                extra.seg=extra.texts
         } else if(spec.kind==="number") {
             extra.min=spec.min
             extra.max=spec.max
@@ -454,12 +463,17 @@ ItemInfo {
         if(!unitsSupported())
             return [unavailableRow("Units", "Unit controls unavailable for this vehicle model")]
         var trim=function(text) { return String(text).trim() }
+        var fuel=g.mFuelUnit.map(trim)
+        var pressure=g.mTpmsUnit.map(trim)
+        var follow=function(override) { return g.followUnit && !override?"Follow":"Manual" }
         return [makeRow("choice", titles[0], unitData(0), {"op": "unit", "arg": 0, "options": [0, 1, 2],
-                        "texts": g.mFuelUnit.map(trim), "start": g.consumptionUnit}),
-                makeRow("toggle", titles[1], unitData(1), {"op": "unit", "arg": 1}),
-                makeRow("toggle", titles[2], unitData(2), {"op": "unit", "arg": 2}),
+                        "texts": fuel, "seg": fuel, "start": g.consumptionUnit, "current": g.consumptionUnit}),
+                makeRow("toggle", titles[1], unitData(1), {"op": "unit", "arg": 1, "seg": ["km/h", "mph"],
+                        "current": g.metricSystem?0:1, "note": follow(g.speedUnitOverride)}),
+                makeRow("toggle", titles[2], unitData(2), {"op": "unit", "arg": 2, "seg": ["°C", "°F"],
+                        "current": g.temperatureUnit?0:1, "note": follow(g.tempUnitOverride)}),
                 makeRow("choice", titles[3], unitData(3), {"op": "unit", "arg": 3, "options": [0, 1, 2, 3],
-                        "texts": g.mTpmsUnit.map(trim), "start": g.pressureUnit}),
+                        "texts": pressure, "seg": pressure, "start": g.pressureUnit, "current": g.pressureUnit}),
                 g.followUnit?makeRow("command", "Follow vehicle units", "", {"op": "follow"}):
                              unavailableRow("Follow vehicle units", "Unavailable for this vehicle model")]
     }
@@ -729,72 +743,415 @@ ItemInfo {
         return value<10?"0"+value:String(value)
     }
 
-    // ===== View (temporary) =====
-    // Binds to engine properties only: mPathText, mRows, mCursor, mPressed, mEditing, mEditText, mArmedRow, mHostedUrl.
+    // ===== View =====
+    // Locked design (design/round-21): layout A (columns), values B (controls), confirm A (press twice).
+    // Parent pages stay on screen as columns; the deepest column has the focus. The view reads engine properties only.
     Item {
         id: mView
         anchors.fill: parent
-        readonly property int rowHeight: 62
-        readonly property int listTop: 60
-        readonly property int visibleRows: Math.floor((height-listTop)/rowHeight)
-        readonly property int firstRow: Math.max(0, Math.min(mCursor-visibleRows+2, mRows.length-visibleRows))
-
-        Text {
-            x: 24
-            y: 10
-            text: mPathText
-            color: "#9aa6b4"
-            font.pixelSize: 30
+        readonly property bool tow: mGlobalId.item.dashboardBeforeTow>=0
+        readonly property color accent: tow?"#5ad1c0":"#8fd3ff"
+        readonly property color accentDim: tow?"#2e5ad1c0":"#2e8fd3ff"
+        readonly property color accentPress: tow?"#4d5ad1c0":"#4d8fd3ff"
+        readonly property color sub: "#7d8792"
+        readonly property color mute: "#4d5661"
+        readonly property color line: "#1f262e"
+        readonly property color quiet: "#9aa4af"
+        readonly property color caution: "#ffb020"
+        readonly property color hot: "#ff3b30"
+        readonly property color ok: "#3ee07a"
+        readonly property string family: "BMW Type Global"
+        readonly property int hintHeight: 44
+        readonly property var widths: [340, 470]
+        readonly property int depth: mPath.length
+        readonly property int lastX: columnX(depth-1)
+        function columnX(level) {
+            var x=0
+            for(var i=0; i<level; i++)
+                x+=widths[Math.min(i, widths.length-1)]
+            return x
         }
-        Item {
-            id: mListArea
-            y: mView.listTop
-            width: parent.width
-            height: parent.height-mView.listTop
-            clip: true
-            visible: mHostedUrl===""
-            Column {
-                y: -mView.firstRow*mView.rowHeight
-                width: parent.width
-                Repeater {
-                    model: mRows
-                    Rectangle {
-                        readonly property bool focused: index===mCursor
-                        readonly property bool armed: index===mArmedRow
-                        readonly property bool dim: modelData.kind==="unavailable"
-                        width: mListArea.width
-                        height: mView.rowHeight
-                        color: armed?"#3d2c06":focused?(mPressed?"#24496f":"#18324c"):"transparent"
-                        Rectangle {
-                            width: 6
-                            height: parent.height
-                            visible: parent.focused
-                            color: parent.armed?"#f2a516":"#3d9bff"
-                        }
-                        Text {
-                            x: 32
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: modelData.title
-                            font.pixelSize: 34
-                            color: parent.dim?"#68727e":
-                                   (modelData.color==="orange" || modelData.color==="red")?modelData.color:"#ffffff"
-                        }
-                        Text {
-                            anchors.right: parent.right
-                            anchors.rightMargin: 32
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: parent.focused && mEditing?mEditText:
-                                  modelData.value+((modelData.kind==="page" || modelData.kind==="hosted")?"  ›":"")
-                            font.pixelSize: 32
-                            color: parent.armed?"#f2a516":parent.dim?"#68727e":parent.focused && mEditing?"#ffffff":"#c3ccd6"
-                        }
-                        Rectangle {
-                            anchors.bottom: parent.bottom
-                            width: parent.width
-                            height: 1
-                            color: "#2a323c"
+        function hints() {
+            if(mEditing)
+                return [["▲ ▼", "Change"], ["OK", "Save"], ["◀", "Cancel"]]
+            if(mArmedRow>=0)
+                return [["OK", "Reset"], ["◀", "Cancel"]]
+            return [["▲ ▼", "Select"], ["OK", "Open or change"], ["◀", "Back"], ["Hold BACK", "Close menu"]]
+        }
+
+        // The panel covers the vendor menu art behind this page.
+        Rectangle {
+            anchors.fill: parent
+            radius: 12
+            color: "#0b0e12"
+            opacity: 0.94
+        }
+        // A hosted page (G-force, Factory) takes the place of the deepest column.
+        Binding {
+            target: mHostedLoader
+            property: "x"
+            value: mView.lastX
+        }
+
+        Repeater {
+            model: mView.depth
+            Item {
+                id: mColumn
+                readonly property int level: index
+                readonly property bool last: level===mView.depth-1
+                readonly property var rows: last?mRows:pageRows(mPath[level], -1, -1)
+                // Back shortens mCursors before mPath, so a parent column can briefly have no saved row.
+                readonly property int focusRow: last?mCursor:(mCursors[level]!==undefined?mCursors[level]:0)
+                readonly property int rowHeight: last?68:60
+                readonly property int headHeight: 54
+                readonly property int visibleRows: Math.floor((height-headHeight)/rowHeight)
+                readonly property int firstRow: Math.max(0, Math.min(focusRow-visibleRows+2, rows.length-visibleRows))
+                x: mView.columnX(level)
+                width: last?menuRoot.width-x:mView.widths[Math.min(level, mView.widths.length-1)]
+                height: menuRoot.height-mView.hintHeight
+                visible: !(last && mHostedUrl!=="")
+
+                Rectangle {
+                    anchors.right: parent.right
+                    y: 18
+                    width: 1
+                    height: parent.height-18
+                    color: mView.line
+                    visible: !mColumn.last
+                }
+                Text {
+                    x: 50
+                    y: 22
+                    text: pageTitle(mPath[mColumn.level])
+                    font.family: mView.family
+                    font.pixelSize: 20
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 4
+                    font.capitalization: Font.AllUppercase
+                    color: mView.mute
+                }
+                Item {
+                    x: 22
+                    y: mColumn.headHeight
+                    width: parent.width-44
+                    height: parent.height-mColumn.headHeight
+                    clip: true
+                    Column {
+                        y: -mColumn.firstRow*mColumn.rowHeight
+                        width: parent.width
+                        Behavior on y { NumberAnimation { duration: 120 } }
+                        Repeater {
+                            model: mColumn.rows
+                            Item {
+                                id: mRow
+                                readonly property var row: modelData
+                                readonly property bool focused: mColumn.last && index===mCursor
+                                readonly property bool onPath: !mColumn.last && index===mColumn.focusRow
+                                readonly property bool armed: mColumn.last && index===mArmedRow
+                                readonly property bool sent: mColumn.last && index===mSentRow
+                                readonly property bool na: row.kind==="unavailable"
+                                readonly property bool editing: focused && mEditing
+                                width: parent.width
+                                height: mColumn.rowHeight
+                                opacity: !mColumn.last && !onPath?0.45:1
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    anchors.topMargin: 3
+                                    anchors.bottomMargin: 3
+                                    radius: 12
+                                    color: mRow.armed?"#29ffb020":mRow.focused?(mPressed?mView.accentPress:mView.accentDim):"transparent"
+                                }
+                                Rectangle {
+                                    readonly property bool strong: mRow.focused || mRow.armed
+                                    visible: strong || mRow.onPath
+                                    y: strong?14:22
+                                    width: strong?5:3
+                                    height: parent.height-2*y
+                                    radius: 3
+                                    color: mRow.armed?mView.caution:mView.accent
+                                    opacity: strong?1:0.6
+                                }
+                                Text {
+                                    x: 28
+                                    width: mValue.x-x-16
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: mRow.row.title
+                                    elide: Text.ElideRight
+                                    font.family: mView.family
+                                    font.pixelSize: mColumn.last?30:28
+                                    color: mRow.na?mView.mute:(mRow.focused || mRow.armed)?"#ffffff":mRow.onPath?mView.accent:
+                                           mRow.row.color==="red"?mView.hot:mRow.row.color==="orange"?mView.caution:mView.quiet
+                                }
+                                Row {
+                                    id: mValue
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 28
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: 12
+                                    Loader {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        readonly property var row: mRow.row
+                                        readonly property bool focused: mRow.focused
+                                        readonly property bool editing: mRow.editing
+                                        sourceComponent: mRow.armed?mArmedText:mRow.sent?mSentText:mRow.na?mReasonText:
+                                                         (row.kind==="page" || row.kind==="hosted")?mOpenValue:
+                                                         row.seg && (editing || row.current>=0)?mSegments:
+                                                         row.kind==="toggle" && row.current>=0?mSwitch:
+                                                         row.kind==="number" && row.unit==="%"?mMeter:mTextValue
+                                    }
+                                }
+                                // Confirm A: the bar runs down over the 5 s the row stays armed.
+                                Rectangle {
+                                    visible: mRow.armed
+                                    x: 28
+                                    width: parent.width-56
+                                    anchors.bottom: parent.bottom
+                                    anchors.bottomMargin: 8
+                                    height: 4
+                                    radius: 2
+                                    color: "#33ffb020"
+                                    Rectangle {
+                                        height: parent.height
+                                        radius: 2
+                                        color: mView.caution
+                                        width: parent.width
+                                        NumberAnimation on width {
+                                            running: mRow.armed
+                                            from: mRow.width-56
+                                            to: 0
+                                            duration: 5000
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
+                }
+            }
+        }
+
+        // Key hints under the menu. The hosted pages fill the full height and have their own rows.
+        Row {
+            visible: mHostedUrl===""
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 10
+            spacing: 44
+            Repeater {
+                model: mView.hints()
+                Row {
+                    spacing: 8
+                    Text {
+                        text: modelData[0]
+                        font.family: mView.family
+                        font.pixelSize: 20
+                        font.weight: Font.DemiBold
+                        color: mView.sub
+                    }
+                    Text {
+                        text: modelData[1]
+                        font.family: mView.family
+                        font.pixelSize: 20
+                        font.letterSpacing: 1
+                        color: mView.mute
+                    }
+                }
+            }
+        }
+
+        // ----- Value controls -----
+        // Each control reads row, focused, and editing from the Loader that holds the control.
+        Component {
+            id: mTextValue
+            Text {
+                readonly property var row: parent.row
+                readonly property bool focused: parent.focused
+                readonly property bool editing: parent.editing
+                text: editing?mEditText:row.value
+                font.family: mView.family
+                font.pixelSize: 28
+                color: focused?"#ffffff":mView.sub
+            }
+        }
+        Component {
+            id: mReasonText
+            Text {
+                readonly property var row: parent.row
+                readonly property bool focused: parent.focused
+                readonly property bool editing: parent.editing
+                text: row.value
+                font.family: mView.family
+                font.pixelSize: 22
+                color: mView.mute
+            }
+        }
+        Component {
+            id: mArmedText
+            Text {
+                readonly property var row: parent.row
+                readonly property bool focused: parent.focused
+                readonly property bool editing: parent.editing
+                text: row.value
+                font.family: mView.family
+                font.pixelSize: 24
+                color: mView.caution
+            }
+        }
+        Component {
+            id: mSentText
+            Text {
+                readonly property var row: parent.row
+                readonly property bool focused: parent.focused
+                readonly property bool editing: parent.editing
+                text: row.value
+                font.family: mView.family
+                font.pixelSize: 24
+                color: mView.ok
+            }
+        }
+        Component {
+            id: mOpenValue
+            Row {
+                readonly property var row: parent.row
+                readonly property bool focused: parent.focused
+                readonly property bool editing: parent.editing
+                spacing: 14
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: text!==""
+                    text: row.value
+                    font.family: mView.family
+                    font.pixelSize: 28
+                    color: focused?"#ffffff":mView.sub
+                }
+                // Chevron: two strokes of a square turned 45 degrees.
+                Item {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 14
+                    height: 14
+                    rotation: 45
+                    opacity: 0.7
+                    Rectangle { width: parent.width; height: 3; color: focused?"#ffffff":mView.sub }
+                    Rectangle { anchors.right: parent.right; width: 3; height: parent.height; color: focused?"#ffffff":mView.sub }
+                }
+            }
+        }
+        Component {
+            id: mSwitch
+            Rectangle {
+                readonly property var row: parent.row
+                readonly property bool focused: parent.focused
+                readonly property bool editing: parent.editing
+                readonly property bool on: row.current===1
+                width: 66
+                height: 34
+                radius: 17
+                color: on?mView.accent:"#2a3138"
+                Rectangle {
+                    x: parent.on?36:4
+                    y: 4
+                    width: 26
+                    height: 26
+                    radius: 13
+                    color: parent.on?"#ffffff":"#6b7480"
+                    Behavior on x { NumberAnimation { duration: 120 } }
+                }
+            }
+        }
+        Component {
+            id: mSegments
+            Row {
+                readonly property var row: parent.row
+                readonly property bool focused: parent.focused
+                readonly property bool editing: parent.editing
+                readonly property int selected: editing?row.options.indexOf(mEditValue):row.current
+                spacing: 12
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: row.note!==undefined
+                    text: row.note!==undefined?row.note:""
+                    font.family: mView.family
+                    font.pixelSize: 22
+                    color: mView.mute
+                }
+                Rectangle {
+                    width: mSegmentRow.width+8
+                    height: mSegmentRow.height+8
+                    radius: 10
+                    color: "#161b21"
+                    border.width: editing?2:0
+                    border.color: mView.accent
+                    Row {
+                        id: mSegmentRow
+                        x: 4
+                        y: 4
+                        spacing: 4
+                        Repeater {
+                            model: row.seg
+                            Rectangle {
+                                readonly property bool on: index===selected
+                                width: mSegmentText.width+28
+                                height: mSegmentText.height+10
+                                radius: 7
+                                color: on?(focused?mView.accent:"#2f3740"):"transparent"
+                                Text {
+                                    id: mSegmentText
+                                    anchors.centerIn: parent
+                                    text: modelData
+                                    font.family: mView.family
+                                    font.pixelSize: 22
+                                    color: parent.on?(focused?"#05070a":"#ffffff"):mView.sub
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Component {
+            id: mMeter
+            Row {
+                readonly property var row: parent.row
+                readonly property bool focused: parent.focused
+                readonly property bool editing: parent.editing
+                readonly property real percent: Math.max(0, Math.min(100, editing?mEditValue:parseFloat(row.value)))
+                spacing: 20
+                Item {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 230
+                    height: 8
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 4
+                        color: "#222a33"
+                    }
+                    Rectangle {
+                        width: parent.width*(isNaN(percent)?0:percent)/100
+                        height: parent.height
+                        radius: 4
+                        gradient: Gradient {
+                            orientation: Gradient.Horizontal
+                            GradientStop { position: 0; color: "transparent" }
+                            GradientStop { position: 1; color: mView.accent }
+                        }
+                    }
+                    Rectangle {
+                        visible: !isNaN(percent)
+                        x: parent.width*percent/100-10
+                        y: -6
+                        width: 20
+                        height: 20
+                        radius: 10
+                        color: "#ffffff"
+                    }
+                }
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: editing?mEditText:row.value
+                    font.family: mView.family
+                    font.pixelSize: 28
+                    color: focused?"#ffffff":mView.sub
                 }
             }
         }

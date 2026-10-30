@@ -26,7 +26,7 @@ etc_sha256() {
         vnB.qml) echo cf4c014945f604b5a0da27d70ec0849a54fb57c972bd9ca55c3f0effd8504aee ;;
         vnF.qml) echo b9db48d55d04d3dc941d32142a6c435cfa89d9f184029bab5ea9b63621879f84 ;;
         vnG.qml) echo bf45cee20d9cfd3d1cfbe8c2461522968e8c2ba1d4104d0323d2eb37e64dbfde ;;
-        vnM.qml) echo 36c36b51286cede7f84879a3a9d18190fb9fe95326f65e46f584b021cd842bcf ;;
+        vnM.qml) echo bcfbcb20cf4e2ae1853fc442983170a4303c1f4765979378e65dfbb306e8746b ;;
         vnV.qml) echo ef6d29dae3b736fa8239930c62cb582abc5c302441d47e35ac0f8c18634829c1 ;;
     esac
 }

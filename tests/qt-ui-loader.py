@@ -59,6 +59,8 @@ def child(phase, fixture, candidate_dir=None):
     QtCore.qInstallMessageHandler(lambda kind, context, message: messages.append(message))
     app = QtGui.QGuiApplication([])
     require(QtCore.qVersion() == '5.14.2', QtCore.qVersion())
+    # The cluster has this font in /usr/share/fonts; the design handoff carries the same file.
+    QtGui.QFontDatabase.addApplicationFont(str(ROOT / "handoff/claude-dashboard/assets/fonts/BMW.ttf"))
     source = (ROOT / "installed/capture-04/rootfs/usr/bin/Launcher" if not phase.startswith("patched")
               else Path(candidate_dir) / "Launcher")
     raw = source.read_bytes()
@@ -1378,7 +1380,7 @@ Window {
     verify("menu custom interval commit", sends(mark)[-1] == ["svcMileage", 6, 500])
     tap("Back")
     verify("menu custom name in the service list", titles()[6] == "Wiper")
-    # Temporary view: the path line and the focus row read the engine state.
+    # Locked view (round 21 layout A, values B, confirm A): the open path stays on screen as columns.
     global_state.setProperty("menuBarIndex", 1)
     menu = load_menu()
     open_path("Vehicle", "Driver assist")
@@ -1393,27 +1395,40 @@ Window {
             found |= item_texts(child)
         return found
     texts = item_texts(sip.cast(menu_state["page"], QtQuick.QQuickItem))
-    verify("menu view shows the path line", "Settings › Vehicle › Driver assist" in texts)
-    verify("menu view shows rows and the edit value", "Trailer brake mode" in texts and "‹ 100% ›" in texts)
+    verify("menu view shows a column for each open page", {"Settings", "Vehicle", "Driver assist"} <= texts)
+    verify("menu view keeps the parent rows on screen", {"System", "Lighting", "Remote start"} <= texts)
+    verify("menu view shows the edit value with the meter", "‹ 100% ›" in texts)
+    verify("menu view shows segment labels", {"Electric", "Electric over hydraulic", "Normal", "Towing"} <= texts)
+    verify("menu view shows edit key hints", {"Save", "Cancel"} <= texts and "Close menu" not in texts)
     window.setProperty("previewTitle", "Host Qt fixture preview - settings menu")
     window.resize(1920, 932)
     window.show()
-    QtTest.QTest.qWait(100)
-    image, render_method = capture()
-    target = fixture / "preview-menu-assist-edit.png"
-    verify("menu preview saved", not image.isNull() and image.save(str(target)))
-    renders.append(dict(path=str(target), method=render_method, sha256=hashlib.sha256(target.read_bytes()).hexdigest(),
-                        width=image.width(), height=image.height(), label="vnM temporary view; Driver assist with an oil life edit."))
+    def preview(name, label):
+        QtTest.QTest.qWait(150)
+        image, render_method = capture()
+        target = fixture / ("preview-menu-" + name + ".png")
+        verify("menu preview saved: " + name, not image.isNull() and image.save(str(target)))
+        renders.append(dict(path=str(target), method=render_method, sha256=hashlib.sha256(target.read_bytes()).hexdigest(),
+                            width=image.width(), height=image.height(), label=label))
+    preview("assist-edit", "vnM locked view; Driver assist with an oil life edit.")
+    tap("Back")
+    texts = item_texts(sip.cast(menu_state["page"], QtQuick.QQuickItem))
+    verify("menu view shows browse key hints", {"Select", "Open or change", "Back", "Close menu"} <= texts)
+    preview("assist", "vnM locked view; Driver assist.")
     tap("Back")
     tap("Back")
-    open_path("Reset")
+    preview("home", "vnM locked view; Settings home.")
+    open_path("Vehicle", "Reset")
     tap("Enter")
-    QtTest.QTest.qWait(50)
-    image, render_method = capture()
-    target = fixture / "preview-menu-reset-armed.png"
-    verify("menu armed preview saved", not image.isNull() and image.save(str(target)))
-    renders.append(dict(path=str(target), method=render_method, sha256=hashlib.sha256(target.read_bytes()).hexdigest(),
-                        width=image.width(), height=image.height(), label="vnM temporary view; Reset with Trip A armed."))
+    texts = item_texts(sip.cast(menu_state["page"], QtQuick.QQuickItem))
+    verify("menu view shows the armed reset row", "Press OK again to reset" in texts and "Reset" in texts)
+    preview("reset-armed", "vnM locked view; Reset with Trip A armed.")
+    tap("Back")
+    tap("Back")
+    open_path("System", "Units")
+    texts = item_texts(sip.cast(menu_state["page"], QtQuick.QQuickItem))
+    verify("menu view shows unit segments and the follow note", {"km/h", "mph", "°C", "°F", "Follow"} <= texts)
+    preview("units", "vnM locked view; System > Units.")
     window.setProperty("pageUrl", "")
     advance()
     result["menu_scope"] = ("vnM engine on host Qt with safe stubs. G-force uses a stub with the compiled Back contract; "
