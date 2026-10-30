@@ -2305,6 +2305,7 @@ Item {
     property int mDataLogTicks: 0
     // oilPressurePercentage (vehicleInfoNotify) and engOilPercent (oilMeterInfoNotify) both read getOilPressure().
     // The log keeps both, so a drive shows which notification the truck sends.
+    // The cruise fields are the four that the stock cruise widget reads (on, SET, stored speed, set speed in km/h).
     readonly property var mDataLogNames: [
         "vehicleSpeed", "tachoSpeed", "gearString", "metricSystem", "temperatureUnit", "consumptionUnit", "lpkUnitIndex",
         "fuelPercentage", "fuelPercentageRaw", "fuelFrameMs", "fuelLevel", "dte", "mainTank", "subTank",
@@ -2313,7 +2314,8 @@ Item {
         "sinceResetAvgFuel", "sinceResetAvgSpeed", "sinceResetTravelTime", "sinceResetTravelMileage",
         "sinceStartAvgFuel", "sinceStartAvgSpeed", "sinceStartTravelTime", "sinceStartTravelMileage",
         "sinceRefuelingDte", "sinceRefuelingAvgFuel", "sinceRefuelingAvgSpeed",
-        "waterTemp", "oilTemp", "gearBoxTemp", "oilPressurePercentage", "engOilPercent", "batterVoltage", "trucksOilLifePercentage", "trucksOilLifeTripRaw", "trucksTrailerDistance", "rtcDate", "rtcTime"
+        "waterTemp", "oilTemp", "gearBoxTemp", "oilPressurePercentage", "engOilPercent", "batterVoltage", "trucksOilLifePercentage", "trucksOilLifeTripRaw", "trucksTrailerDistance", "rtcDate", "rtcTime",
+        "cruiseState", "cruiseSpeedSet", "cruiseSetSpeedState", "cruiseSpeed"
     ]
     Timer {
         interval: 1000
