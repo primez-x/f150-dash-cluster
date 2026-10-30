@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 19</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 19 · Drive modes, speed scale, and cruise on Towing A</h1>
+<p>Towing A is locked as the center axis layout from <a href="../round-18/">round 18</a> (option B). Round 19 adds the drive modes, a speed scale, and the cruise states. Pick A or B for the speed scale.</p>
+<ul>
+  <li>Drive mode: the chip under the gear. 2H is a grey outline; 4A, 4H, and 4L fill. The rear locker adds an amber chip with a padlock. Field: getGearAwd() (mFord4wd); rear locker: alarmTable[76], pending verification on the truck.</li>
+  <li>Cruise: the stock readout at top center, above the speed. The cruise symbol and the set speed only (no SET, ACC, or MPH text); the limiter keeps the LIM tag.
+    The set speed also shows as a mark on the speed scale: green for cruise and adaptive cruise, white for the limiter. An alert banner covers the readout; the mark stays.</li>
+  <li>Speed scale: 0 to 100 mph under the speed digits, filled in the accent colour, with no numbers (the digits carry the number). MPH moves under the scale.</li>
+  <li>A · Ruler: a straight bar with ticks every 10 mph. B · Arch: segments on an arch that echoes the shroud and the corner bands.</li>
+</ul>
+<h2>A · Ruler</h2>
+<div class="grid">
+  <div><h3>calm, cruise off</h3><a href="tow-a.html?"><img src="shots/tow-a-normal.png" alt=""></a></div>
+  <div><h3>cruise set 65</h3><a href="tow-a.html?scene=cruise"><img src="shots/tow-a-set.png" alt=""></a></div>
+  <div><h3>adaptive cruise 65</h3><a href="tow-a.html?scene=cruise&amp;cruise=acc"><img src="shots/tow-a-acc.png" alt=""></a></div>
+  <div><h3>speed limiter 70</h3><a href="tow-a.html?cruise=lim"><img src="shots/tow-a-lim.png" alt=""></a></div>
+  <div><h3>4A</h3><a href="tow-a.html?scene=d4a"><img src="shots/tow-a-d4a.png" alt=""></a></div>
+  <div><h3>4H</h3><a href="tow-a.html?scene=d4h"><img src="shots/tow-a-d4h.png" alt=""></a></div>
+  <div><h3>4L on a 12 % grade: the panel jumps to engine</h3><a href="tow-a.html?scene=d4l"><img src="shots/tow-a-d4l.png" alt=""></a></div>
+  <div><h3>4L and the rear locker</h3><a href="tow-a.html?scene=locker"><img src="shots/tow-a-locker.png" alt=""></a></div>
+  <div><h3>cruise set during an alert: the banner covers the readout; the mark stays</h3><a href="tow-a.html?scene=alertcruise"><img src="shots/tow-a-alert.png" alt=""></a></div>
+  <div><h3>true size</h3><a href="tow-a.html?view=physical&amp;ruler=1"><img src="shots/tow-a-physical.png" alt=""></a></div>
+</div>
+<h2>B · Arch</h2>
+<div class="grid">
+  <div><h3>calm, cruise off</h3><a href="tow-b.html?"><img src="shots/tow-b-normal.png" alt=""></a></div>
+  <div><h3>cruise set 65</h3><a href="tow-b.html?scene=cruise"><img src="shots/tow-b-set.png" alt=""></a></div>
+  <div><h3>adaptive cruise 65</h3><a href="tow-b.html?scene=cruise&amp;cruise=acc"><img src="shots/tow-b-acc.png" alt=""></a></div>
+  <div><h3>speed limiter 70</h3><a href="tow-b.html?cruise=lim"><img src="shots/tow-b-lim.png" alt=""></a></div>
+  <div><h3>4A</h3><a href="tow-b.html?scene=d4a"><img src="shots/tow-b-d4a.png" alt=""></a></div>
+  <div><h3>4H</h3><a href="tow-b.html?scene=d4h"><img src="shots/tow-b-d4h.png" alt=""></a></div>
+  <div><h3>4L on a 12 % grade: the panel jumps to engine</h3><a href="tow-b.html?scene=d4l"><img src="shots/tow-b-d4l.png" alt=""></a></div>
+  <div><h3>4L and the rear locker</h3><a href="tow-b.html?scene=locker"><img src="shots/tow-b-locker.png" alt=""></a></div>
+  <div><h3>cruise set during an alert: the banner covers the readout; the mark stays</h3><a href="tow-b.html?scene=alertcruise"><img src="shots/tow-b-alert.png" alt=""></a></div>
+  <div><h3>true size</h3><a href="tow-b.html?view=physical&amp;ruler=1"><img src="shots/tow-b-physical.png" alt=""></a></div>
+</div>
+</body>
+</html>

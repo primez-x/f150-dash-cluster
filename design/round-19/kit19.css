@@ -1,0 +1,8 @@
+/* Round 19: drive modes, speed scale, and cruise. Loads after round-18/kit18.css. */
+/* Rear locker chip: amber with a padlock. */
+.dchip.lock { display: inline-flex; align-items: center; gap: 6px; }
+.dchip.lock .sym { color: #05070a; }
+.drow { display: flex; align-items: center; gap: 10px; }
+
+/* Cruise readout: the symbol names the mode, so SET, ACC, and the unit drop. The limiter keeps the LIM tag (no stock symbol). */
+.cruise:not([data-state="lim"]) .tag, .cruise .unit { display: none; }
