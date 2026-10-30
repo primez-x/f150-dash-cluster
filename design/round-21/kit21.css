@@ -1,0 +1,61 @@
+/* Round 21: settings menu. Loads after round-20/kit20.css. The menu panel takes the area between the cruise region
+:root { --quiet: #9aa4af; }
+   and the steering column shroud (y 176 to 724), as the stock menu takes the center of the screen. */
+.menu { left: 64px; top: 176px; width: 1792px; height: 548px; box-sizing: border-box; }
+.menu .hint { position: absolute; left: 0; right: 0; bottom: -2px; display: flex; justify-content: center; gap: 44px;
+  font: var(--small) "BMW Type Global"; color: var(--mute); letter-spacing: 1px; }
+.menu .hint b { color: var(--sub); font-weight: 600; margin-right: 8px; }
+
+/* Rows. Focus: the accent tint, an accent bar on the left, and white text. Other rows stay quiet. */
+.mrow { position: relative; display: flex; align-items: center; height: 68px; padding: 0 28px; box-sizing: border-box;
+  border-radius: 12px; font: 30px "BMW Type Global"; color: var(--quiet); }
+.mrow .t { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mrow .v { font: 28px "BMW Type Global"; color: var(--sub); white-space: nowrap; display: flex; align-items: center; gap: 12px; }
+.mrow .chev { width: 14px; height: 14px; border-right: 3px solid currentColor; border-top: 3px solid currentColor; transform: rotate(45deg); margin-left: 14px; opacity: .7; }
+.mrow.focus { background: var(--accent-dim); color: #fff; }
+.mrow.focus::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 5px; border-radius: 3px; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+.mrow.focus .v { color: #fff; }
+.mrow.path { color: var(--accent); }
+.mrow.path::before { content: ""; position: absolute; left: 0; top: 22px; bottom: 22px; width: 3px; border-radius: 2px; background: var(--accent); opacity: .6; }
+.mrow.na { color: var(--mute); }
+.mrow.na .v { color: var(--mute); font-size: 22px; }
+.mrow .arr { color: var(--accent); font-size: 26px; }
+
+/* Value controls (option B values). */
+.sw { width: 66px; height: 34px; border-radius: 17px; background: #2a3138; position: relative; }
+.sw::after { content: ""; position: absolute; left: 4px; top: 4px; width: 26px; height: 26px; border-radius: 50%; background: #6b7480; }
+.sw.on { background: var(--accent); box-shadow: 0 0 12px var(--accent-dim); }
+.sw.on::after { left: 36px; background: #fff; }
+.seg { display: flex; border-radius: 10px; background: #161b21; padding: 4px; gap: 4px; }
+.seg span { font: 22px "BMW Type Global"; padding: 5px 14px; border-radius: 7px; color: var(--sub); }
+.seg span.on { color: #05070a; background: var(--accent); }
+.mrow:not(.focus) .seg span.on { color: #fff; background: #2f3740; }
+.pmeter { position: relative; width: 230px; height: 8px; border-radius: 4px; background: #222a33; }
+.pmeter i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: linear-gradient(90deg, transparent, var(--accent)); }
+.pmeter i::after { content: ""; position: absolute; right: -8px; top: -6px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 0 12px var(--accent); }
+
+/* Confirm states for actions that change the truck (reset rows, factory reset). */
+.mrow.arm { background: rgba(255, 176, 32, .16); color: #fff; }
+.mrow.arm::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 5px; border-radius: 3px; background: var(--caution); box-shadow: 0 0 12px var(--caution); }
+.mrow.arm .v { color: var(--caution); font-size: 24px; }
+.mrow .cbar { position: absolute; left: 28px; right: 28px; bottom: 8px; height: 4px; border-radius: 2px; background: rgba(255, 176, 32, .2); }
+.mrow .cbar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: var(--caution); }
+.mrow.done .v { color: var(--ok); }
+
+/* Option A structure: columns. Parent columns keep the path; the focus column is the deepest open column. */
+.cols { position: absolute; left: 0; top: 0; right: 0; bottom: 56px; display: flex; gap: 0; }
+.col { box-sizing: border-box; padding: 18px 22px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+.col:last-child { border-right: 0; flex: 1; }
+.col .head { font: 600 var(--small) "BMW Type Global"; letter-spacing: 4px; color: var(--mute); text-transform: uppercase; padding: 0 28px 10px; }
+.col.parent .mrow:not(.path) { opacity: .45; }
+.col.parent .mrow { font-size: 28px; height: 60px; }
+
+/* Option B structure: one list with a path line; the page slides in from the right. */
+.drill { position: absolute; left: 346px; width: 1100px; top: 0; bottom: 56px; display: flex; flex-direction: column; }
+.drill .crumb { font: 600 var(--small) "BMW Type Global"; letter-spacing: 4px; color: var(--mute); text-transform: uppercase; padding: 18px 28px 16px; }
+.drill .crumb em { font-style: normal; color: var(--accent); }
+.drill .list { display: flex; flex-direction: column; gap: 6px; position: relative; }
+.drill .mrow { height: 66px; }
+.drill .side { position: absolute; left: -282px; top: 10px; width: 240px; display: flex; flex-direction: column; gap: 14px; }
+.drill .side span { font: 24px "BMW Type Global"; color: var(--mute); }
+.drill .side span.on { color: var(--accent); }

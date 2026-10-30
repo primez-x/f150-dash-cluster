@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 21</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 14px; }
+  .grid.two { grid-template-columns: 1fr 1fr; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 21 · Settings menu</h1>
+<p>The settings menu gets one owned page in place of the vendor pages. The new menu keeps every setting the truck supports, shows
+unsupported settings with a reason, and fixes the navigation and setting defects from the menu audit. The mocks sit on the locked
+Towing A frame (top bar, telltales, cruise region). The menu takes the center area above the steering column shroud, as the stock menu does.</p>
+<p><strong>Three picks, each open:</strong> 1 · layout, 2 · values, 3 · confirm. Pick each one separately.</p>
+<ul>
+  <li>Rows and pages follow the firmware for the 2011-2014 F150 profile. Values on the Driver assist page are sample values; the truck sends the real values.</li>
+  <li>Focus: the accent tint, an accent bar on the left, and white text. Other rows stay quiet. The open path keeps an accent title in each parent column (A) or in the side list (B).</li>
+  <li>Key hints sit under the menu. The close key follows the stock key routing from the audit.</li>
+</ul>
+<h2>Pick 1 · Layout</h2>
+<p>A · Columns: every open level stays on screen, left to right, as the stock menu does. The deepest column has the focus; parent columns fade to the path.
+B · One list: one page at a time, with the path line on top and the parent page in a quiet side list.</p>
+<div class="grid">
+  <div><h3>A · home</h3><a href="menu.html?layout=a&scene=home"><img src="shots/layout-a-home.png" alt=""></a></div>
+  <div><h3>A · Vehicle › Driver assist</h3><a href="menu.html?layout=a&scene=assist"><img src="shots/layout-a-assist.png" alt=""></a></div>
+  <div><h3>A · System › Units</h3><a href="menu.html?layout=a&scene=units"><img src="shots/layout-a-units.png" alt=""></a></div>
+  <div><h3>B · home</h3><a href="menu.html?layout=b&scene=home"><img src="shots/layout-b-home.png" alt=""></a></div>
+  <div><h3>B · Vehicle › Driver assist</h3><a href="menu.html?layout=b&scene=assist"><img src="shots/layout-b-assist.png" alt=""></a></div>
+  <div><h3>B · System › Units</h3><a href="menu.html?layout=b&scene=units"><img src="shots/layout-b-units.png" alt=""></a></div>
+</div>
+<h2>Pick 2 · Values</h2>
+<p>A · Text: the value as text at the right. The focus row shows ‹ › where OK changes the value.
+B · Controls: switches for on and off, segments for a short choice, and a meter for a percent. Every choice stays visible.</p>
+<div class="grid two">
+  <div><h3>A · Driver assist</h3><a href="menu.html?values=a&scene=assist"><img src="shots/values-a-assist.png" alt=""></a></div>
+  <div><h3>B · Driver assist</h3><a href="menu.html?values=b&scene=assist"><img src="shots/values-b-assist.png" alt=""></a></div>
+  <div><h3>A · Units</h3><a href="menu.html?values=a&scene=units"><img src="shots/values-a-units.png" alt=""></a></div>
+  <div><h3>B · Units</h3><a href="menu.html?values=b&scene=units"><img src="shots/values-b-units.png" alt=""></a></div>
+</div>
+<h2>Pick 3 · Confirm for resets</h2>
+<p>The stock menu resets on one press of OK, so one bump of the wheel key can clear a trip or the oil life. Both options add a confirm step to the reset rows and the factory reset.
+A · Press twice: the first OK arms the row for 5 seconds (the bar runs down); a second OK sends the reset. B · Hold: hold OK for 1.5 seconds (the bar fills); a short press does nothing.</p>
+<div class="grid two">
+  <div><h3>A · armed</h3><a href="menu.html?confirm=a&scene=confirm"><img src="shots/confirm-a-confirm.png" alt=""></a></div>
+  <div><h3>B · holding</h3><a href="menu.html?confirm=b&scene=confirm"><img src="shots/confirm-b-confirm.png" alt=""></a></div>
+  <div><h3>A · sent</h3><a href="menu.html?confirm=a&scene=done"><img src="shots/confirm-a-done.png" alt=""></a></div>
+  <div><h3>B · sent</h3><a href="menu.html?confirm=b&scene=done"><img src="shots/confirm-b-done.png" alt=""></a></div>
+</div>
+<h2>Physical preview</h2>
+<div class="grid"><div><h3>A · Driver assist at 1920 × 720</h3><img src="shots/layout-a-physical.png" alt=""></div></div>
+</body>
+</html>
