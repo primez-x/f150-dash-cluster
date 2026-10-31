@@ -782,6 +782,25 @@ Item {
             //console.log("[onOverSpeedWarningNotify overSpeedWarningState: "+mGlobalId.item.overSpeedWarningState+"]")
             //console.log("[onOverSpeedWarningNotify overSpeedWarningSpeed: "+mGlobalId.item.overSpeedWarningSpeed+"]")
         }
+        // Command 0x3B (vehicleInfoNotify) and command 0x16 sub-command 0x45 (mustangInfoNotify) fill the same engine gauge slots.
+        function copyEngineGauges() {
+            mGlobalId.item.vacuumBoost=getVacuumBoost()
+            mGlobalId.item.vacuumBoostDir=getVacuumBoostDir()
+            mGlobalId.item.vacuumBoostPercentage=getVacuumBoostPercentage()
+            mGlobalId.item.cylinderHeadTemp=getCylinderHeadTemp()
+            mGlobalId.item.inletAirTemp=getInletAirTemp()
+            mGlobalId.item.inletAirTempPercentage=getInletAirTempPercentage()
+            mGlobalId.item.airFuelRatio=getAirFuelRatio()
+            mGlobalId.item.oilPressureState=getOilPressureState()
+            mGlobalId.item.oilTempState=getOilTempState()
+        }
+        ////////////////////////////////
+        // mustangInfoNotify
+        ////////////////////////////////
+        onMustangInfoNotify: {
+            copyEngineGauges()
+            mGlobalId.item.compass=getCompass()
+        }
         ////////////////////////////////
         // vehicleInfoNotify
         ////////////////////////////////
@@ -803,6 +822,8 @@ Item {
             mGlobalId.item.diffOilTemp=getDiffOilTemp()
             mGlobalId.item.turbo=getTurbo()
             mGlobalId.item.boostPercentage=getBoostPercentage()
+            mGlobalId.item.oilLifePercentage=getOilLifePercentage()
+            copyEngineGauges()
             mGlobalId.item.reverseAlarmEnabled=getReverseAlarm()
         }
         ////////////////////////////////
@@ -2311,7 +2332,8 @@ Item {
     // oilPressurePercentage (vehicleInfoNotify) and engOilPercent (oilMeterInfoNotify) both read getOilPressure().
     // The log keeps both, so a drive shows which notification the truck sends.
     // The cruise fields are the four that the stock cruise widget reads (on, SET, stored speed, set speed in km/h).
-    // The boost and trailer fields come from JLY commands 0x40 and 0x1A. The stock layouts never read them, so the units need a drive.
+    // The boost, engine gauge, compass and trailer fields come from JLY commands 0x40, 0x3B, 0x16/0x45, 0x3F, 0x1B and 0x1A.
+    // The stock layouts never read them, so the units and the frames the truck sends need a drive.
     readonly property var mDataLogNames: [
         "vehicleSpeed", "tachoSpeed", "gearString", "metricSystem", "temperatureUnit", "consumptionUnit", "lpkUnitIndex",
         "fuelPercentage", "fuelPercentageRaw", "fuelFrameMs", "fuelLevel", "dte", "mainTank", "subTank",
@@ -2322,7 +2344,9 @@ Item {
         "sinceRefuelingDte", "sinceRefuelingAvgFuel", "sinceRefuelingAvgSpeed",
         "waterTemp", "oilTemp", "gearBoxTemp", "oilPressurePercentage", "engOilPercent", "batterVoltage", "trucksOilLifePercentage", "trucksOilLifeTripRaw", "trucksTrailerDistance", "rtcDate", "rtcTime",
         "cruiseState", "cruiseSpeedSet", "cruiseSetSpeedState", "cruiseSpeed",
-        "diffOilTemp", "turbo", "boostPercentage",
+        "diffOilTemp", "turbo", "boostPercentage", "vacuumBoost", "vacuumBoostDir", "vacuumBoostPercentage",
+        "cylinderHeadTemp", "inletAirTemp", "inletAirTempPercentage", "airFuelRatio", "oilPressureState", "oilTempState",
+        "oilLifePercentage", "compass",
         "trucksTrailerGain", "trucksTrailerBrakeState", "trucksTrailerOutputState", "trucksTrailerOutput"
     ]
     Timer {

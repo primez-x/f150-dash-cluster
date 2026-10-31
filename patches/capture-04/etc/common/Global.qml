@@ -3468,6 +3468,20 @@ Item {
     // JLY command 0x40 also fills turbo (payload byte 1) and boostPercentage (payload byte 3). -1: no frame yet.
     property int turbo: -1
     property int boostPercentage: -1
+    // Engine gauge frame: JLY command 0x3B, or command 0x16 sub-command 0x45 (mustangInfoNotify). The stock layouts never read these.
+    // vacuumBoost: 15-bit magnitude, vacuumBoostDir: payload bit 7 (0xFFFE and 0xFFFF are no-data codes). Temperatures: raw minus
+    // the frame offset, with 0xFE and 0xFF kept as no-data codes. airFuelRatio: raw / 10. -1: no frame yet.
+    property int vacuumBoost: -1
+    property int vacuumBoostDir: -1
+    property int vacuumBoostPercentage: -1
+    property int cylinderHeadTemp: -1
+    property int inletAirTemp: -1
+    property int inletAirTempPercentage: -1
+    property real airFuelRatio: -1
+    property int oilPressureState: -1
+    property int oilTempState: -1
+    property int oilLifePercentage: -1      // JLY command 0x1B
+    property int compass: -1                // JLY command 0x3F (mustangInfoNotify)
 
     onTemperatureUnitChanged: {
         Funcs.setProperty("temperatureUnit", temperatureUnit)
