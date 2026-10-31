@@ -1,0 +1,13 @@
+/* Round 38: the speed rail at bottom center, fuel in the bottom-right corner, the trailer brake pick. Loads after round-37/kit37.css. */
+/* Fuel range number: right-aligned at the 40 px line; amber when low, red at reserve, grey without data. */
+.num34.fuel38 { align-items: flex-end; }
+.num34.fuel38.low b { color: var(--caution); }
+.num34.fuel38.reserve b { color: var(--warn); }
+.num34.fuel38.nodata b { color: #5d6670; }
+.corner.fuel38 .k .sym { color: #c9d1da; }
+.corner.fuel38.low .k .sym { color: var(--caution); }
+.corner.fuel38.reserve .k .sym { color: var(--warn); }
+/* Trailer brake symbol beside the rail: grey at rest, accent while braking. */
+.brk38 { display: flex; color: #6b7480; }
+.brk38 .sym { color: inherit; }
+.brk38.on { color: var(--accent); }
