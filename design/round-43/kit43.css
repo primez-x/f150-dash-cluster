@@ -1,0 +1,37 @@
+/* Round 43: the alert panel from the top edge (kit43.js). Loads after round-42/kit42.css. */
+.alert43 { top: 0; box-sizing: border-box; display: flex; align-items: center; gap: 22px; padding: 40px 30px 12px 34px;
+  border-radius: 0 0 22px 22px; z-index: 5; }
+.alert43 .badge { flex: none; width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; }
+.alert43 .ic { width: 38px; height: 38px; background: currentColor; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; }
+.alert43 .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.alert43 .k { font: 600 15px "BMW Type Global"; letter-spacing: 4px; }
+.alert43 .t { font: 600 30px/36px "BMW Type Global"; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.alert43.msg .t { font-size: 26px; line-height: 32px; }
+.alert43 .s { font: 22px/28px "BMW Type Global"; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.alert43 .ok { flex: none; align-self: center; font: 600 20px "BMW Type Global"; padding: 5px 16px; border-radius: 999px; border: 1.5px solid; }
+.alert43.warn:not(.moving) { animation: pulse43 1.4s ease-out 1; }
+.still .alert43.warn { animation: none; }
+@keyframes pulse43 { 0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, .7); } 100% { box-shadow: 0 0 0 28px rgba(255, 59, 48, 0), 0 12px 48px rgba(255, 59, 48, .3); } }
+
+/* A · Tinted glass: the side-panel glass with a strong severity tint, a severity edge along the screen side, and a severity
+   kicker. The title stays white, so the colour carries the severity and the text stays easy to read. */
+.alert43.a { border: 1.5px solid; border-top: none; }
+.alert43.a .t { color: #fff; }
+.alert43.a .s { color: #d7dde4; }
+.alert43.a.caution { color: var(--caution); border-color: rgba(255, 176, 32, .6);
+  background: linear-gradient(180deg, rgba(255, 176, 32, .32), rgba(255, 176, 32, .12)), #0c0e12;
+  box-shadow: inset 0 -3px 0 rgba(255, 176, 32, .9), 0 12px 40px rgba(255, 176, 32, .18); }
+.alert43.a.warn { color: var(--warn); border-color: rgba(255, 59, 48, .7);
+  background: linear-gradient(180deg, rgba(255, 59, 48, .38), rgba(255, 59, 48, .14)), #0c0e12;
+  box-shadow: inset 0 -3px 0 rgba(255, 59, 48, .95), 0 12px 48px rgba(255, 59, 48, .26); }
+.alert43.a .badge { background: currentColor; }
+.alert43.a .badge .ic { background: #0b0d10; }
+.alert43.a .ok { border-color: currentColor; background: rgba(0, 0, 0, .25); }
+
+/* B · Solid placard: a solid severity panel with dark text, the strongest contrast on the screen. */
+.alert43.b.caution { color: #1a1000; background: linear-gradient(180deg, #ffc247, #ffaa1c); box-shadow: 0 12px 44px rgba(255, 176, 32, .34); }
+.alert43.b.warn { color: #1c0402; background: linear-gradient(180deg, #ff6a5f, #ff3b30); box-shadow: 0 12px 48px rgba(255, 59, 48, .4); }
+.alert43.b .badge { background: rgba(0, 0, 0, .16); }
+.alert43.b .k { opacity: .62; }
+.alert43.b .s { opacity: .78; }
+.alert43.b .ok { border-color: currentColor; background: rgba(0, 0, 0, .1); }
