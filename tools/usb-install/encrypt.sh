@@ -238,15 +238,20 @@ launcher_stop() {
 }
 # Start as /etc/init.d/S22launcher and the vendor updater do. The new Launcher must not hold the USB drive:
 # the working directory is / and all output goes to /dev/null (qtenv.sh writes /tmp/Launcher.log itself).
+# The Launcher must not hold the run lock either: fd 9 closes for the child.
+# A Launcher never starts without a settings folder: the folder that a stopped restore moved aside goes back first.
+# Returns 1 and starts nothing when no settings folder is in place.
 launcher_start() {
     log "start Launcher"
-    # A Launcher never starts without a settings folder: the folder that a stopped restore moved aside goes back first.
-    settings_back || log "settings folder move back failed"
+    if ! settings_back || [ ! -d "$R/private/Launcher" ]; then
+        log "no settings folder; Launcher not started"
+        return 1
+    fi
     [ ! -f "$LAUNCHER_LOG" ] || cp "$LAUNCHER_LOG" "$out/Launcher-before-$1.log" 2>/dev/null
     # qtenv.sh writes a new log. The old log goes, so old startup lines cannot pass the health check.
     rm -f "$LAUNCHER_LOG"
     fbinit 0 >/dev/null 2>&1
-    (cd / && exec "$R/etc/qtenv.sh") >/dev/null 2>&1 </dev/null &
+    (cd / && exec "$R/etc/qtenv.sh") >/dev/null 2>&1 </dev/null 9>&- &
 }
 # The patched VehicleEvent (/etc/vnV.qml) logs its version from Global (/etc/vnG.qml), so the line proves both loaded.
 health() {
@@ -505,8 +510,13 @@ clean_leftovers() {
 # When no Launcher runs, start the Launcher on disk and check the start. Adds the result to started.
 launcher_keep() {
     launcher_running && return 0
-    launcher_start current
-    if health; then kept="current Launcher started"; else kept="current Launcher start check failed: $reason"; fi
+    if ! launcher_start current; then
+        kept="current Launcher not started: no settings folder"
+    elif health; then
+        kept="current Launcher started"
+    else
+        kept="current Launcher start check failed: $reason"
+    fi
     started=${started:+$started; }$kept
 }
 # Nothing live changed: $1 names the failed step. Clear the journal when $2 is clear, keep the journal otherwise,
@@ -587,9 +597,15 @@ restore_original() {
     fi
     which=original
     [ "$(hash_of "$LAUNCHER")" = "$ORIGINAL_SHA256" ] || which=current
-    launcher_start "$which"
-    healthy=1
-    if health; then started="$which Launcher started"; else started="$which Launcher start check failed: $reason"; healthy=0; fi
+    healthy=0
+    if ! launcher_start "$which"; then
+        started="$which Launcher not started: no settings folder"
+    elif health; then
+        started="$which Launcher started"
+        healthy=1
+    else
+        started="$which Launcher start check failed: $reason"
+    fi
     cp "$LAUNCHER_LOG" "$out/Launcher-$which.log" 2>/dev/null
     started="$note$started$settings_note"
     [ -z "$failed" ] || started="$failed failed; $started"
@@ -620,7 +636,7 @@ fail_restart() {
     log "failed: $1"
     remove_staged
     rm -f "$SETTINGS_COPY" "$SETTINGS_COPY.new" 2>/dev/null
-    launcher_start original
+    launcher_start original || abort "$1" "Launcher not started: no settings folder"
     abort "$1"
 }
 # Failure after the journal: block a repeat install from this drive, then restore the original.
@@ -639,34 +655,23 @@ rollback_now() {
 # The install is one transaction. Every check, the settings backups, the stage files, and the journal come before the
 # first live change. From the first rename to a passed start check, the journal makes the next drive insert of any kind
 # finish a rollback to the original.
-# One run at a time reads or changes the cluster state. /etc/mdev/udisk_insert starts each updater in the background, and one
-# drive insertion can start two runs (the disk and the partition events, or the boot scan and the hotplug event).
-# The lock is a folder on tmpfs (/tmp), so a reboot clears the lock. The folder holds the pid of the owner run.
+# One run at a time reads or changes the cluster state. Two updater runs can start at once: the boot scan (mdev -s in
+# /etc/init.d/rcS) and the hotplug event, and /etc/mdev/udisk_insert starts each updater in the background.
+# The lock is a kernel lock (flock) on fd 9 of /tmp/viknav-ui.lock. The kernel drops the lock when the run ends or dies, so
+# no stale lock exists. Long-lived children (the Launcher, the recorder) start with fd 9 closed.
 LOCK=$R/tmp/viknav-ui.lock
-# Returns 1 when a live run holds the lock. A lock of a run that no longer runs is stale: this run takes the lock.
+# Returns 0 with the lock held, 1 when another run holds the lock, and 2 when the lock file does not open.
 lock_take() {
-    tries=0
-    until mkdir "$LOCK" 2>/dev/null; do
-        tries=$((tries + 1))
-        [ "$tries" -le 3 ] || return 1
-        owner=$(cat "$LOCK/pid" 2>/dev/null)
-        # The owner writes the pid just after the mkdir. Give the owner one second.
-        if [ -z "$owner" ]; then
-            sleep 1
-            owner=$(cat "$LOCK/pid" 2>/dev/null)
-        fi
-        case "$owner" in *[!0-9]*) owner= ;; esac
-        if [ -n "$owner" ] && kill -0 "$owner" 2>/dev/null; then
-            return 1
-        fi
-        log "stale lock of pid ${owner:-unknown} removed"
-        rm -rf "$LOCK"
-    done
-    printf '%s\n' "$$" > "$LOCK/pid" || log "lock pid write failed"
-    trap lock_release EXIT
-}
-lock_release() {
-    [ "$(cat "$LOCK/pid" 2>/dev/null)" != "$$" ] || rm -rf "$LOCK"
+    # A failed exec redirection stops the shell. Create and check the lock file first, so the open of fd 9 cannot fail.
+    [ -f "$LOCK" ] || printf '' >> "$LOCK" 2>/dev/null || return 2
+    [ -f "$LOCK" ] && [ ! -L "$LOCK" ] && [ -w "$LOCK" ] || return 2
+    exec 9>>"$LOCK"
+    flock -n 9
+    case "$?" in
+        0) return 0 ;;
+        1) return 1 ;;
+    esac
+    return 2
 }
 
 do_install() {
@@ -757,7 +762,7 @@ do_install() {
     done
     log "files installed"
 
-    launcher_start candidate
+    launcher_start candidate || rollback_now "no settings folder"
     health || rollback_now "$reason"
     cp "$LAUNCHER_LOG" "$out/Launcher-start.log" 2>/dev/null
     # The start check passed: the journal removal commits the install.
@@ -875,7 +880,7 @@ while [ -d "$out" ] && awk -v t="$usb" '$2 == t {f = 1} END {exit !f}' "$R/proc/
 done
 rm -f "$R/tmp/viknav-recorder.pid"
 RECORDER_END
-    (cd / && exec sh "$RECORDER" "$R" "$usb_root" "$out") </dev/null >/dev/null 2>&1 &
+    (cd / && exec sh "$RECORDER" "$R" "$usb_root" "$out") </dev/null >/dev/null 2>&1 9>&- &
     echo "$!" > "$RECORDER_PID"
     finish RECORDING "Turn on Factory > Debug logging for values and UART frames. Each power-up with the drive in starts a new folder."
 }
@@ -884,7 +889,12 @@ RECORDER_END
 log "action $action from $usb_root"
 # The record action reads no cluster state and needs no lock.
 case "$action" in
-    install|rollback|log) lock_take || { finish "BUSY another viknav-ui run is active"; exit 0; } ;;
+    install|rollback|log)
+        lock_take
+        case "$?" in
+            1) finish "BUSY another viknav-ui run is active"; exit 0 ;;
+            2) abort lock "Restart the cluster to clear /tmp, then insert the drive again." ;;
+        esac ;;
 esac
 case "$action" in
     install) do_install ;;

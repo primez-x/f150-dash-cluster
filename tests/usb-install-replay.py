@@ -12,6 +12,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tarfile
@@ -118,6 +119,11 @@ mode=healthy
 [ "$h" != "__CANDIDATE__" ] && [ -f "$T/original-mode" ] && mode=$(cat "$T/original-mode")
 # The process runs before the process writes a log line. A process that dies leaves the flag off.
 [ "$mode" = dies ] || : > "$T/running"
+# long-launcher: a process that outlives this script stands in for the Launcher. The process keeps every inherited fd.
+if [ -f "$T/long-launcher" ] && [ "$mode" != dies ]; then
+    __BB__ sleep 60 </dev/null >/dev/null 2>&1 &
+    echo "$!" >> "$T/launcher-pids"
+fi
 # locksound: the candidate does not start, and /etc/sound turns read-only, so the sound restore fails.
 [ "$mode" = locksound ] && chmod 555 "$R/etc/sound"
 # breakstock: the candidate does not start, and one stock sound on the drive turns bad, so the stock copy fails.
@@ -213,6 +219,7 @@ class Case:
         fakebin.mkdir()
         for applet in APPLETS + ["readlink", "pwd", "tail", "cut", "kill"]:
             (fakebin / applet).symlink_to(BUSYBOX)
+        (fakebin / "flock").symlink_to(flock_tool())
         (fakebin / "sh").symlink_to("/bin/dash")
         stubs = {"ps": STUB_PS, "killall": STUB_KILLALL, "sleep": STUB_SLEEP, "fbinit": STUB_FBINIT, "df": STUB_DF, "mv": STUB_MV}
         for name, text in stubs.items():
@@ -273,13 +280,33 @@ class Case:
         return self.root / "etc/.viknav-rollback"
 
     def lock_path(self):
-        """The run lock on tmpfs: a folder with the pid of the owner run."""
+        """The run lock file on tmpfs. A run holds a kernel lock (flock) on the file."""
         return self.root / "tmp/viknav-ui.lock"
 
-    def hold_lock(self, pid):
-        self.lock_path().mkdir()
-        if pid is not None:
-            (self.lock_path() / "pid").write_text(f"{pid}\n")
+    def hold_lock(self):
+        """Hold the run lock from another process, as a live run does. Stop the returned process after the case."""
+        holder = subprocess.Popen(flock_command() + [str(self.lock_path()), str(BUSYBOX), "sleep", "60"])
+        if not wait_for(lambda: not self.lock_free(), 10):
+            raise RuntimeError("lock holder did not take the lock")
+        return holder
+
+    def lock_free(self):
+        return subprocess.run(flock_command() + ["-n", str(self.lock_path()), "true"]).returncode == 0
+
+    def lock_holders(self, pids=None):
+        """The pids (of pids, or of the long-lived Launcher stand-ins) that have the lock file open."""
+        if pids is None:
+            path = self.t / "launcher-pids"
+            pids = [int(p) for p in path.read_text().split()] if path.exists() else []
+        held = []
+        for pid in pids:
+            for fd in Path(f"/proc/{pid}/fd").glob("*"):
+                try:
+                    if os.readlink(fd) == str(self.lock_path()):
+                        held.append(pid)
+                except OSError:
+                    pass
+        return sorted(set(held))
 
     def sums(self):
         """First field of the drive and the internal stock settings hash files (None when absent)."""
@@ -486,6 +513,32 @@ class Case:
         return sorted(str(p.relative_to(self.root)) for p in self.root.rglob(".*.new"))
 
 
+def flock_tool():
+    """The flock applet of BUSYBOX. The Ubuntu busybox-static build has no flock applet: util-linux flock stands in."""
+    if BUSYBOX not in FLOCK_TOOLS:
+        probe = subprocess.run([str(BUSYBOX), "flock", "-n", "/dev/null", "true"], capture_output=True)
+        FLOCK_TOOLS[BUSYBOX] = BUSYBOX if probe.returncode == 0 else Path("/usr/bin/flock")
+    return FLOCK_TOOLS[BUSYBOX]
+
+
+def flock_command():
+    """The argument list that runs flock_tool()."""
+    return [str(BUSYBOX), "flock"] if flock_tool() == BUSYBOX else [str(flock_tool())]
+
+
+FLOCK_TOOLS = {}
+
+
+def stop_long_launchers(base):
+    """Stop every long-lived Launcher stand-in under base."""
+    for path in Path(base).rglob("launcher-pids"):
+        for pid in path.read_text().split():
+            try:
+                os.kill(int(pid), signal.SIGKILL)
+            except (OSError, ValueError):
+                pass
+
+
 def script_min_free_kb():
     line = next(l for l in SCRIPT.read_text().splitlines() if l.startswith("MIN_FREE_KB="))
     return int(line.split("=", 1)[1])
@@ -521,8 +574,11 @@ REDIRECTION = re.compile(r"\d*(>>|>|<)(?![&>(])")
 
 
 def unsafe_redirection_lines(text):
+    """Line numbers with a special builtin or a compound command that has a redirection. One form is allowed: exec N>>"$VAR"
+    right after a code line that checks [ -w "$VAR" ] and ends with || return N, so the open cannot fail."""
     found = []
     heredoc = None
+    previous = ""
     for number, line in enumerate(text.splitlines(), 1):
         if heredoc:
             if line.strip() == heredoc:
@@ -538,10 +594,14 @@ def unsafe_redirection_lines(text):
         for segment in re.split(r"&&|\|\||[;|&(){}]|\$\(", code):
             words = [word for word in segment.split() if word != "!"]
             if words and words[0] in SPECIAL_BUILTINS and REDIRECTION.search(segment):
-                found.append(number)
+                guarded = re.fullmatch(r'exec \d>>?"\$(\w+)"', line.strip())
+                if not (guarded and f'[ -w "${guarded.group(1)}" ]' in previous and re.search(r"\|\| return \d+$", previous)):
+                    found.append(number)
         compound = re.search(r"(\}|\)|\bdone|\bfi|\besac)\s*(\d*(>>|>|<)(?![&>(]))", code)
         if compound and not code.rstrip().endswith("&"):
             found.append(number)
+        if line.strip() and not line.strip().startswith("#"):
+            previous = line.strip()
     return sorted(set(found))
 
 
@@ -658,10 +718,7 @@ def main():
 
         def low_space():
             c = new()
-            source = c.script.read_text()
-            if source.count("MIN_FREE_KB=65536\n") != 1:
-                raise ValueError("installer anchor MIN_FREE_KB=65536 missing")
-            c.script.write_text(source.replace("MIN_FREE_KB=65536\n", "MIN_FREE_KB=999999999999\n"))
+            c.free("bin", script_min_free_kb() - 1)
             install(c)
             return [c.status(), c.device(), c.starts()]
         check("low-space-refused", 3, ["ABORTED low space", "original", 0], low_space)
@@ -1082,55 +1139,160 @@ def main():
                 return [c.status(), c.leftovers(), c.running(), c.copy_path().exists()]
             check(f"abandoned-stages-at-min-free-then-{action}", 13, [status, [], True, False], stages_at_min_free)
 
-        # One drive insertion can start two runs: mdev sees the disk and the partition, the boot coldplug scan repeats the
-        # hotplug event, and /etc/mdev/udisk_insert starts each updater in the background. One lock serializes the runs.
+        # Two updater runs can start at once (the boot scan in /etc/init.d/rcS and the hotplug event). One kernel lock
+        # (flock on /tmp/viknav-ui.lock) serializes the runs; the kernel drops the lock when the run ends or dies.
         for action in ("install", "rollback", "log"):
             def busy(action=action):
                 c = install(new()) if action == "rollback" else new()
                 c.unmark()
-                c.hold_lock(os.getpid())
-                before, calls = c.state(), len(c.calls())
-                c.marker(action)
+                holder = c.hold_lock()
+                try:
+                    before, calls = c.state(), len(c.calls())
+                    c.marker(action)
+                    c.run()
+                    return [c.status(), c.state() == before, c.calls()[calls:], c.lock_free(), c.running()]
+                finally:
+                    holder.kill()
+                    holder.wait()
+            check(f"busy-{action}-changes-nothing", 22, [BUSY, True, [], False, True], busy)
+
+        def lock_gate(c, name):
+            """A copy of the case installer that holds right after the lock until the release file exists."""
+            source = c.script.read_text()
+            anchor = 'case "$action" in\n    install) do_install ;;\n'
+            gate = f'printf won > "{c.t}/{name}-won-$$"\nwhile [ ! -f "{c.t}/{name}-release" ]; do "{BUSYBOX}" sleep 0.02; done\n'
+            if source.count(anchor) != 1:
+                raise ValueError("installer dispatch anchor missing")
+            path = c.t / f"{name}.sh"
+            path.write_text(source.replace(anchor, gate + anchor))
+            return path
+
+        def race():
+            c = new()
+            c.marker("log")
+            results = []
+            for round_number in range(20):
+                path = lock_gate(c, f"r{round_number}")
+                runs = [subprocess.Popen([str(BUSYBOX), "ash", str(path)], env={"PATH": "/usr/bin:/bin"},
+                                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) for _ in range(2)]
+                try:
+                    # The loser ends with BUSY while the winner holds at the gate.
+                    ended = wait_for(lambda: any(p.poll() is not None for p in runs), 30)
+                    won = len(list(c.t.glob(f"r{round_number}-won-*")))
+                finally:
+                    (c.t / f"r{round_number}-release").write_text("go")
+                    for p in runs:
+                        p.wait(timeout=60)
+                results.append([ended, won])
+            statuses = sorted((p / "STATUS.txt").read_text().split("\n")[0] for p in c.usb.glob("viknav-ui-log-*"))
+            return [all(r == [True, 1] for r in results), statuses.count("LOGGED"), statuses.count(BUSY), c.lock_free()]
+        check("lock-race-one-winner-20-rounds", 22, [True, 20, 20, True], race)
+
+        def killed_run():
+            c = new()
+            c.marker("install")
+            path = lock_gate(c, "killed")
+            run = subprocess.Popen([str(BUSYBOX), "ash", str(path)], env={"PATH": "/usr/bin:/bin"}, start_new_session=True,
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            held = wait_for(lambda: any(c.t.glob("killed-won-*")), 30) and not c.lock_free()
+            os.killpg(run.pid, signal.SIGKILL)
+            run.wait()
+
+            def group_gone():
+                # The gate sleep child of the killed run also holds fd 9 until the child exits.
+                try:
+                    os.killpg(run.pid, 0)
+                    return False
+                except ProcessLookupError:
+                    return True
+            wait_for(group_gone, 5)
+            free = c.lock_free()
+            c.run()
+            return [held, free, c.status(), c.device()]
+        check("killed-run-releases-lock", 22, [True, True, "INSTALLED", "candidate"], killed_run)
+
+        def old_pid_in_lock():
+            # The lock file of the earlier design held a pid. A live, unrelated process with that pid blocks nothing.
+            c = new()
+            c.lock_path().write_text(f"{os.getpid()}\n")
+            c.marker("log")
+            c.run()
+            return [c.status(), c.lock_free()]
+        check("unrelated-pid-does-not-block", 22, ["LOGGED", True], old_pid_in_lock)
+
+        def lock_open_fails():
+            c = new()
+            c.lock_path().mkdir()
+            before, calls = c.state(), len(c.calls())
+            install(c)
+            return [c.status(), c.state() == before, c.calls()[calls:], c.running()]
+        check("lock-open-failure-reported", 22, ["ABORTED lock", True, [], True], lock_open_fails)
+
+        def children_drop_lock():
+            # The Launcher stub leaves a long-lived process, as the real Launcher does. No child may keep the lock.
+            found = []
+            try:
+                c = new()
+                (c.t / "long-launcher").write_text("")
+                install(c)
+                found.append([c.status(), c.lock_free(), c.lock_holders()])
+                found.append(c.run().status())
+                c = new()
+                (c.t / "long-launcher").write_text("")
+                install(c, "dies")
+                found.append([c.status(), c.lock_free(), c.lock_holders()])
+                found.append(c.run().status())
+                c = new()
+                c.marker("record")
                 c.run()
-                return [c.status(), c.state() == before, c.calls()[calls:], (c.lock_path() / "pid").read_text(), c.running()]
-            check(f"busy-{action}-changes-nothing", 22, [BUSY, True, [], f"{os.getpid()}\n", True], busy)
-
-        def stale_lock():
-            gone = subprocess.Popen(["/bin/true"])
-            gone.wait()
-            c = new()
-            c.hold_lock(gone.pid)
-            install(c)
-            return [c.status(), c.device(), c.lock_path().exists()]
-        check("stale-lock-taken", 22, ["INSTALLED", "candidate", False], stale_lock)
-
-        def ownerless_lock():
-            c = new()
-            c.hold_lock(None)
-            install(c)
-            return [c.status(), c.device(), c.lock_path().exists()]
-        check("lock-without-pid-taken", 22, ["INSTALLED", "candidate", False], ownerless_lock)
+                pid = int((c.root / "tmp/viknav-recorder.pid").read_text())
+                found.append([c.status(), c.lock_free(), c.lock_holders([pid])])
+                c.unmark()
+                c.marker("log")
+                found.append(c.run().status())
+                (c.root / "proc/mounts").write_text("/dev/root / ext2 rw 0 0\n")
+                wait_for(lambda: not Path(f"/proc/{pid}").exists())
+            finally:
+                stop_long_launchers(base)
+            return found
+        check("children-do-not-hold-lock", 22,
+              [["INSTALLED", True, []], "ALREADY_INSTALLED", ["ROLLED_BACK Launcher stopped", True, []], "BLOCKED",
+               ["RECORDING", True, []], "LOGGED"], children_drop_lock)
 
         def lock_released():
             found = []
             c = install(new())
-            found.append([c.status(), c.lock_path().exists()])
+            found.append([c.status(), c.lock_free()])
             c.run()
-            found.append([c.status(), c.lock_path().exists()])
+            found.append([c.status(), c.lock_free()])
             c.unmark()
             c.marker("log")
             c.run()
-            found.append([c.status(), c.lock_path().exists()])
+            found.append([c.status(), c.lock_free()])
             c = install(new(), "dies")
-            found.append([c.status(), c.lock_path().exists()])
+            found.append([c.status(), c.lock_free()])
             c = new()
             (c.root / "usr/bin/Launcher").write_bytes(b"unknown\n")
             install(c)
-            found.append([c.status(), c.lock_path().exists()])
+            found.append([c.status(), c.lock_free()])
             return found
-        check("lock-released-on-every-exit", 22, [["INSTALLED", False], ["ALREADY_INSTALLED", False], ["LOGGED", False],
-                                                 ["ROLLED_BACK Launcher stopped", False], ["ABORTED unknown Launcher", False]],
+        check("lock-released-on-every-exit", 22, [["INSTALLED", True], ["ALREADY_INSTALLED", True], ["LOGGED", True],
+                                                 ["ROLLED_BACK Launcher stopped", True], ["ABORTED unknown Launcher", True]],
               lock_released)
+
+        def no_settings_no_start():
+            # A cut between the two settings renames, then the move back of the old settings folder fails.
+            c = new()
+            c.cut("between", True)
+            (c.t / "mv-fail").write_text("private/Launcher")
+            starts = c.starts()
+            c.marker("install")
+            c.run()
+            return [c.status(), c.detail(), c.starts() - starts, c.journal_path().exists(), (c.root / "private/Launcher").exists(),
+                    (c.root / "private/.Launcher.old").is_dir()]
+        check("no-settings-folder-no-start", 19,
+              ["ROLLBACK_FAILED resumed", "restore settings failed; original Launcher not started: no settings folder", 0, True, False,
+               True], no_settings_no_start)
 
         def concurrent_runs():
             # The first run holds at the journal removal of a healthy install. A rollback run starts from the same drive.
@@ -1155,9 +1317,9 @@ def main():
                 first.wait(timeout=120)
             first_out = sorted(c.usb.glob("viknav-ui-install-*"))[0]
             first_status = (first_out / "STATUS.txt").read_text().split("\n")[0]
-            return [ready, held, second, first_status, c.device(), c.journal_path().exists(), c.lock_path().exists(), c.running()]
+            return [ready, held, second, first_status, c.device(), c.journal_path().exists(), c.lock_free(), c.running()]
         check("concurrent-runs-serialized", 22,
-              [True, ["candidate", True], [BUSY, "candidate", True], "INSTALLED", "candidate", False, False, True], concurrent_runs)
+              [True, ["candidate", True], [BUSY, "candidate", True], "INSTALLED", "candidate", False, True, True], concurrent_runs)
 
         # A Launcher that ignores TERM gets KILL. A Launcher that ignores both stops the run before any live change.
         def term_ignored():
@@ -1528,12 +1690,20 @@ def main():
                 (c.root / "etc" / blocker).mkdir()
                 before = c.state()
                 install(c)
-                return [c.status(), c.state() == before, c.running(), c.leftovers(), c.copy_path().exists()]
+                return [c.status(), c.state() == before, wait_for(c.running, 5), c.leftovers(), c.copy_path().exists()]
             check(f"install-{reason.replace(' ', '-')}-write-failure-changes-nothing", 18,
                   [f"ABORTED {reason}", True, True, [f"etc/{blocker}"] if blocker.endswith(".new") else [], False], install_write_fails)
 
         def unsafe_redirections():
             return unsafe_redirection_lines(SCRIPT.read_text())
+
+        def checker_self_test():
+            sample = ('exec 9>>"$LOCK"\n'
+                      '[ -f "$LOCK" ] && [ -w "$LOCK" ] || return 2\nexec 9>>"$LOCK"\n'
+                      '[ -w "$OTHER" ] || return 2\nexec 9>>"$LOCK"\n'
+                      ': > x\n{ a; } > x\nprintf a ${n:+"$n"} > "$o"\n(a) 9>&- &\n')
+            return unsafe_redirection_lines(sample)
+        check("static-check-flags-unguarded-exec", 18, [1, 5, 6, 7], checker_self_test)
         check("no-special-builtin-or-compound-redirection", 18, [], unsafe_redirections)
 
         def log_journal():
@@ -1629,6 +1799,7 @@ def main():
             return [first, again, copied, stopped, c.device(), c.starts()]
         check("record-copies-log-until-drive-gone", 10, ["RECORDING", "ALREADY_RECORDING", True, True, "original", 0], record)
     finally:
+        stop_long_launchers(base)
         for path in Path(base).rglob("*"):
             if path.is_dir():
                 path.chmod(0o755)
@@ -1636,6 +1807,7 @@ def main():
 
     payload = {"script": str(SCRIPT.relative_to(ROOT)), "script_sha256": sha(SCRIPT.read_bytes()),
                "shell": subprocess.run([str(BUSYBOX)], capture_output=True, text=True).stdout.split("\n")[0],
+               "busybox": str(BUSYBOX), "flock": str(flock_tool()),
                "failureModes": FAILURE_MODES, "count": len(rows), "passed": sum(r["pass"] for r in rows),
                "failed": sum(not r["pass"] for r in rows), "rows": rows, "cutTable": cut_table,
                "scope": "BusyBox ash syntax check; BusyBox ash with stub functions for the cases; real Launcher, QML, and sound payload bytes, stubbed Launcher start, process list, and free space. "
