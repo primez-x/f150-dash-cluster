@@ -856,6 +856,7 @@ ItemInfo {
     // Parent pages stay on screen as columns; the deepest column has the focus. The view reads engine properties only.
     Item {
         id: mView
+        objectName: "menuView"
         anchors.fill: parent
         readonly property bool tow: mGlobalId.item.dashboardBeforeTow>=0
         readonly property color accent: tow?"#5ad1c0":"#8fd3ff"
@@ -880,6 +881,22 @@ ItemInfo {
             for(var i=first; i<level; i++)
                 x+=widths[Math.min(i-first, widths.length-1)]
             return x
+        }
+        // Motion (design/round-41 tokens: 120, 200, and 280 ms, Easing.OutCubic). Only position, opacity, scale, and colour animate.
+        // A page that opens slides in 40 px from the right and fades in over 280 ms. A page that closes leaves at once.
+        property real enterX: 0
+        property real enterOpacity: 1
+        property int shownDepth: 1
+        Component.onCompleted: shownDepth=depth
+        onDepthChanged: {
+            if(depth>shownDepth)
+                mEnter.restart()
+            shownDepth=depth
+        }
+        ParallelAnimation {
+            id: mEnter
+            NumberAnimation { target: mView; property: "enterX"; from: 40; to: 0; duration: 280; easing.type: Easing.OutCubic }
+            NumberAnimation { target: mView; property: "enterOpacity"; from: 0; to: 1; duration: 280; easing.type: Easing.OutCubic }
         }
         function hints() {
             if(mEditing)
@@ -922,6 +939,8 @@ ItemInfo {
                 width: last?menuRoot.width-x:mView.widths[Math.min(level-mView.first, mView.widths.length-1)]
                 height: menuRoot.height-mView.hintHeight
                 visible: level>=mView.first && !(last && mHostedUrl!=="")
+                opacity: last?mView.enterOpacity:1
+                transform: Translate { x: mColumn.last?mView.enterX:0 }
 
                 Rectangle {
                     anchors.right: parent.right
@@ -948,92 +967,114 @@ ItemInfo {
                     width: parent.width-44
                     height: parent.height-mColumn.headHeight
                     clip: true
-                    Column {
+                    Item {
                         y: -mColumn.firstRow*mColumn.rowHeight
                         width: parent.width
-                        Behavior on y { NumberAnimation { duration: 120 } }
-                        Repeater {
-                            model: mColumn.rows
-                            Item {
-                                id: mRow
-                                readonly property var row: modelData
-                                readonly property bool focused: mColumn.last && index===mCursor
-                                readonly property bool onPath: !mColumn.last && index===mColumn.focusRow
-                                readonly property bool armed: mColumn.last && index===mArmedRow
-                                readonly property bool sent: mColumn.last && index===mSentRow
-                                readonly property bool na: row.kind==="unavailable"
-                                readonly property bool editing: focused && mEditing
-                                width: parent.width
-                                height: mColumn.rowHeight
-                                opacity: !mColumn.last && !onPath?0.45:1
+                        height: mColumn.rows.length*mColumn.rowHeight
+                        Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                        // Focus: one highlight slides from row to row. The armed row turns the highlight amber.
+                        Rectangle {
+                            objectName: "focusHighlight"
+                            readonly property bool armed: mArmedRow>=0 && mArmedRow===mCursor
+                            visible: mColumn.last && mColumn.rows.length>0
+                            y: mColumn.focusRow*mColumn.rowHeight+3
+                            width: parent.width
+                            height: mColumn.rowHeight-6
+                            radius: 12
+                            color: armed?"#29ffb020":mPressed?mView.accentPress:mView.accentDim
+                            Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                            Rectangle {
+                                y: 11
+                                width: 5
+                                height: parent.height-22
+                                radius: 3
+                                color: parent.armed?mView.caution:mView.accent
+                            }
+                        }
+                        Column {
+                            width: parent.width
+                            // A count model keeps each row while values change, so the controls animate in place.
+                            Repeater {
+                                model: mColumn.rows.length
+                                Item {
+                                    id: mRow
+                                    readonly property var row: mColumn.rows[index]
+                                    readonly property bool focused: mColumn.last && index===mCursor
+                                    readonly property bool onPath: !mColumn.last && index===mColumn.focusRow
+                                    readonly property bool armed: mColumn.last && index===mArmedRow
+                                    readonly property bool sent: mColumn.last && index===mSentRow
+                                    readonly property bool na: row.kind==="unavailable"
+                                    readonly property bool editing: focused && mEditing
+                                    width: parent.width
+                                    height: mColumn.rowHeight
+                                    opacity: !mColumn.last && !onPath?0.45:1
+                                    Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
 
-                                Rectangle {
-                                    anchors.fill: parent
-                                    anchors.topMargin: 3
-                                    anchors.bottomMargin: 3
-                                    radius: 12
-                                    color: mRow.armed?"#29ffb020":mRow.focused?(mPressed?mView.accentPress:mView.accentDim):"transparent"
-                                }
-                                Rectangle {
-                                    readonly property bool strong: mRow.focused || mRow.armed
-                                    visible: strong || mRow.onPath
-                                    y: strong?14:22
-                                    width: strong?5:3
-                                    height: parent.height-2*y
-                                    radius: 3
-                                    color: mRow.armed?mView.caution:mView.accent
-                                    opacity: strong?1:0.6
-                                }
-                                Text {
-                                    x: 28
-                                    width: mValue.x-x-16
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: mRow.row.title
-                                    elide: Text.ElideRight
-                                    font.family: mView.family
-                                    font.pixelSize: mColumn.last?30:28
-                                    color: mRow.na?mView.mute:(mRow.focused || mRow.armed)?"#ffffff":mRow.onPath?mView.accent:
-                                           mRow.row.color==="red"?mView.hot:mRow.row.color==="orange"?mView.caution:mView.quiet
-                                }
-                                Row {
-                                    id: mValue
-                                    anchors.right: parent.right
-                                    anchors.rightMargin: 28
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    spacing: 12
-                                    Loader {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        readonly property var row: mRow.row
-                                        readonly property bool focused: mRow.focused
-                                        readonly property bool editing: mRow.editing
-                                        readonly property bool compact: mColumn.compact
-                                        sourceComponent: mRow.armed?mArmedText:mRow.sent?mSentText:mRow.na?mReasonText:
-                                                         (row.kind==="page" || row.kind==="hosted")?mOpenValue:
-                                                         row.seg && (editing || row.current>=0)?mSegments:
-                                                         row.kind==="toggle" && row.current>=0?mSwitch:
-                                                         row.kind==="number" && row.unit==="%"?mMeter:mTextValue
-                                    }
-                                }
-                                // Confirm A: the bar runs down over the 5 s the row stays armed.
-                                Rectangle {
-                                    visible: mRow.armed
-                                    x: 28
-                                    width: parent.width-56
-                                    anchors.bottom: parent.bottom
-                                    anchors.bottomMargin: 8
-                                    height: 4
-                                    radius: 2
-                                    color: "#33ffb020"
+                                    // Parent columns mark the open row; the focus highlight marks the focused row.
                                     Rectangle {
-                                        height: parent.height
+                                        visible: mRow.onPath
+                                        y: 22
+                                        width: 3
+                                        height: parent.height-2*y
+                                        radius: 3
+                                        color: mView.accent
+                                        opacity: 0.6
+                                    }
+                                    Text {
+                                        x: 28
+                                        width: mValue.x-x-16
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: mRow.row.title
+                                        elide: Text.ElideRight
+                                        font.family: mView.family
+                                        font.pixelSize: mColumn.last?30:28
+                                        color: mRow.na?mView.mute:(mRow.focused || mRow.armed)?"#ffffff":mRow.onPath?mView.accent:
+                                               mRow.row.color==="red"?mView.hot:mRow.row.color==="orange"?mView.caution:mView.quiet
+                                        Behavior on color { ColorAnimation { duration: 120 } }
+                                    }
+                                    Row {
+                                        id: mValue
+                                        anchors.right: parent.right
+                                        anchors.rightMargin: 28
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: 12
+                                        Loader {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            readonly property var row: mRow.row
+                                            readonly property bool focused: mRow.focused
+                                            readonly property bool editing: mRow.editing
+                                            readonly property bool compact: mColumn.compact
+                                            sourceComponent: mRow.armed?mArmedText:mRow.sent?mSentText:mRow.na?mReasonText:
+                                                             (row.kind==="page" || row.kind==="hosted")?mOpenValue:
+                                                             row.seg && (editing || row.current>=0)?mSegments:
+                                                             row.kind==="toggle" && row.current>=0?mSwitch:
+                                                             row.kind==="number" && row.unit==="%"?mMeter:mTextValue
+                                        }
+                                    }
+                                    // Confirm A: the bar runs down over the 5 s the row stays armed.
+                                    Rectangle {
+                                        visible: mRow.armed
+                                        x: 28
+                                        width: parent.width-56
+                                        anchors.bottom: parent.bottom
+                                        anchors.bottomMargin: 8
+                                        height: 4
                                         radius: 2
-                                        color: mView.caution
-                                        width: parent.width
-                                        NumberAnimation on width {
-                                            running: mRow.armed
-                                            from: mRow.width-56
-                                            to: 0
-                                            duration: 5000
+                                        color: "#33ffb020"
+                                        Rectangle {
+                                            width: parent.width
+                                            height: parent.height
+                                            radius: 2
+                                            color: mView.caution
+                                            transform: Scale { id: mArmScale; origin.x: 0 }
+                                            NumberAnimation {
+                                                target: mArmScale
+                                                property: "xScale"
+                                                running: mRow.armed
+                                                from: 1
+                                                to: 0
+                                                duration: 5000
+                                            }
                                         }
                                     }
                                 }
@@ -1162,6 +1203,7 @@ ItemInfo {
                 height: 34
                 radius: 17
                 color: on?mView.accent:"#2a3138"
+                Behavior on color { ColorAnimation { duration: 200; easing.type: Easing.OutCubic } }
                 Rectangle {
                     x: parent.on?36:4
                     y: 4
@@ -1169,7 +1211,8 @@ ItemInfo {
                     height: 26
                     radius: 13
                     color: parent.on?"#ffffff":"#6b7480"
-                    Behavior on x { NumberAnimation { duration: 120 } }
+                    Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                    Behavior on color { ColorAnimation { duration: 200; easing.type: Easing.OutCubic } }
                 }
             }
         }
@@ -1196,19 +1239,31 @@ ItemInfo {
                     color: "#161b21"
                     border.width: editing?2:0
                     border.color: mView.accent
+                    // One pill slides to the selected segment while the value changes.
+                    Rectangle {
+                        readonly property Item target: selected>=0 && mSegmentRepeater.count>selected?mSegmentRepeater.itemAt(selected):null
+                        visible: target!==null
+                        x: 4+(target?target.x:0)
+                        y: 4
+                        width: target?target.width:0
+                        height: target?target.height:0
+                        radius: 7
+                        color: focused?mView.accent:"#2f3740"
+                        Behavior on x { enabled: editing; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                        Behavior on width { enabled: editing; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                    }
                     Row {
                         id: mSegmentRow
                         x: 4
                         y: 4
                         spacing: 4
                         Repeater {
+                            id: mSegmentRepeater
                             model: row.seg
-                            Rectangle {
+                            Item {
                                 readonly property bool on: index===selected
                                 width: mSegmentText.width+28
                                 height: mSegmentText.height+10
-                                radius: 7
-                                color: on?(focused?mView.accent:"#2f3740"):"transparent"
                                 Text {
                                     id: mSegmentText
                                     anchors.centerIn: parent
@@ -1216,6 +1271,7 @@ ItemInfo {
                                     font.family: mView.family
                                     font.pixelSize: 22
                                     color: parent.on?(focused?"#05070a":"#ffffff"):mView.sub
+                                    Behavior on color { ColorAnimation { duration: 120 } }
                                 }
                             }
                         }
@@ -1240,14 +1296,20 @@ ItemInfo {
                         radius: 4
                         color: "#222a33"
                     }
+                    // The fill scales from the left edge; the knob moves. Both follow each edit step.
                     Rectangle {
-                        width: parent.width*(isNaN(percent)?0:percent)/100
+                        width: parent.width
                         height: parent.height
                         radius: 4
                         gradient: Gradient {
                             orientation: Gradient.Horizontal
                             GradientStop { position: 0; color: "transparent" }
                             GradientStop { position: 1; color: mView.accent }
+                        }
+                        transform: Scale {
+                            origin.x: 0
+                            xScale: isNaN(percent)?0:percent/100
+                            Behavior on xScale { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
                         }
                     }
                     Rectangle {
@@ -1258,6 +1320,7 @@ ItemInfo {
                         height: 20
                         radius: 10
                         color: "#ffffff"
+                        Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
                     }
                 }
                 Text {

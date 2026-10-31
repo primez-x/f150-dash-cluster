@@ -1384,7 +1384,8 @@ Window {
     window.resize(1920, 932)
     window.show()
     def preview(name, label):
-        QtTest.QTest.qWait(150)
+        # Wait past the longest menu motion (280 ms page enter) so the preview shows the settled frame.
+        QtTest.QTest.qWait(400)
         image, render_method = capture()
         target = fixture / ("preview-menu-" + name + ".png")
         verify("menu preview saved: " + name, not image.isNull() and image.save(str(target)))
@@ -1398,6 +1399,28 @@ Window {
     tap("Back")
     tap("Back")
     preview("home", "vnM locked view; Settings home.")
+    # Motion (design/round-41 tokens): the focus highlight slides to the next row, and a page that opens fades in.
+    def find_item(item, name):
+        for child in item.childItems():
+            if child.objectName() == name and child.isVisible():
+                return child
+            found = find_item(child, name)
+            if found is not None:
+                return found
+        return None
+    page_item = sip.cast(menu_state["page"], QtQuick.QQuickItem)
+    highlight, menu_view = find_item(page_item, "focusHighlight"), find_item(page_item, "menuView")
+    require(m("mCursor") < len(rows())-1 and rows()[m("mCursor")]["kind"] == "page", "motion check needs a page row with a row below")
+    start_y = highlight.property("y")
+    tap("Down")
+    verify("menu focus highlight slides, not jumps", highlight.property("y") < start_y+68-1)
+    verify("menu focus highlight settles on the next row", wait_until(lambda: abs(highlight.property("y")-(start_y+68)) < 0.5, 1000))
+    tap("Up")
+    wait_until(lambda: abs(highlight.property("y")-start_y) < 0.5, 1000)
+    tap("Enter")
+    verify("menu page fades in, not jumps", menu_view.property("enterOpacity") < 1)
+    verify("menu page settles", wait_until(lambda: menu_view.property("enterOpacity") == 1 and menu_view.property("enterX") == 0, 1000))
+    tap("Back")
     open_path("Vehicle", "Reset")
     tap("Enter")
     texts = item_texts(sip.cast(menu_state["page"], QtQuick.QQuickItem))
@@ -1467,7 +1490,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--child", choices=PHASES)
     parser.add_argument("--fixture")
-    parser.add_argument("--candidate-dir", default=str(ROOT / "analysis/capture-04/ui-candidate-menu-v3"))
+    # Default: the release candidate that tools/build_usb_install.py packs for the USB drive.
+    builder = importlib.util.spec_from_file_location("build_usb_install", ROOT / "tools/build_usb_install.py")
+    release = importlib.util.module_from_spec(builder)
+    builder.loader.exec_module(release)
+    parser.add_argument("--candidate-dir", default=str(release.CANDIDATE))
     args = parser.parse_args()
     if args.child:
         return child(args.child, Path(args.fixture), args.candidate_dir)

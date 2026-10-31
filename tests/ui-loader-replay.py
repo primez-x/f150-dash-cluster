@@ -18,7 +18,7 @@ GENERATOR = BASE / "tools" / "prepare_ui_candidate.py"
 DECODER_PATH = BASE / "tools" / "decode_qml_units.py"
 SOURCE = BASE / "installed" / "capture-04" / "rootfs" / "usr" / "bin" / "Launcher"
 OUTPUT_PARENT = BASE / "analysis" / "capture-04"
-OUTPUT = OUTPUT_PARENT / "ui-candidate-menu-v3"
+BUILDER_PATH = BASE / "tools" / "build_usb_install.py"
 RESULT = OUTPUT_PARENT / "ui-loader-replay-results.json"
 SCHEMA = BASE / "evidence" / "qt-5.14.2" / "qv4instr_moth_p.h"
 EXPECTED_SOURCE_SHA256 = "2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b"
@@ -67,9 +67,9 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def load_decoder():
-    spec = importlib.util.spec_from_file_location("decode_qml_units", DECODER_PATH)
-    require(spec is not None and spec.loader is not None, "decoder module load failed")
+def load_module(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    require(spec is not None and spec.loader is not None, f"{name} module load failed")
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     write_bytecode = sys.dont_write_bytecode
@@ -251,7 +251,7 @@ def write_result(result: dict[str, object]) -> None:
 
 
 def main() -> int:
-    decoder = load_decoder()
+    decoder = load_module("decode_qml_units", DECODER_PATH)
     require(SOURCE.is_file(), f"verified Launcher missing: {SOURCE}")
     source_bytes = SOURCE.read_bytes()
     require(sha256(source_bytes) == EXPECTED_SOURCE_SHA256 == decoder.SHA256, "installed Launcher baseline hash mismatch")
@@ -312,7 +312,8 @@ def main() -> int:
             require(not outside_output.exists(), "outside output path created candidate")
         tests["outside_analysis_output"] = {"result": "rejected", "output_created": False}
 
-        final_candidate = OUTPUT
+        # The release candidate: the folder that tools/build_usb_install.py packs for the USB drive.
+        final_candidate = load_module("build_usb_install", BUILDER_PATH).CANDIDATE
         if final_candidate.exists() or final_candidate.is_symlink():
             existing = inspect_candidate(final_candidate, decoder)
             require(existing["candidate_sha256"] == successful["candidate_sha256"], "existing candidate differs; candidate preserved")
@@ -327,7 +328,7 @@ def main() -> int:
     result = {
         "status": "PASS",
         "source_sha256": EXPECTED_SOURCE_SHA256,
-        "candidate_directory": str(OUTPUT.relative_to(BASE)).replace("\\", "/"),
+        "candidate_directory": str(final_candidate.relative_to(BASE)).replace("\\", "/"),
         "candidate_sha256": successful["candidate_sha256"],
         "candidate_size": successful["candidate_size"],
         "tests": tests,
@@ -338,7 +339,7 @@ def main() -> int:
     print(f"PASS: UI candidate replay completed; 198 units decoded, {len(LOADERS)} loaders redirected in "
           f"{len({item['unit_qrc_path'] for item in LOADERS.values()})} units, thirteen factory codes cleared, {len(LOADERS) + len(COPIES)} QML files copied.")
     print(f"Result: {RESULT}")
-    print(f"Candidate: {OUTPUT}")
+    print(f"Candidate: {final_candidate}")
     return 0
 
 

@@ -138,10 +138,10 @@ The fixture manifest preserves source and export hashes. One vendor menu-code co
 The original captured source remains unchanged outside Git. Git keeps the selected fixture bytes unchanged.
 Earlier public commits retain the removed vendor menu-code comment. This source change does not purge Git history or change device access.
 
-Prepare a new UI candidate directory:
+Prepare a new UI candidate directory. First set `CANDIDATE` in `tools/build_usb_install.py` to the new folder name; the replay and the Qt probe check that folder.
 
 ```powershell
-python tools/prepare_ui_candidate.py --output analysis/capture-04/ui-candidate-next
+python tools/prepare_ui_candidate.py --output analysis/capture-04/ui-candidate-menu-v8
 python tests/ui-loader-replay.py
 ```
 

@@ -16,7 +16,6 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parents[1]
 DECODER_PATH = BASE / "tools" / "decode_qml_units.py"
 SOURCE_DEFAULT = BASE / "installed" / "capture-04" / "rootfs" / "usr" / "bin" / "Launcher"
-OUTPUT_DEFAULT = BASE / "analysis" / "capture-04" / "ui-candidate-menu-v3"
 ANALYSIS_ROOT = (BASE / "analysis").resolve()
 SCHEMA_PATH = BASE / "evidence" / "qt-5.14.2" / "qv4instr_moth_p.h"
 LAYOUT_PATH = BASE / "evidence" / "fixtures" / "capture-04" / "launcher-layout.json"
@@ -364,7 +363,7 @@ def write_staged_output(output: Path, source: Path, candidate_bytes: bytes, copy
 def main() -> int:
     parser = argparse.ArgumentParser(description="Prepare a PC-only Launcher cache candidate without target execution.")
     parser.add_argument("--source", type=Path, default=SOURCE_DEFAULT)
-    parser.add_argument("--output", type=Path, default=OUTPUT_DEFAULT)
+    parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     target = output_path(args.output)
     require(args.source.is_file(), "source Launcher is missing")
