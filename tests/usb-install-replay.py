@@ -2,8 +2,10 @@
 
 Run under WSL: python3 tests/usb-install-replay.py
 The installer runs in dash (an ash-family shell) with BusyBox applets only on PATH. The BusyBox shell itself runs its own
-applets before PATH, so the BusyBox shell only checks the syntax here. Stubs replace killall, ps, sleep, fbinit, and /etc/qtenv.sh. The qtenv stub writes a Launcher log for the installed Launcher: the candidate log follows the case, and
-the original log is always healthy. No device, partition, or captured ARM program is used.
+applets before PATH, so the BusyBox shell only checks the syntax here. Stubs replace killall, ps, sleep, fbinit, df, and /etc/qtenv.sh. The qtenv stub writes a Launcher log for the installed Launcher: the candidate log follows the case, and
+the original log is always healthy. The df stub reports a set free space for a folder only when the case asks for one.
+The fake root starts with the stock /etc/sound files; the payload carries chime set A and the stock sounds.
+No device, partition, or captured ARM program is used.
 """
 import hashlib
 import json
@@ -18,7 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools/usb-install/encrypt.sh"
 BUSYBOX = ROOT / "tools/busybox/busybox"
-CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v12"
+CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v13"
 ORIGINAL = ROOT / "installed/capture-04/rootfs/usr/bin/Launcher"
 RESULT = ROOT / "analysis/capture-04/usb-install-replay-results.json"
 ETC = ["vnD.qml", "vnG.qml", "vnL.qml", "vnM.qml", "vnN.qml", "vnS.qml", "vnV.qml"]
@@ -41,8 +43,14 @@ V8_ETC = ROOT / "analysis/capture-04/usb-install-menu-v8/drive/viknav-ui/etc"
 # The eleventh release (menu-v11: the owned dashboard shell and the fixed notification text). menu-v11 has no vnL.qml,
 # and the menu-v11 Launcher is the candidate Launcher.
 V11_ETC = ROOT / "analysis/capture-04/usb-install-menu-v11/drive/viknav-ui/etc"
+# The twelfth release (menu-v12: the Daily A and Towing A layouts). menu-v12 left the stock sounds in /etc/sound.
+V12_ETC = ROOT / "analysis/capture-04/usb-install-menu-v12/drive/viknav-ui/etc"
+# Chime set A (design/round-43/sounds/make_sounds.py writes the files) and the stock sounds of the cluster.
+SOUND_SET = ROOT / "design/round-43/sounds/a"
+STOCK_SOUND = ROOT / "installed/capture-04/rootfs/etc/sound"
+
 RETIRED = ["vnB.qml", "vnF.qml"]
-APPLETS = ["awk", "cat", "chmod", "cp", "date", "df", "grep", "head", "mkdir", "mv", "rm", "sha256sum", "sync", "tar", "wc"]
+APPLETS = ["awk", "cat", "chmod", "cp", "date", "grep", "head", "mkdir", "mv", "rm", "sha256sum", "sync", "tar", "wc"]
 MARKERS = {"install": ("VIKNAV-UI-INSTALL.txt", "VIKNAV_UI_INSTALL"),
            "rollback": ("VIKNAV-UI-ROLLBACK.txt", "VIKNAV_UI_ROLLBACK_CAPTURE04"),
            "log": ("VIKNAV-UI-LOG.txt", "VIKNAV_UI_LOG"),
@@ -61,12 +69,23 @@ FAILURE_MODES = [
     "Log collection changes the cluster",
     "The recorder misses new Launcher log lines, runs twice, or keeps running after the drive is gone",
     "An upgrade from an earlier release is refused, keeps a retired file, or replaces the stock settings backup",
+    "The installer replaces an /etc/sound file that is missing, a link, or not a stock or set A file",
+    "The free space check misses the sounds or a filesystem that receives staged files",
+    "A failed install or a failed sound copy leaves set A or a partial sound set on the cluster",
+    "A rollback leaves set A sounds, or reports success after a failed sound restore",
+    "A repeated install or rollback skips a needed sound change",
+    "Log collection omits the /etc/sound hashes",
 ]
 
 sha = lambda data: hashlib.sha256(data).hexdigest()
 ORIGINAL_BYTES = ORIGINAL.read_bytes()
 CANDIDATE_BYTES = (CANDIDATE / "Launcher").read_bytes()
 ETC_BYTES = {name: (CANDIDATE / "etc" / name).read_bytes() for name in ETC}
+SOUNDS = sorted(path.name for path in STOCK_SOUND.glob("*.wav"))
+if len(SOUNDS) != 15 or not all((SOUND_SET / name).is_file() for name in SOUNDS):
+    raise SystemExit("Chime set A is missing: run python3 design/round-43/sounds/make_sounds.py")
+SOUND_BYTES = {name: (SOUND_SET / name).read_bytes() for name in SOUNDS}
+STOCK_SOUND_BYTES = {name: (STOCK_SOUND / name).read_bytes() for name in SOUNDS}
 SETTINGS = b"settings before install\n"
 # The stock notification text table on the cluster (/etc/common/NotifyTranslation.qml).
 STOCK_NOTIFY = (ROOT / "installed/capture-04/rootfs/etc/common/NotifyTranslation.qml").read_bytes()
@@ -81,9 +100,11 @@ mode=healthy
 [ "$h" = "__CANDIDATE__" ] && mode=$(cat "$T/candidate-mode")
 # The process runs before the process writes a log line. A process that dies leaves the flag off.
 [ "$mode" = dies ] || : > "$T/running"
+# locksound: the candidate does not start, and /etc/sound turns read-only, so the sound restore fails.
+[ "$mode" = locksound ] && chmod 555 "$R/etc/sound"
 log=$R/tmp/Launcher.log
 printf 'qml: [Translation Starting...]\n' > "$log"
-case "$mode" in nomarker) ;; *)
+case "$mode" in nomarker|locksound) ;; *)
     printf 'qml: [Starting VehicleEvent .....]\nqml: [VehicleEvent Ver:VehicleEvent@20250714 r36577]\nqml: [main.qml starting...]\n' >> "$log" ;; esac
 [ "$mode" = vnerror ] && printf 'file:///etc/vnG.qml:120: ReferenceError: x is not defined\n' >> "$log"
 [ "$h" = "__CANDIDATE__" ] && printf 'changed by candidate\n' > "$R/private/Launcher/settings.db"
@@ -101,6 +122,23 @@ exit 0
 """
 STUB_SLEEP = "#!/bin/sh\nexec __BB__ sleep 0.02\n"
 STUB_FBINIT = "#!/bin/sh\nexit 0\n"
+STUB_DF = r"""#!/bin/sh
+# Test stub for df: the file __T__/df-<folder> sets the free space of that folder. Other folders report real values.
+for a; do d=$a; done
+case "$d" in */etc/sound) k=sound ;; */etc) k=etc ;; */usr/bin) k=bin ;; *) k=none ;; esac
+if [ -f __T__/df-$k ]; then
+    echo 'Filesystem           1K-blocks      Used Available Use% Mounted on'
+    echo "/dev/mmcblk0p4          761776    584948 $(cat __T__/df-$k)  78% /"
+    exit 0
+fi
+exec __BB__ df "$@"
+"""
+
+
+def stock_mode(name):
+    """Stock mode of a sound file (capture-04 ROOTFS-INVENTORY): the radar files are 644, the others 777."""
+    return 0o644 if name.startswith("radar_") else 0o777
+
 
 
 class Case:
@@ -108,19 +146,26 @@ class Case:
         self.t = Path(tempfile.mkdtemp(dir=base))
         self.root = self.t / "root"
         self.usb = self.t / "usb" / "sda1"
-        for d in ("usr/bin", "etc", "private/Launcher", "tmp", "proc", "mnt/temp/encrypt"):
+        for d in ("usr/bin", "etc/sound", "private/Launcher", "tmp", "proc", "mnt/temp/encrypt"):
             (self.root / d).mkdir(parents=True)
         (self.root / "usr/bin/Launcher").write_bytes(ORIGINAL_BYTES)
+        for name, data in STOCK_SOUND_BYTES.items():
+            (self.root / "etc/sound" / name).write_bytes(data)
+            (self.root / "etc/sound" / name).chmod(stock_mode(name))
         (self.root / "private/Launcher/settings.db").write_bytes(SETTINGS)
         self.usb.mkdir(parents=True)
         (self.usb / "encrypt.zip").write_bytes(b"zip")
         payload = self.usb / "viknav-ui"
         (payload / "etc").mkdir(parents=True)
-        (payload / "original").mkdir()
+        (payload / "sound").mkdir()
+        (payload / "original/sound").mkdir(parents=True)
         (payload / "Launcher").write_bytes(CANDIDATE_BYTES)
         (payload / "original/Launcher").write_bytes(ORIGINAL_BYTES)
         for name, data in ETC_BYTES.items():
             (payload / "etc" / name).write_bytes(data)
+        for name in SOUNDS:
+            (payload / "sound" / name).write_bytes(SOUND_BYTES[name])
+            (payload / "original/sound" / name).write_bytes(STOCK_SOUND_BYTES[name])
         (self.root / "proc/mounts").write_text(f"/dev/root / ext2 rw 0 0\n/dev/sda1 {self.usb} vfat rw,relatime 0 0\n")
         (self.t / "candidate-mode").write_text("healthy")
         # The log of the running original Launcher already has both startup lines: a stale log must not pass the health check.
@@ -132,7 +177,7 @@ class Case:
             (fakebin / applet).symlink_to(BUSYBOX)
         # The recorder runs in a second shell. dash keeps the sleep stub in use (the BusyBox shell would run its own sleep).
         (fakebin / "sh").symlink_to("/bin/dash")
-        stubs = {"ps": STUB_PS, "killall": STUB_KILLALL, "sleep": STUB_SLEEP, "fbinit": STUB_FBINIT}
+        stubs = {"ps": STUB_PS, "killall": STUB_KILLALL, "sleep": STUB_SLEEP, "fbinit": STUB_FBINIT, "df": STUB_DF}
         for name, text in stubs.items():
             self.stub(fakebin / name, text)
         self.stub(self.root / "etc/qtenv.sh", STUB_QTENV)
@@ -187,11 +232,36 @@ class Case:
         state = "original" if launcher == sha(ORIGINAL_BYTES) else "candidate" if launcher == sha(CANDIDATE_BYTES) else "other"
         etc = {name: (self.root / "etc" / name).exists() and sha((self.root / "etc" / name).read_bytes()) == sha(ETC_BYTES[name]) for name in ETC}
         present = [name for name in ETC + RETIRED if (self.root / "etc" / name).exists()]
-        if state == "candidate" and all(etc.values()):
+        sound = self.sound()
+        if state == "candidate" and all(etc.values()) and sound == "A":
             return "candidate"
-        if state == "original" and not present:
+        if state == "original" and not present and sound == "stock":
             return "original"
-        return f"mixed launcher={state} etc={present}"
+        return f"mixed launcher={state} etc={present} sound={sound}"
+
+    def sound(self):
+        """stock or A when every /etc/sound file is a regular file of that set, mixed otherwise."""
+        paths = [self.root / "etc/sound" / name for name in SOUNDS]
+        found = [None if p.is_symlink() or not p.is_file() else sha(p.read_bytes()) for p in paths]
+        if found == [sha(STOCK_SOUND_BYTES[name]) for name in SOUNDS]:
+            return "stock"
+        if found == [sha(SOUND_BYTES[name]) for name in SOUNDS]:
+            return "A"
+        return "mixed"
+
+    def sound_modes(self):
+        """True when every /etc/sound file has the stock mode of that file."""
+        return all((self.root / "etc/sound" / name).stat().st_mode & 0o777 == stock_mode(name) for name in SOUNDS)
+
+    def state(self):
+        """Hash and link flag of every file that an install or a rollback can change."""
+        paths = [self.root / "usr/bin/Launcher", self.root / "private/Launcher/settings.db"]
+        paths += [self.root / "etc" / name for name in ETC + RETIRED] + [self.root / "etc/sound" / name for name in SOUNDS]
+        return {str(p.relative_to(self.root)): [sha(p.read_bytes()) if p.is_file() else None, p.is_symlink()] for p in paths}
+
+    def free(self, folder, kb):
+        """Make the df stub report kb free for folder (bin, etc, or sound)."""
+        (self.t / f"df-{folder}").write_text(str(kb))
 
     def settings(self):
         return (self.root / "private/Launcher/settings.db").read_bytes()
@@ -215,6 +285,11 @@ class Case:
 
     def leftovers(self):
         return sorted(str(p.relative_to(self.root)) for p in self.root.rglob(".*.new"))
+
+
+def script_min_free_kb():
+    line = next(l for l in SCRIPT.read_text().splitlines() if l.startswith("MIN_FREE_KB="))
+    return int(line.split("=", 1)[1])
 
 
 rows = []
@@ -259,8 +334,9 @@ def main():
             c = install(new())
             return [c.status(), c.device(), c.starts(), c.settings() == b"changed by candidate\n",
                     (c.out / "private-Launcher.tar").exists(), (c.usb / "viknav-ui/settings-before-install.tar").exists(),
-                    (c.out / "Launcher-start.log").exists(), (c.out / "Launcher-later.log").exists(), c.leftovers()]
-        check("install-healthy", 4, ["INSTALLED", "candidate", 1, True, True, True, True, True, []], healthy)
+                    (c.out / "Launcher-start.log").exists(), (c.out / "Launcher-later.log").exists(), c.leftovers(),
+                    c.sound(), c.sound_modes()]
+        check("install-healthy", 4, ["INSTALLED", "candidate", 1, True, True, True, True, True, [], "A", True], healthy)
 
         def restart_context():
             c = install(new())
@@ -292,7 +368,8 @@ def main():
             (c.root / "etc/vnM.qml").write_text("other\n")
             install(c)
             return [c.status(), c.device(), c.starts()]
-        check("unknown-etc-file-refused", 1, ["ABORTED unknown /etc/vnM.qml", "mixed launcher=original etc=['vnM.qml']", 0], unknown_etc)
+        check("unknown-etc-file-refused", 1, ["ABORTED unknown /etc/vnM.qml", "mixed launcher=original etc=['vnM.qml'] sound=stock", 0],
+              unknown_etc)
 
         def bad_payload():
             c = new()
@@ -310,7 +387,10 @@ def main():
 
         def low_space():
             c = new()
-            c.script.write_text(c.script.read_text().replace("MIN_FREE_KB=40960\n", "MIN_FREE_KB=999999999999\n"))
+            source = c.script.read_text()
+            if source.count("MIN_FREE_KB=65536\n") != 1:
+                raise ValueError("installer anchor MIN_FREE_KB=65536 missing")
+            c.script.write_text(source.replace("MIN_FREE_KB=65536\n", "MIN_FREE_KB=999999999999\n"))
             install(c)
             return [c.status(), c.device(), c.starts()]
         check("low-space-refused", 3, ["ABORTED low space", "original", 0], low_space)
@@ -328,8 +408,8 @@ def main():
             def unhealthy(mode=mode):
                 c = install(new(), mode)
                 return [c.status(), c.device(), c.starts(), c.settings() == SETTINGS, (c.usb / "INSTALL-BLOCKED.txt").exists(),
-                        (c.out / "Launcher-failed.log").exists(), c.leftovers()]
-            check(f"unhealthy-{mode}-rolls-back", 4, [reason, "original", 2, True, True, True, []], unhealthy)
+                        (c.out / "Launcher-failed.log").exists(), c.leftovers(), c.sound(), c.sound_modes()]
+            check(f"unhealthy-{mode}-rolls-back", 4, [reason, "original", 2, True, True, True, [], "stock", True], unhealthy)
 
         def blocked():
             c = install(new(), "dies")
@@ -369,8 +449,8 @@ def main():
             c.unmark()
             c.marker("rollback")
             c.run()
-            return [c.status(), c.device(), c.starts(), c.settings() == SETTINGS, c.leftovers()]
-        check("rollback-restores-original", 7, ["ROLLED_BACK by request", "original", 2, True, []], rollback)
+            return [c.status(), c.device(), c.starts(), c.settings() == SETTINGS, c.leftovers(), c.sound_modes()]
+        check("rollback-restores-original", 7, ["ROLLED_BACK by request", "original", 2, True, [], True], rollback)
 
         def rollback_again():
             c = install(new())
@@ -516,6 +596,146 @@ def main():
             return [c.status(), c.device(), c.settings() == SETTINGS, c.leftovers()]
         check("rollback-from-v1", 7, ["ROLLED_BACK by request", "original", True, []], rollback_v1)
 
+        def upgrade_v12():
+            c = new().install_v1(V12_ETC)
+            before = c.backup()
+            stock = c.sound()
+            install(c)
+            installed = [stock, c.status(), c.device(), c.starts(), c.backup() == before, c.leftovers()]
+            c.run()
+            return installed + [c.status(), c.device(), c.starts()]
+        check("upgrade-from-v12-then-again", 11, ["stock", "INSTALLED", "candidate", 1, True, [], "ALREADY_INSTALLED", "candidate", 1],
+              upgrade_v12)
+
+        def unknown_sound():
+            c = new()
+            (c.root / "etc/sound/ding.wav").write_bytes(b"other\n")
+            before = c.state()
+            install(c)
+            return [c.status(), c.state() == before, c.starts(), [x for x in c.calls() if x.startswith("killall")]]
+        check("unknown-sound-refused", 12, ["ABORTED unknown /etc/sound/ding.wav", True, 0, []], unknown_sound)
+
+        def linked_sound():
+            c = new()
+            real = c.root / "etc/door-real.wav"
+            real.write_bytes(STOCK_SOUND_BYTES["door.wav"])
+            (c.root / "etc/sound/door.wav").unlink()
+            (c.root / "etc/sound/door.wav").symlink_to(real)
+            before = c.state()
+            install(c)
+            return [c.status(), c.state() == before, c.starts()]
+        check("linked-sound-refused", 12, ["ABORTED unknown /etc/sound/door.wav", True, 0], linked_sound)
+
+        def missing_sound():
+            c = new()
+            (c.root / "etc/sound/buzzer.wav").unlink()
+            before = c.state()
+            install(c)
+            return [c.status(), c.state() == before, c.starts()]
+        check("missing-sound-refused", 12, ["ABORTED unknown /etc/sound/buzzer.wav", True, 0], missing_sound)
+
+        for payload_name in ("sound/radar_b3.wav", "original/sound/door.wav"):
+            def bad_sound_payload(payload_name=payload_name):
+                c = new()
+                path = c.usb / "viknav-ui" / payload_name
+                path.write_bytes(path.read_bytes()[:-10])
+                before = c.state()
+                install(c)
+                return [c.status(), c.state() == before, c.starts(), c.calls()]
+            check(f"damaged-payload-{payload_name.replace('/', '-')}-refused", 2, [f"ABORTED payload {payload_name}", True, 0, []],
+                  bad_sound_payload)
+
+        def sound_copy_fails():
+            c = new()
+            # A folder in the place of one staged file makes the copy of that one sound fail after the earlier files staged.
+            blocker = c.root / "etc/sound/.ding.wav.new"
+            blocker.mkdir()
+            before = c.state()
+            install(c)
+            blocker.chmod(0o755)
+            return [c.status(), c.state() == before, c.starts(), c.leftovers()]
+        check("failed-sound-copy-changes-nothing", 14, ["ABORTED copy /etc/sound/ding.wav", True, 1, ["etc/sound/.ding.wav.new"]],
+              sound_copy_fails)
+
+        def free_limit():
+            blocks = lambda data: -(-len(data) // 4096) * 4
+            staged = blocks(CANDIDATE_BYTES) + sum(map(blocks, ETC_BYTES.values())) + sum(map(blocks, SOUND_BYTES.values()))
+            return script_min_free_kb() >= staged + 4096
+        check("free-space-limit-covers-staged-files", 13, True, free_limit)
+
+        for folder in ("bin", "etc", "sound"):
+            def short(folder=folder):
+                c = new()
+                for other in ("bin", "etc", "sound"):
+                    c.free(other, script_min_free_kb() - (1 if other == folder else 0))
+                before = c.state()
+                install(c)
+                return [c.status(), c.state() == before, c.starts()]
+            check(f"low-space-in-{folder}-refused", 13, ["ABORTED low space", True, 0], short)
+
+        def exact_space():
+            c = new()
+            for folder in ("bin", "etc", "sound"):
+                c.free(folder, script_min_free_kb())
+            install(c)
+            return [c.status(), c.device()]
+        check("enough-space-in-every-folder-installs", 13, ["INSTALLED", "candidate"], exact_space)
+
+        def install_needs_sounds():
+            c = install(new())
+            (c.root / "etc/sound/ding.wav").write_bytes(STOCK_SOUND_BYTES["ding.wav"])
+            c.run()
+            return [c.status(), c.device(), c.starts()]
+        check("install-again-replaces-stock-sound", 16, ["INSTALLED", "candidate", 2], install_needs_sounds)
+
+        def rollback_needs_sounds():
+            c = install(new())
+            c.unmark()
+            c.marker("rollback")
+            c.run()
+            (c.root / "etc/sound/ding.wav").write_bytes(SOUND_BYTES["ding.wav"])
+            c.run()
+            return [c.status(), c.device(), c.starts()]
+        check("rollback-again-restores-stock-sound", 16, ["ROLLED_BACK by request", "original", 3], rollback_needs_sounds)
+
+        def rollback_sound_fails():
+            c = install(new())
+            c.unmark()
+            c.marker("rollback")
+            (c.root / "etc/sound").chmod(0o555)
+            c.run()
+            (c.root / "etc/sound").chmod(0o755)
+            return [c.status(), c.sound(), c.leftovers()]
+        check("rollback-sound-restore-failure-reported", 15, ["ROLLBACK_FAILED", "A", []], rollback_sound_fails)
+
+        def unhealthy_sound_fails():
+            c = install(new(), "locksound")
+            (c.root / "etc/sound").chmod(0o755)
+            return [c.status(), c.sound(), (c.usb / "INSTALL-BLOCKED.txt").exists()]
+        check("unhealthy-sound-restore-failure-reported", 15, ["ROLLBACK_FAILED startup markers missing", "A", True],
+              unhealthy_sound_fails)
+
+        def rollback_bad_sound_payload():
+            c = install(new())
+            c.unmark()
+            path = c.usb / "viknav-ui/original/sound/ding.wav"
+            path.write_bytes(path.read_bytes()[:-10])
+            c.marker("rollback")
+            before = c.state()
+            c.run()
+            return [c.status(), c.state() == before, c.starts()]
+        check("rollback-damaged-sound-payload-refused", 15, ["ABORTED payload original/sound/ding.wav", True, 1],
+              rollback_bad_sound_payload)
+
+        def log_sounds():
+            c = install(new())
+            c.unmark()
+            c.marker("log")
+            c.run()
+            text = (c.out / "installed-sha256.txt").read_text()
+            return [c.status(), [n for n in SOUNDS if f"{sha(SOUND_BYTES[n])}  {c.root}/etc/sound/{n}" not in text]]
+        check("log-lists-sound-hashes", 17, ["LOGGED", []], log_sounds)
+
         def record():
             c = new()
             (c.root / "proc/uptime").write_text("12.34 5.00\n")
@@ -543,7 +763,7 @@ def main():
                "shell": subprocess.run([str(BUSYBOX)], capture_output=True, text=True).stdout.split("\n")[0],
                "failureModes": FAILURE_MODES, "count": len(rows), "passed": sum(r["pass"] for r in rows),
                "failed": sum(not r["pass"] for r in rows), "rows": rows,
-               "scope": "BusyBox ash syntax check; dash with BusyBox applets for the cases; real Launcher and QML payload bytes, stubbed Launcher start and process list. "
+               "scope": "BusyBox ash syntax check; dash with BusyBox applets for the cases; real Launcher, QML, and sound payload bytes, stubbed Launcher start, process list, and free space. "
                         "No cluster, vendor updater, Qt runtime, or vehicle proof."}
     RESULT.write_text(json.dumps(payload, indent=2) + "\n")
     print(json.dumps({k: payload[k] for k in ("count", "passed", "failed")} | {"result": str(RESULT)}))

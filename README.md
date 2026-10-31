@@ -209,17 +209,17 @@ The vendor USB updater (`/etc/mdev/update.sh`) runs `encrypt/encrypt.sh` from `e
 
 `tools/usb-install/encrypt.sh` installs, rolls back, or collects logs. One marker file next to `encrypt.zip` selects the action. The script pins the hash of every payload file in `viknav-ui/`.
 
-- Install: the script aborts with no change for an unknown Launcher, an unknown `/etc/vn*.qml` file, a damaged payload, or low space. Files of an earlier release are known files, so a new drive upgrades the cluster in place. The install removes files that only an earlier release used (`RETIRED_FILES`). The script stops the Launcher, backs up `/private/Launcher` to the drive, and stages and checks each file. Only an install over the original Launcher writes `viknav-ui/settings-before-install.tar`; an upgrade keeps that stock backup. Then the script renames the `/etc` files and the Launcher into place and starts the Launcher.
+- Install: the script aborts with no change for an unknown Launcher, an unknown `/etc/vn*.qml` file, an `/etc/sound` file that is missing, a link, or neither stock nor chime set A, a damaged payload, or low space. Files of an earlier release are known files, so a new drive upgrades the cluster in place. The install removes files that only an earlier release used (`RETIRED_FILES`). The script stops the Launcher, backs up `/private/Launcher` to the drive, and stages and checks each file. Only an install over the original Launcher writes `viknav-ui/settings-before-install.tar`; an upgrade keeps that stock backup. Then the script renames the `/etc` files, the chime sounds (`/etc/sound`, set A from `design/round-43/sounds/make_sounds.py`, menu-v13), and the Launcher into place and starts the Launcher. Each sound keeps the stock file mode.
 - Health check: the new Launcher must log `VehicleEvent Ver:VehicleEvent@` and `main.qml starting`, stay up for 20 s, and log no `/etc/vn` error. Otherwise the script restores the original Launcher, the `/etc` files, and the settings. The script also writes `INSTALL-BLOCKED.txt`, so the next insertion does not try the install again.
-- Rollback: the script restores the original Launcher from the drive, removes the current and retired `/etc/vn*.qml` files, and restores the settings from before the first install.
-- Log: the script copies `/tmp/Launcher.log` and the installed hashes. The script changes nothing.
+- Rollback: the script restores the original Launcher from the drive, removes the current and retired `/etc/vn*.qml` files, puts back the stock sounds from `viknav-ui/original/sound/`, and restores the settings from before the first install. Only a menu-v13 or later drive restores the stock sounds.
+- Log: the script copies `/tmp/Launcher.log` and the installed hashes, the `/etc/sound` hashes included. The script changes nothing.
 - Record: the script starts a background copy of `/tmp/Launcher.log` to the drive every 2 s. The copy stops when the drive is unmounted or the power goes. The script changes nothing on the cluster.
 - A repeated install or rollback with nothing to change does not restart the dashboard.
 
 The USB port becomes a host port at the end of `rcS`, after the hotplug handler starts. A drive left in at power-up therefore runs the updater; the first truck install (menu-v1, 2026-10-30) ran this way. A repeated install does nothing, and each record run writes a new folder.
 Results go to a new `viknav-ui-<action>-<time>-<pid>` folder on the drive. Line 1 of `STATUS.txt` is the result. The boot scripts (`S01private`, `S90mount`, `rcS`) are not part of the install.
 
-Replay the installer against a fake cluster root with the real payload bytes, then build the drive contents (Ubuntu under WSL):
+Replay the installer against a fake cluster root with the real payload bytes, then build the drive contents (Ubuntu under WSL). The build reads chime set A from `design/round-43/sounds/a/`; run `python design/round-43/sounds/make_sounds.py` first:
 
 ```powershell
 wsl.exe -d Ubuntu --exec sh -c "cd /mnt/c/f150-dash-cluster/tools/busybox && apt-get download busybox-static && dpkg-deb -x busybox-static_*.deb deb && cp deb/usr/bin/busybox busybox"
