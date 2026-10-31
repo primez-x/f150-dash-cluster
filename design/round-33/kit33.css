@@ -1,0 +1,7 @@
+/* Round 33: the engine gauge frame on Towing A. Loads after round-32/kit32.css. */
+/* Option A: five columns in the 380 px card; 26 px values keep four readings such as 273° apart on the 72 px column pitch. */
+.card.t25.t33 .tb13 { width: 64px; }
+.card.t25.t33 .tb13 .rv { font-size: 26px; }
+.card.t25.t33 .tb13 .rv.slot { height: 26px; }
+/* Engine page: three readings stack in the square card. */
+.card.sec.sq.engine .cells { gap: 22px; }
