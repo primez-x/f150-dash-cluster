@@ -8,7 +8,7 @@ const ACC = "var(--accent)";
 function place(html) { document.getElementById("canvas").insertAdjacentHTML("beforeend", html); }
 function layer(svg) { place(`<svg class="abs" style="left:0;top:0" width="1920" height="932">${DEFS}${svg}</svg>`); }
 const DEFS = `<defs>
-  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="glow" filterUnits="userSpaceOnUse" x="0" y="0" width="1920" height="932"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   <filter id="bloom" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="9"/></filter>
 </defs>`;
 const LABEL = "BMW Type Global";
