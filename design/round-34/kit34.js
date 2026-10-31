@@ -15,11 +15,12 @@ const boostCls = s => s.boost == null ? " nodata" : s.boost < 0 ? " vac" : "";
 const rpmNum = s => `<span class="n34${rpmCls(s)}" data-field="tacho rpm"><b>${s.rpm.toLocaleString("en-US")}</b><i>rpm</i></span>`;
 const boostNum = s => `<span class="n34${boostCls(s)}" data-field="${BOOST_FIELD}"><b>${boostText(s)}</b><i>psi</i></span>`;
 
+const stack34 = s => NUM === "a"
+  ? `<div class="abs num34 a" style="left:40px;top:690px">${boostNum(s)}${rpmNum(s)}</div>`
+  : `<div class="abs num34 b" style="left:${CARD.l}px;top:620px">${rpmNum(s)}${boostNum(s)}</div>`;
 const finish33 = finish;
 finish = function (s) {
   finish33(s);
   if (crawl(s)) return;
-  place(NUM === "a"
-    ? `<div class="abs num34 a" style="left:40px;top:690px">${boostNum(s)}${rpmNum(s)}</div>`
-    : `<div class="abs num34 b" style="left:${CARD.l}px;top:620px">${rpmNum(s)}${boostNum(s)}</div>`);
+  place(stack34(s));
 };

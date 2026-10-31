@@ -26,8 +26,6 @@ async (page) => {
     ["alert-in", "a", 13000, [0, 30, 60, 90, 120], { x: 520, y: 70, width: 880, height: 100 }],
     ["alert-out", "a", 17000, [0, 50, 100, 150, 200], { x: 520, y: 70, width: 880, height: 100 }],
     ["drive", "a", 18000, [0, 50, 100, 150, 200], { x: 1700, y: 680, width: 200, height: 60 }],
-    ["stack-out", "a", 22000, [0, 30, 60, 90, 120], { x: 20, y: 680, width: 200, height: 104 }],
-    ["stack-in", "a", 24100, [0, 50, 100, 150, 200], { x: 20, y: 680, width: 200, height: 104 }],
     ["steer", "a", 19000, [0, 500, 1000, 1500, 2000], { x: 700, y: 170, width: 520, height: 100 }],
   ];
   for (const pg of ["b", "a"]) {
@@ -40,8 +38,9 @@ async (page) => {
         for (const v of await page.evaluate(() => shroudViolations())) errors.push(`${name} +${age}: ${v}`);
       }
   }
-  // Full frames (page change A): the page slide, the trailer brake jump with the cruise cancel, and the alert with the glow.
-  for (const t of [1300, 6100, 13300]) {
+  // Full frames (page change A): the page slide, the trailer brake jump with the cruise cancel, the alert with the glow,
+  // and the crawl turn with the boost and rpm stack on.
+  for (const t of [1300, 6100, 13300, 23000]) {
     await page.evaluate(t => at41(t), t);
     await page.screenshot({ path: `${out}m41-full-${t}.png` });
   }

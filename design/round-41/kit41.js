@@ -15,8 +15,14 @@
 // - Alert banner: in within --m-fast from 12 px above; out over --m-base. The background glow fades over --m-slow.
 // - Set-speed number: in over --m-fast from 6 px below, holds 3 s, fades over 0.6 s (round 32 timing).
 // - Cruise cancel: the round 32 red hold and fade, on the loop clock.
-// - Drive chip change: scale 0.85 to 1 with a fade, --m-base. The boost and rpm stack fades out at crawl speed and back in.
+// - Drive chip change: scale 0.85 to 1 with a fade, --m-base.
+// User direction (2026-10-30): the boost and rpm stack stays on at all speeds. The round 34 crawl hide no longer applies.
 const PG = params.get("pg") === "b" ? "b" : "a";
+const finish40 = finish;
+finish = function (s) {
+  finish40(s);
+  if (crawl(s)) place(stack34(s));
+};
 const TOK = (() => {
   const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue(n).trim();
   return { fast: parseFloat(v("--m-fast")), base: parseFloat(v("--m-base")), slow: parseFloat(v("--m-slow")), smooth: parseFloat(v("--m-smooth")),
@@ -79,7 +85,7 @@ function stateAt(t) {
 // Discrete keys on the sample grid; a transition starts where a key changes.
 const GRID = Array.from({ length: N41 }, (_, i) => {
   const s = stateAt(i * TICK), b = document.body.classList;
-  return { page: secPage(s, focusOf(s)), alert: s.alert ? s.alert[2] : "", left: !crawl(s), drive: s.drive, cset: s.cruiseSet,
+  return { page: secPage(s, focusOf(s)), alert: s.alert ? s.alert[2] : "", drive: s.drive, cset: s.cruiseSet,
     cancel: !!s.cancelled, glow: b.contains("glow-hot") ? "glow-hot" : b.contains("glow-warm") ? "glow-warm" : "" };
 });
 function lastChange(key, t) {
@@ -123,13 +129,11 @@ function clear41() {
 
 function render41(draw, t, motion = true) {
   t = mod(t, LOOP);
-  const ch = Object.fromEntries(["page", "alert", "left", "drive", "cset", "cancel", "glow"].map(k => [k, lastChange(k, t)]));
-  const pageGo = motion && ch.page.age < TOK.slow + 40, alertOut = motion && ch.alert.to === "" && ch.alert.age < TOK.base,
-    leftOut = motion && !ch.left.to && ch.left.age < TOK.fast;
-  const LEFT = ".num34.a:not(.fuel38)", old = {};
+  const ch = Object.fromEntries(["page", "alert", "drive", "cset", "cancel", "glow"].map(k => [k, lastChange(k, t)]));
+  const pageGo = motion && ch.page.age < TOK.slow + 40, alertOut = motion && ch.alert.to === "" && ch.alert.age < TOK.base;
+  const old = {};
   if (pageGo) Object.assign(old, ghost(draw, ch.page.at - 1, [".card.sec .body"]));
   if (alertOut) Object.assign(old, ghost(draw, ch.alert.at - 1, [".alert4"]));
-  if (leftOut) Object.assign(old, ghost(draw, ch.left.at - 1, [LEFT]));
 
   const s = stateAt(t);
   const v = Object.fromEntries(Object.keys(CH).map(c => [c, smooth(j => sample(c, j), t, TOK.smooth)]));
@@ -175,13 +179,6 @@ function render41(draw, t, motion = true) {
     document.getElementById("canvas").insertAdjacentHTML("beforeend", old[".alert4"]);
     hold(document.getElementById("canvas").lastElementChild, [{ opacity: 1, transform: "translateX(-50%)" }, { opacity: 0, transform: "translateX(-50%) translateY(-8px)" }],
       { dur: TOK.base, easing: TOK.in }, ch.alert.age);
-  }
-  // Boost and rpm stack: fades out at crawl speed and back in.
-  if (ch.left.to && ch.left.age < TOK.base)
-    hold(document.querySelector(LEFT), [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { dur: TOK.base, easing: TOK.out }, ch.left.age);
-  if (leftOut && old[LEFT]) {
-    document.getElementById("canvas").insertAdjacentHTML("beforeend", old[LEFT]);
-    hold(document.getElementById("canvas").lastElementChild, [{ opacity: 1 }, { opacity: 0 }], { dur: TOK.fast, easing: TOK.in }, ch.left.age);
   }
   // Drive chip change.
   if (ch.drive.age < TOK.base)
