@@ -9,6 +9,8 @@ import QtQuick.Shapes 1.12
 // - pages: the card pages. The card shows pages[drivingInfoIndex], or pages[0] for an index outside the pages (as vnD
 //   pages and tests the Trip A card); a change slides (round 41 A).
 // - tripHold (0 to 1) draws the hold ring on the Trip A cell; flashTrip() flashes the Trip A value after a reset.
+// - bannerShown: true while the alert banner shows or enters (false during the out motion). acknowledge(): the parent
+//   calls this on a short OK release while bannerShown; the banner plays the out motion and the next alert can show.
 // - ownsNotify: this layout draws the adapter notification banner and the trailer brake gain (notify 1246), so the
 //   parent stops drawing the stock Notify and Dragging popups for this layout.
 // - The layout draws the turn edges, the cruise region, the warning lights, and the overspeed badge. The stock
@@ -380,24 +382,76 @@ Item {
     }
 
     // ===== Alerts =====
-    // Derived alerts (rounds 4, 27, and 33), most urgent first: [severity, icon, title, sub-text, flip].
-    readonly property var derivedAlert: {
+    // Derived alerts (rounds 4, 27, and 33), most urgent first: [severity, icon, title, sub-text, flip, condition key].
+    // One key per condition, so a caution that becomes a warn (head temperature, fuel) keeps the key.
+    readonly property var derivedList: {
+        var a=[]
         if(oilpLow)
-            return ["warn", "oil", "OIL PRESSURE LOW", "stop safely and switch the engine off", false]
+            a.push(["warn", "oil", "OIL PRESSURE LOW", "stop safely and switch the engine off", false, "oilp"])
         if(transSt==="hot")
-            return ["warn", "gearBoxTemp", "TRANSMISSION HOT", tText(transC)+" "+tempUnit+" · reduce load or speed", false]
+            a.push(["warn", "gearBoxTemp", "TRANSMISSION HOT", tText(transC)+" "+tempUnit+" · reduce load or speed", false, "trans"])
         if(chtSt==="hot")
-            return ["warn", "cht", "ENGINE HEAD TEMP HIGH", tText(chtC)+" "+tempUnit+" · reduce load or speed", false]
+            a.push(["warn", "cht", "ENGINE HEAD TEMP HIGH", tText(chtC)+" "+tempUnit+" · reduce load or speed", false, "cht"])
         if(fuelLight)
-            return ["warn", "fuel", "FUEL RESERVE", (rangeOk?rangeText+" "+distUnit+" to empty · ":"")+"refuel now", true]
+            a.push(["warn", "fuel", "FUEL RESERVE", (rangeOk?rangeText+" "+distUnit+" to empty · ":"")+"refuel now", true, "fuel"])
         if(tireLow>=0)
-            return ["caution", "alarm:24", ["LEFT FRONT", "RIGHT FRONT", "LEFT REAR", "RIGHT REAR"][tireLow]+" TIRE LOW",
-                    tires[tireLow]+" "+pressUnit, false]
+            a.push(["caution", "alarm:24", ["LEFT FRONT", "RIGHT FRONT", "LEFT REAR", "RIGHT REAR"][tireLow]+" TIRE LOW",
+                    tires[tireLow]+" "+pressUnit, false, "tire"+tireLow])
         // Round 33 option B: Daily A has no head temperature column, so a warm head temperature comes as a caution.
         if(!tow && chtSt==="warm")
-            return ["caution", "cht", "ENGINE HEAD TEMP", tText(chtC)+" "+tempUnit+" · watch the load", false]
-        if(fuelLow)
-            return ["caution", "fuel", "FUEL LOW", rangeText+" "+distUnit+" to empty", true]
+            a.push(["caution", "cht", "ENGINE HEAD TEMP", tText(chtC)+" "+tempUnit+" · watch the load", false, "cht"])
+        if(fuelLow && !fuelLight)
+            a.push(["caution", "fuel", "FUEL LOW", rangeText+" "+distUnit+" to empty", true, "fuel"])
+        return a
+    }
+    // Acknowledged conditions: key to severity rank (1 caution, 2 warn). An acknowledged condition stays down until the
+    // condition stays clear for ackHold without a break, so a reading that crosses the limit back and forth does not
+    // raise the banner again. A rise in severity shows the banner at once. Only the banner hides: colors, glow, and
+    // warning lights stay. ackClear: key to the time the condition cleared; one Timer ends the hold at the earliest end.
+    property var ackRank: ({})
+    property var ackClear: ({})
+    property int ackHold: 30000
+    function rank(sev) { return sev==="warn"?2:1 }
+    function ackOn(k) {
+        for(var i=0; i<derivedList.length; i++)
+            if(derivedList[i][5]===k)
+                return true
+        return false
+    }
+    function ackSweep() {
+        var now=Date.now(), rk={}, cl={}, next=-1
+        for(var k in ackRank) {
+            if(ackOn(k)) {
+                rk[k]=ackRank[k]
+            } else {
+                var t=ackClear[k]!==undefined?ackClear[k]:now
+                if(now-t<ackHold) {
+                    rk[k]=ackRank[k]
+                    cl[k]=t
+                    next=next<0?t+ackHold-now:Math.min(next, t+ackHold-now)
+                }
+            }
+        }
+        ackClear=cl
+        ackRank=rk
+        if(next>=0) {
+            mAckHoldId.interval=Math.max(1, next)
+            mAckHoldId.restart()
+        } else {
+            mAckHoldId.stop()
+        }
+    }
+    onDerivedListChanged: ackSweep()
+    Timer {
+        id: mAckHoldId
+        onTriggered: mLayoutId.ackSweep()
+    }
+    readonly property var derivedAlert: {
+        for(var i=0; i<derivedList.length; i++) {
+            var d=derivedList[i]
+            if(!(ackRank[d[5]]>=rank(d[0])))
+                return d
+        }
         return null
     }
     readonly property string derivedKey: derivedAlert?derivedAlert[2]+derivedAlert[3]:""
@@ -417,14 +471,50 @@ Item {
     onNotifyKeyChanged: notifyAt=Date.now()
     // A derived warn wins over an adapter caution; otherwise the newest source shows.
     readonly property var alertNow: {
-        var d=derivedAlert, n=notifyLine!==""?["caution", "", notifyLine, "", false]:null
+        var d=derivedAlert, n=notifyLine!==""?["caution", "", notifyLine, "", false, "notify"]:null
         if(d && n)
             return d[0]==="warn" || derivedAt>=notifyAt?d:n
         return d || n
     }
     // The banner keeps the last alert while the banner fades out.
-    property var alertShown: ["caution", "", "", "", false]
+    property var alertShown: ["caution", "", "", "", false, ""]
+    readonly property bool bannerShown: alertBox.visible && !mAlertOutId.running
+    property bool ackSwap: false
+    // OK acknowledge. Adapter source: end the notification as the parent notifyDuration timeout does, and clear the
+    // other notifyTop paths (0x83 dialog, shell command) through the Global hide functions. Derived source: hold the
+    // condition down at the shown severity.
+    function acknowledge() {
+        var a=alertNow
+        if(!bannerShown || !a)
+            return
+        ackSwap=true
+        if(a[5]==="notify") {
+            g.notifyInfoHide()
+            g.dialogInfoHide()
+            g.shellCmdHide()
+        } else {
+            var m={}
+            for(var k in ackRank)
+                m[k]=ackRank[k]
+            m[a[5]]=rank(a[0])
+            ackRank=m
+        }
+        mAlertInId.stop()
+        mAlertOutId.restart()
+    }
+    function alertOutDone() {
+        ackSwap=false
+        if(alertNow) {
+            alertShown=alertNow
+            mAlertInId.restart()
+            if(alertNow[0]==="warn")
+                mPulseId.restart()
+        }
+    }
     onAlertNowChanged: {
+        // During the acknowledge out motion, the end of the motion shows the next alert.
+        if(ackSwap)
+            return
         if(alertNow) {
             var fresh=!alertBox.visible || alertShown[2]!==alertNow[2] || alertShown[0]!==alertNow[0]
             alertShown=alertNow
@@ -2294,9 +2384,11 @@ Item {
         readonly property bool hasIcon: a[1]!==""
         readonly property bool hasSub: a[3]!==""
         readonly property real iconW: hasIcon?56:0
+        // OK chip slot (design addition): 20 px gap, the chip, and 16 px to the edge in place of the 28 px padding.
+        readonly property real chipSlot: 20+okChip.width+16-28
         x: 960-width/2
         y: 92
-        width: 2+28+iconW+alertTitle.width+(hasSub?22+alertSub.width:0)+28+2
+        width: 2+28+iconW+alertTitle.width+(hasSub?22+alertSub.width:0)+28+2+chipSlot
         height: Math.max(64, alertTitle.height+20)
         visible: false
         opacity: 0
@@ -2374,6 +2466,31 @@ Item {
             font.family: mLayoutId.fBmw
             font.pixelSize: 22
         }
+        // OK key chip: the menu footer "OK" key label (20 px DemiBold) on an outline chip in the severity color.
+        Rectangle {
+            id: okChip
+            objectName: "alert.ok"
+            x: alertBox.width-2-16-width
+            y: (alertBox.height-height)/2
+            width: okText.width+28
+            height: 34
+            radius: 17
+            color: Qt.rgba(alertBox.col.r, alertBox.col.g, alertBox.col.b, 0.1)
+            border.color: Qt.rgba(alertBox.col.r, alertBox.col.g, alertBox.col.b, 0.45)
+            border.width: 2
+            Text {
+                id: okText
+                x: 14
+                height: 34
+                verticalAlignment: Text.AlignVCenter
+                text: "OK"
+                color: Qt.rgba(alertBox.col.r, alertBox.col.g, alertBox.col.b, 0.85)
+                font.family: mLayoutId.fBmw
+                font.pixelSize: 20
+                font.weight: Font.DemiBold
+                font.letterSpacing: 1
+            }
+        }
         transform: Translate { id: alertShift; y: 0 }
     }
     ParallelAnimation {
@@ -2389,6 +2506,7 @@ Item {
             NumberAnimation { target: alertShift; property: "y"; to: -8; duration: mBase; easing.type: Easing.InCubic }
         }
         PropertyAction { target: alertBox; property: "visible"; value: false }
+        ScriptAction { script: mLayoutId.alertOutDone() }
     }
     // Warn pulse (round 4): one ring that grows 28 px and fades over 1.4 s.
     ParallelAnimation {

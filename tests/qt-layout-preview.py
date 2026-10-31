@@ -51,13 +51,14 @@ STUB_OVERRIDES = {
     "vehicleSpeedMax": "260",
     "tachoSpeedMax": "7000",
     "mRccPrefix": '"file:///etc/"',
-    "notifyTop": "notifyDuration>0",
+    "notifyTop": "shellCmdShow || dialogDuration>0 || notifyDuration>0",
     "gpsFixedValid": '""',
     "gpsFixed": "0",
     "gpsAltitude": "0",
     "fuelPercentageValid": "fuelPercentageRaw>=0 && fuelPercentageRaw<=100",
 }
-STUB_FUNCTIONS = ("rtcTrusted", "getRtcTime", "getAmPm", "getOverSpeedWaningSpeed")
+STUB_FUNCTIONS = ("rtcTrusted", "getRtcTime", "getAmPm", "getOverSpeedWaningSpeed", "notifyInfoHide", "dialogInfoHide",
+                  "shellCmdHide")
 
 
 def require(condition, message):
@@ -98,7 +99,7 @@ def stub_global():
     names = used_names()
     missing = [n for n in names if n not in props and n not in funcs]
     lines = ["import QtQuick 2.12", "QtObject {", "    objectName: \"stub-global\""]
-    extra = {"fuelPercentageRaw": ("int", "0"), "shellCmdShow": ("int", "0")}
+    extra = {"fuelPercentageRaw": ("int", "0"), "shellCmdShow": ("int", "0"), "dialogDuration": ("int", "0")}
     for name in sorted(set(names) | set(extra) | {"rtcTime", "rtc24h", "gpsClockRtcSet", "gpsClockMinYear",
                                                   "overSpeedWarningSpeed", "language"}):
         if name in funcs and name not in props:
@@ -317,6 +318,8 @@ def child(layout):
                      "box": [round(r.x(), 1), round(r.y(), 1), round(r.width(), 1), round(r.height(), 1)]}
             if entry["cls"].startswith("QQuickText"):
                 entry["text"] = c.property("text")
+            if entry["name"] == "alert":
+                entry["chipSlot"] = c.property("chipSlot")
             found.append(entry)
         return found
 
@@ -462,6 +465,109 @@ def child(layout):
     title = [c for c, o in walk(window.contentItem()) if c.property("text") == long_text]
     lines = title[0].property("lineCount") if title else 0
     check("banner: a long adapter text wraps on words to two lines", lines == 2, lines)
+    capture(OUT / (layout + "-ack-long.png"))
+
+    def banner_state():
+        boxes = [c for c, o in walk(window.contentItem()) if c.objectName() == "alert"]
+        return bool(prop("bannerShown")), bool(boxes) and boxes[0].isVisible()
+
+    def acknowledge():
+        QtCore.QMetaObject.invokeMethod(item, "acknowledge", QtCore.Qt.DirectConnection)
+
+    # Adapter caution: OK ends the notification (notifyDuration 0) and the banner leaves over 200 ms.
+    call("setTranslation", "Tow/Haul Mode Active")
+    set_value("notifyText", 1247)
+    set_value("notifyDuration", 5002)
+    settle(400)
+    shown = banner_state()
+    chip = [e for e in scene_items() if e["name"] == "alert.ok" and e["opacity"] > 0.01]
+    capture(OUT / (layout + "-ack-caution.png"))
+    acknowledge()
+    leaving = banner_state()
+    settle(400)
+    gone = banner_state()
+    check("acknowledge: an adapter banner ends the notification and leaves; bannerShown follows the banner",
+          shown == (True, True) and bool(chip) and leaving == (False, True) and gone == (False, False)
+          and g.property("notifyDuration") == 0,
+          [shown, bool(chip), leaving, gone, g.property("notifyDuration")])
+    # Derived warn: OK holds the alert down while the condition holds and until the condition stays clear for ackHold
+    # (30 s on the cluster; 1.5 s here). The glow stays.
+    hold_default = prop("ackHold")
+    item.setProperty("ackHold", 1500)
+    set_value("gearBoxTemp", 124)
+    settle(400)
+    warn = (prop("alertShown") or [""] * 3)[2]
+    capture(OUT / (layout + "-ack-warn.png"))
+    acknowledge()
+    settle(400)
+    set_value("gearBoxTemp", 126)
+    settle(400)
+    held = (banner_state(), prop("glow"), prop("transSt"))
+    check("acknowledge: a derived warn stays down while the condition holds; the glow and the state stay; the hold is 30 s",
+          warn == "TRANSMISSION HOT" and held == ((False, False), "hot", "hot") and hold_default == 30000,
+          [warn, held, hold_default])
+    # Crossings: a return inside the hold stays hidden; a return after the reading stays clear for the hold shows.
+    set_value("gearBoxTemp", 93)
+    settle(500)
+    set_value("gearBoxTemp", 124)
+    settle(400)
+    inside = banner_state()
+    set_value("gearBoxTemp", 93)
+    settle(1000)
+    set_value("gearBoxTemp", 124)
+    settle(300)
+    set_value("gearBoxTemp", 93)
+    settle(1000)
+    set_value("gearBoxTemp", 124)
+    settle(400)
+    flicker = banner_state()
+    check("acknowledge: a return inside the hold stays hidden, and each return restarts the hold", inside == (False, False)
+          and flicker == (False, False), [inside, flicker])
+    set_value("gearBoxTemp", 93)
+    settle(1900)
+    set_value("gearBoxTemp", 124)
+    settle(400)
+    back = (banner_state(), (prop("alertShown") or [""] * 3)[2])
+    check("acknowledge: a return after the condition stays clear for the hold shows the banner",
+          back == ((True, True), "TRANSMISSION HOT"), back)
+    # Both sources: OK hides the shown warn; the adapter caution then enters.
+    call("setTranslation", "Tow/Haul Mode Active")
+    set_value("notifyDuration", 5003)
+    settle(400)
+    first = (prop("alertShown") or [""] * 3)[2]
+    acknowledge()
+    settle(500)
+    after = (banner_state(), (prop("alertShown") or [""] * 3)[2])
+    check("acknowledge: with both sources, the shown warn hides and the adapter caution shows",
+          first == "TRANSMISSION HOT" and after == ((True, True), "Tow/Haul Mode Active"), [first, after])
+    acknowledge()
+    settle(400)
+    set_value("gearBoxTemp", 93)
+    settle(300)
+    # Escalation: an acknowledged fuel caution shows again as a warn (the low-fuel light), also inside the hold.
+    settle(1900)
+    set_value("dte", 72)
+    settle(400)
+    low = (prop("alertShown") or [""] * 3)[2]
+    acknowledge()
+    settle(400)
+    set_value("dte", 502)
+    settle(300)
+    set_value("dte", 72)
+    settle(300)
+    down = banner_state()
+    alarms = [0] * 300
+    alarms[151] = 1
+    set_value("alarmTable", alarms)
+    set_value("alarmChanged", 1 - int(g.property("alarmChanged") or 0))
+    settle(400)
+    up = (banner_state(), (prop("alertShown") or [""] * 3)[2])
+    check("acknowledge: an acknowledged caution shows again at once when the condition becomes a warn, inside the hold",
+          low == "FUEL LOW" and down == (False, False) and up == ((True, True), "FUEL RESERVE"), [low, down, up])
+    set_value("alarmTable", [0] * 300)
+    set_value("alarmChanged", 1 - int(g.property("alarmChanged") or 0))
+    set_value("dte", 502)
+    settle(400)
     call("setTranslation", "   ")
     set_value("notifyDuration", 6001)
     settle(500)
@@ -680,8 +786,19 @@ def on_screen(box):
     return [x0, y0, round(max(0, x1 - x0), 1), round(max(0, y1 - y0), 1)]
 
 
+def design_part(box, slot):
+    """The banner without the OK chip slot (a design addition): the design box, centered at the same x."""
+    if not slot:
+        return box
+    return [round(box[0] + slot / 2, 1), box[1], round(box[2] - slot, 1), box[3]]
+
+
 def geometry(data, items):
     texts = [e for e in items if "text" in e and e["opacity"] > 0.01 and e["text"]]
+    # Banner texts sit half the OK chip slot left of the design place, as the banner centers with the chip.
+    for banner in [e for e in items if e["name"] == "alert" and e.get("chipSlot") and e["opacity"] > 0.01]:
+        texts = [dict(e, box=[round(e["box"][0] + banner["chipSlot"] / 2, 1)] + e["box"][1:])
+                 if inside(e["box"], banner["box"]) and e["text"] != "OK" else e for e in texts]
     misses, matched = [], 0
     for node in design_texts(data):
         if node["text"] in EXPECTED_TEXT_DEVIATIONS:
@@ -698,7 +815,8 @@ def geometry(data, items):
             matched += 1
     for key, pred in BOX_KEYS.items():
         nodes = [n for n in data["nodes"] if pred(n) and n.get("style", {}).get("opacity") != "0"]
-        boxes = [dict(e, box=on_screen(e["box"])) for e in items if e["name"] == key and e["opacity"] > 0.01]
+        boxes = [dict(e, box=design_part(on_screen(e["box"]), e.get("chipSlot"))) for e in items
+                 if e["name"] == key and e["opacity"] > 0.01]
         for node in nodes:
             if not boxes:
                 misses.append({"key": key, "design": node["box"], "reason": "no item"})
