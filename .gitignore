@@ -61,3 +61,4 @@
 *.so.*
 **/__pycache__/
 /design/round-42/geometry/
+/design/round-43/sounds/**/*.wav

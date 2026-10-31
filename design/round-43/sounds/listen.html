@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 43 cluster sounds: stock, A (soft), B (crisp)</title>
+<style>
+body { font: 14px/1.4 system-ui, sans-serif; margin: 16px; }
+table { border-collapse: collapse; }
+th, td { border: 1px solid #bbb; padding: 4px 8px; vertical-align: middle; text-align: left; }
+th { background: #eee; position: sticky; top: 0; }
+td.name { font-family: monospace; white-space: nowrap; }
+audio { width: 260px; height: 32px; }
+p { max-width: 70em; }
+</style>
+</head>
+<body>
+<h1>Round 43 cluster sounds</h1>
+<p>Stock is the original firmware sound. A is the soft set. B is the crisp set.
+Active loudness matches stock within 1 dB for every file. Radar rows play the first
+4 seconds of each loop. The stock radar players stop at 4 seconds too.</p>
+<table>
+<tr><th>Sound</th><th>Use</th><th>Stock</th><th>A (soft)</th><th>B (crisp)</th></tr>
+<tr><td class="name">direct_slow.wav</td><td>Turn signal, normal flash. Three ticks at 0.00, 0.35 and 0.70 s (on, off, on).</td><td><audio controls preload="none" src="../../../installed/capture-04/rootfs/etc/sound/direct_slow.wav"></audio></td><td><audio controls preload="none" src="a/direct_slow.wav"></audio></td><td><audio controls preload="none" src="b/direct_slow.wav"></audio></td></tr>
+<tr><td class="name">direct_quick.wav</td><td>Turn signal, fast flash (bulb out). Three ticks at 0.00, 0.11 and 0.31 s.</td><td><audio controls preload="none" src="../../../installed/capture-04/rootfs/etc/sound/direct_quick.wav"></audio></td><td><audio controls preload="none" src="a/direct_quick.wav"></audio></td><td><audio controls preload="none" src="b/direct_quick.wav"></audio></td></tr>
+<tr><td class="name">door.wav</td><td>Door ajar. One tone burst, 0 to 0.33 s. Information.</td><td><audio controls preload="none" src="../../../installed/capture-04/rootfs/etc/sound/door.wav"></audio></td><td><audio controls preload="none" src="a/door.wav"></audio></td><td><audio controls preload="none" src="b/door.wav"></audio></td></tr>
+<tr><td class="name">breaker.wav</td><td>Short alert. One burst, 0 to 0.20 s. Warning.</td><td><audio controls preload="none" src="../../../installed/capture-04/rootfs/etc/sound/breaker.wav"></audio></td><td><audio controls preload="none" src="a/breaker.wav"></audio></td><td><audio controls preload="none" src="b/breaker.wav"></audio></td></tr>
+<tr><td class="name">ding.wav</td><td>General chime. One decaying chime, 1.2 s. Attention.</td><td><audio controls preload="none" src="../../../installed/capture-04/rootfs/etc/sound/ding.wav"></audio></td><td><audio controls preload="none" src="a/ding.wav"></audio></td><td><audio controls preload="none" src="b/ding.wav"></audio></td></tr>
+<tr><td class="name">buzzer.wav</td><td>Urgent warning. Continuous tone for the full 0.82 s.</td><td><audio controls preload="none" src="../../../installed/capture-04/rootfs/etc/sound/buzzer.wav"></audio></td><td><audio controls preload="none" src="a/buzzer.wav"></audio></td><td><audio controls preload="none" src="b/buzzer.wav"></audio></td></tr>
+<tr><td class="name">seatbelt_slow.wav</td><td>Seatbelt reminder, slow. Two pulsing voices that fade over 2.4 s.</td><td><audio controls preload="none" src="../../../installed/capture-04/rootfs/etc/sound/seatbelt_slow.wav"></audio></td><td><audio controls preload="none" src="a/seatbelt_slow.wav"></audio></td><td><audio controls preload="none" src="b/seatbelt_slow.wav"></audio></td></tr>
+<tr><td class="name">seatbelt_quick.wav</td><td>Seatbelt reminder, fast. The first 0.6 s of the slow pattern.</td><td><audio controls preload="none" src="../../../installed/capture-04/rootfs/etc/sound/seatbelt_quick.wav"></audio></td><td><audio controls preload="none" src="a/seatbelt_quick.wav"></audio></td><td><audio controls preload="none" src="b/seatbelt_quick.wav"></audio></td></tr>
+<tr><td class="name">radar_b0.wav</td><td>Parking sensor, far. One beep every 0.48 s (4 s excerpt for A and B).</td><td><audio controls preload="none" src="../../../installed/capture-04/rootfs/etc/sound/radar_b0.wav#t=0,4"></audio></td><td><audio controls preload="none" src="a/preview/radar_b0.wav"></audio></td><td><audio controls preload="none" src="b/preview/radar_b0.wav"></audio></td></tr>
+<tr><td class="name">radar_b1.wav</td><td>Parking sensor. One beep every 0.35 s.</td><td><audio controls preload="none" src="../../../installed/capture-04/rootfs/etc/sound/radar_b1.wav#t=0,4"></audio></td><td><audio controls preload="none" src="a/preview/radar_b1.wav"></audio></td><td><audio controls preload="none" src="b/preview/radar_b1.wav"></audio></td></tr>
+<tr><td class="name">radar_b2.wav</td><td>Parking sensor. One beep every 0.27 s.</td><td><audio controls preload="none" src="../../../installed/capture-04/rootfs/etc/sound/radar_b2.wav#t=0,4"></audio></td><td><audio controls preload="none" src="a/preview/radar_b2.wav"></audio></td><td><audio controls preload="none" src="b/preview/radar_b2.wav"></audio></td></tr>
+<tr><td class="name">radar_b3.wav</td><td>Parking sensor. One beep every 0.18 s.</td><td><audio controls preload="none" src="../../../installed/capture-04/rootfs/etc/sound/radar_b3.wav#t=0,4"></audio></td><td><audio controls preload="none" src="a/preview/radar_b3.wav"></audio></td><td><audio controls preload="none" src="b/preview/radar_b3.wav"></audio></td></tr>
+<tr><td class="name">radar_b4.wav</td><td>Parking sensor, near. One beep every 0.14 s.</td><td><audio controls preload="none" src="../../../installed/capture-04/rootfs/etc/sound/radar_b4.wav#t=0,4"></audio></td><td><audio controls preload="none" src="a/preview/radar_b4.wav"></audio></td><td><audio controls preload="none" src="b/preview/radar_b4.wav"></audio></td></tr>
+<tr><td class="name">radar_b5.wav</td><td>Parking sensor, very near. Continuous tone.</td><td><audio controls preload="none" src="../../../installed/capture-04/rootfs/etc/sound/radar_b5.wav#t=0,4"></audio></td><td><audio controls preload="none" src="a/preview/radar_b5.wav"></audio></td><td><audio controls preload="none" src="b/preview/radar_b5.wav"></audio></td></tr>
+<tr><td class="name">radar_b6.wav</td><td>Parking sensor, closest. Continuous tone, lower pitch in stock.</td><td><audio controls preload="none" src="../../../installed/capture-04/rootfs/etc/sound/radar_b6.wav#t=0,4"></audio></td><td><audio controls preload="none" src="a/preview/radar_b6.wav"></audio></td><td><audio controls preload="none" src="b/preview/radar_b6.wav"></audio></td></tr>
+</table>
+</body>
+</html>

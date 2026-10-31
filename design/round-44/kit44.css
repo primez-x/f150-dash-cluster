@@ -1,0 +1,13 @@
+/* Round 44 (kit44.js). Loads after round-43/kit43.css. */
+/* The bezel mask draws over the alert panel, as the truck bezel does: round 43 drew the panel over the mask, so the shots
+   showed a top band that the bezel hides (3 px at the center, 25 px at the panel ends). */
+.mask22 { z-index: 6; }
+/* Alert panel A padding: the content block sits 20 px below the bezel arch over the text (the margin rule) and 20 px above the
+   panel bottom; the sides match at 36 px. The tighter line heights make the block 76 px (round 43: 86 px). */
+.alert43 { padding: 40px 36px 20px; }
+.alert43 .k { font-size: 14px; line-height: 16px; }
+.alert43 .t { line-height: 32px; }
+.alert43.msg .t { line-height: 30px; }
+.alert43 .s { line-height: 24px; }
+/* Overspeed A: the speed digits turn red while over the threshold. */
+.over44-a .speed { color: var(--warn); text-shadow: 0 0 40px rgba(255, 59, 48, .35); }
