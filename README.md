@@ -94,8 +94,16 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - The settings menu, including Factory and General settings, passes 249 host Qt checks.
 - Eight additional Qt checks execute the patched MenuPage cache. The checks verify that MenuPage loads `/etc/vnM.qml` and passes the keys.
 - Native Qt fixture previews cover eight settings menu states, including the layout editor, Factory, and General settings, and the screen grid. Real vehicle rendering remains unverified.
-- The dashboard shell is the owned source file `/etc/vnD.qml`. The candidate changes the one main.qml record that both Ford trucks read (`qrc:/Trucks/Dashboard.qml`). vnD reproduces the compiled shell (cache 023) function by function; the six layouts stay compiled.
-- The `dashboard-differential` Qt phase runs the compiled shell and vnD with the same stub Global. 28224 wheel events give identical traces across layouts 0–5, menu, notification, door popup, and TPMS states. The Loader geometry, the overlay item tree, and the pixels are also identical. The truck has not run vnD.
+- The dashboard shell is the owned source file `/etc/vnD.qml`. The candidate changes the one main.qml record that both Ford trucks read (`qrc:/Trucks/Dashboard.qml`). vnD started as a function-by-function copy of the compiled shell (cache 023); the six layouts stay compiled.
+- Wheel keys on the dashboard (menu-v10):
+  - Left and Right show the previous and the next card when you press the key. Holding or releasing the key does nothing more. On a stock layout, Left and Right switch the info panel, as Up and Down did before.
+  - A short OK press (under 250 ms) opens the menu when you release the key.
+  - On the trip card, hold OK. The hold bar fills from 0.25 s to 1.2 s, and then Trip A resets and the card flashes. A release before 1.2 s cancels the reset. On other cards, a long OK press does nothing.
+  - Up and Down do nothing on the dashboard. Back and Modes work as before.
+  - With the menu open, a notification shown, or the door popup shown, the keys go to the menu, the notification, or the popup, as before.
+  - The truck has not run the key map.
+- The `dashboard-differential` Qt phase runs the compiled shell and vnD with the same stub Global through 18816 single wheel events. The menu, notification, and door popup routes are identical for every event. Back and Modes are identical. On a stock layout, Left and Right equal the compiled Up and Down. The Loader geometry, the overlay item tree, and the pixels are also identical.
+- The `dashboard-keys` Qt phase runs 26 timed key cases on vnD with layout stand-ins for the card pages, including holds, layout changes during a hold, and a missing layout. The phase fails on any QML warning.
 - The candidate clears all 13 vendor factory-menu code records and exposes labeled settings and diagnostic entries.
 - All six layouts have detailed specifications, coordinate schematics, and genuine assets under `handoff/claude-dashboard/`.
 
@@ -162,7 +170,7 @@ The Qt probe requires the local Launcher, recovered resources, and decoded metad
 The Qt probe uses fixture components and a mocked native type. The probe never loads the captured ARM program or native plugins.
 The host accepts original and redirected caches for the main and MenuPage routes.
 Global and VehicleEvent wrappers compile in isolated directories. The settings menu, Factory, and General pages run with safe context stubs.
-The compiled shell and vnD run in a 1920 × 932 window with a stub Global and stand-in child pages. The previews (`preview-shell-compiled-menu-0.png` and the other three) are in the `loader-*` fixture folder of the `dashboard-differential` run under `analysis/capture-04/qt-host/`.
+The compiled shell and vnD run in a 1920 × 932 window with a stub Global, a stub event handler, and stand-in child pages. The previews (`preview-shell-compiled-menu-0.png` and the other three) are in the `loader-*` fixture folder of the `dashboard-differential` run under `analysis/capture-04/qt-host/`.
 Wrapper startup and vehicle behavior remain unverified.
 
 Decode the installed Launcher metadata:

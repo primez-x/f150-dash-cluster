@@ -23,7 +23,8 @@ ORIGINAL_SHA256 = "2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e28
 CANDIDATE_SHA256 = "00cd0fa4bc8c09f5ea87eb2e0fa7e16948f2cefd7b18daf18018978e6e2ae0e2"
 PHASES = ("empty-source-control", "original-vendor-header", "original-adapted", "patched-adapted",
           "patched-settings-adapted", "patched-settings-redirects", "candidate-compile", "settings-pages",
-          "dashboard-differential")
+          "dashboard-differential", "dashboard-keys")
+DASHBOARD_PHASES = ("dashboard-differential", "dashboard-keys")
 
 
 def require(condition, message):
@@ -180,7 +181,7 @@ def child(phase, fixture, candidate_dir=None):
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes((ROOT / "recovered-resources/latest-Launcher" / alias).read_bytes())
             files[alias] = None
-    if phase == "dashboard-differential":
+    if phase in DASHBOARD_PHASES:
         # Compiled units that run unchanged under both shells, from the original Launcher: the compiled shell
         # Trucks/Dashboard.qml (cache 023), SwcEvent, Trip, TurnLightIndicator, and the GlowText and GlowImage parts.
         for path in ("Trucks/Dashboard.qml", "common/SwcEvent.qml", "Trucks/common/Trip.qml",
@@ -201,7 +202,8 @@ def child(phase, fixture, candidate_dir=None):
             "function key(code, state) { mGlobalId.item.note(['menu', code, state]); "
             "if(code===mGlobalId.item.swcBack && state===0) mGlobalId.item.menuBarIndex=0; return 1 }")
         files["Trucks/common/Notify.qml"] = marker("stand-in-notify", "width: 640; height: 90\n" + fill + "\n"
-            "function key(code, state) { mGlobalId.item.note(['notify', code, state]); return code===mGlobalId.item.swcBack?1:0 }")
+            "function key(code, state) { mGlobalId.item.note(['notify', code, state]); "
+            "return code===mGlobalId.item.swcBack || mGlobalId.item.notifyTakesAll?1:0 }")
         for name, size in (("common/DoorInfo", "520; height: 300"), ("common/MaintentNotify", "820; height: 110"),
                            ("common/ShellInfoNotify", "900; height: 140"), ("common/Dragging", "700; height: 120"),
                            ("common/update/UpdateMcu", "760; height: 160")):
@@ -209,6 +211,17 @@ def child(phase, fixture, candidate_dir=None):
         for number in range(1, 7):
             files["Trucks/ui" + str(number) + "/Dashboard.qml"] = marker("stock-ui" + str(number),
                 "width: " + str(1880 + number) + "; height: " + str(700 + number) + "\n" + fill)
+        if phase == "dashboard-keys":
+            # Layout stand-ins with the owned layout contract in slots 0 and 1: the card pages, tripHold, and flashTrip().
+            # Each one records each tripHold value and each flashTrip() call in the stub Global.
+            for number, name, pages in ((1, "daily", ["trip", "economy", "tires", "engine", "level"]),
+                                        (2, "tow", ["trailer", "tires", "engine", "level", "trip"])):
+                files["Trucks/ui" + str(number) + "/Dashboard.qml"] = marker("paged-" + name,
+                    "width: " + str(1880 + number) + "; height: " + str(700 + number) + "\n" + fill + "\n"
+                    "readonly property var pages: " + json.dumps(pages) + "\n"
+                    "property real tripHold: 0\n"
+                    "onTripHoldChanged: mGlobalId.item.holdTrace(objectName, tripHold)\n"
+                    "function flashTrip() { mGlobalId.item.note(['flashTrip', objectName]) }")
         # Turn arrow images: the compiled TurnLightIndicator names each image without the file suffix.
         for name in ("tsico_left_n", "tsico_left_h", "tsico_right_n", "tsico_right_h"):
             image = (ROOT / "recovered-resources/latest-Launcher/Trucks/images/common/turnlight" / (name + ".png")).read_bytes()
@@ -248,7 +261,7 @@ def child(phase, fixture, candidate_dir=None):
         external["file:///etc/vnM.qml"].write_text('import QtQuick 2.12\nItem { objectName: "route-menu"; property var keys: []; '
                                                    'function key(code,state) { keys=keys.concat([[code,state]]); return 1 } }')
         result["safe_directory_probe_mapping"] = {"file:///etc/qmldir": str(external["file:///etc/qmldir"])}
-    if phase == "dashboard-differential":
+    if phase in DASHBOARD_PHASES:
         # The owned shell under the URL that main.qml opens, in an isolated directory.
         (fixture / "etc").mkdir()
         external["file:///etc/vnD.qml"] = fixture / "etc/vnD.qml"
@@ -328,7 +341,7 @@ def child(phase, fixture, candidate_dir=None):
     def lookup(pointer):
         url = sip.wrapinstance(pointer, QtCore.QUrl).toString()
         callbacks.append(url)
-        if phase in ("settings-pages", "patched-settings-redirects", "dashboard-differential"):
+        if phase in ("settings-pages", "patched-settings-redirects") + DASHBOARD_PHASES:
             return ctypes.addressof(ui_caches[url]) if url in ui_caches else None
         return ctypes.addressof(cache) if url == "qrc:/main.qml" and phase != "empty-source-control" else None
     library = ctypes.CDLL(str(Path(QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.LibrariesPath)) / "libQt5Qml.so.5"))
@@ -349,9 +362,10 @@ def child(phase, fixture, candidate_dir=None):
     if phase in ("settings-pages", "patched-settings-redirects"):
         engine.rootContext().setContextProperty("mTrucksModel", 1)
         return settings_pages(fixture, result, app, engine, callbacks, intercepted, denied, ui_units)
-    if phase == "dashboard-differential":
+    if phase in DASHBOARD_PHASES:
         engine.rootContext().setContextProperty("mTrucksModel", 1)
-        return dashboard_differential(fixture, result, app, engine, callbacks, intercepted, denied, ui_units)
+        test = dashboard_differential if phase == "dashboard-differential" else dashboard_keys
+        return test(fixture, result, engine, callbacks, intercepted, denied, ui_units)
     engine.load(QtCore.QUrl("qrc:/main.qml"))
     for unused in range(30):
         app.processEvents()
@@ -1556,40 +1570,7 @@ def tree_differences(left, right, path="shell", found=None):
     return found
 
 
-def dashboard_differential(fixture, result, app, engine, callbacks, intercepted, denied, ui_units):
-    # Differential test of the owned shell vnD against the compiled Trucks/Dashboard.qml (cache 023).
-    # Both shells run in one harness with one stub Global, the real compiled SwcEvent, Trip, and TurnLightIndicator,
-    # and stand-ins for the children loaded by URL. Failure modes, each with a check below:
-    # - vnD does not compile, reads a name that the compiled shell does not read, or logs a QML warning;
-    # - a wheel event changes a different Global value, reaches the menu or the notification differently, or hides
-    #   the door popup differently (the key trace);
-    # - a Loader opens a different URL, or turns on under different Global values (the Loader state in the trace);
-    # - an overlay, the trip text, or a turn arrow sits at a different place or size (the item tree and the pixels).
-    from PyQt5 import QtCore, QtQml, QtQuick  # QtQuick types the root as QQuickWindow for capture()
-    warnings = []
-    def handler(kind, context, message):
-        result["messages"].append(message)
-        if kind not in (QtCore.QtDebugMsg, QtCore.QtInfoMsg) and "wrong permissions" not in message:
-            warnings.append(message)
-    QtCore.qInstallMessageHandler(handler)
-    checks = []
-    renders = []
-    def verify(name, condition):
-        checks.append(dict(name=name, passed=bool(condition)))
-        print("CHECK " + name, flush=True)
-        require(condition, name)
-    precompiled = []
-    stand_ins = ["qrc:/" + name for name in ("Trucks/menu/MenuPage.qml", "Trucks/common/Notify.qml", "Trucks/common/DoorInfo.qml",
-                 "Trucks/common/MaintentNotify.qml", "Trucks/common/ShellInfoNotify.qml", "Trucks/common/Dragging.qml",
-                 "Trucks/common/update/UpdateMcu.qml")] + ["qrc:/Trucks/ui" + str(n) + "/Dashboard.qml" for n in range(1, 7)]
-    for url in list(ui_units) + stand_ins + ["file:///etc/vnD.qml"]:
-        dependency = QtQml.QQmlComponent(engine, QtCore.QUrl(url))
-        precompiled.append(dict(url=url, ready=dependency.status() == QtQml.QQmlComponent.Ready,
-                                errors=[error.toString() for error in dependency.errors()]))
-    result["precompiled"] = precompiled
-    verify("vnD, the compiled units, and the stand-ins compile", all(entry["ready"] for entry in precompiled))
-    harness = fixture / "ShellHarness.qml"
-    harness.write_text(r"""import QtQuick 2.12
+SHELL_HARNESS = r"""import QtQuick 2.12
 import QtQuick.Window 2.12
 Window {
     width: 1920; height: 932; visible: true; color: "#000000"
@@ -1641,6 +1622,12 @@ Window {
             property var calls: []
             function note(entry) { calls=calls.concat([entry]) }
             function doorInfoHide() { note(["doorInfoHide"]); doorInfo=0 }
+            // Test controls: the notification stand-in takes every key when notifyTakesAll is set (else Back only).
+            // Layout stand-ins report each tripHold value with the time since the last press.
+            property int notifyTakesAll: 0
+            property double pressAt: 0
+            property var holds: []
+            function holdTrace(name, value) { holds=holds.concat([[name, Date.now()-pressAt, value]]) }
         }
     }
     QtObject {
@@ -1650,6 +1637,13 @@ Window {
             property string mTripA: "TRIP A"
             property string mTripB: "TRIP B"
             property string mFontType: "BMW Type Global"
+        }
+    }
+    // The native event handler of main.qml: the stub records each reset with the time since the last press.
+    QtObject {
+        id: mEventHandleId
+        property QtObject item: QtObject {
+            function resetTrip(trip) { g.note(["resetTrip", trip, Date.now()-g.pressAt]) }
         }
     }
     // A dark ground, so the white trip text shows in the previews.
@@ -1662,7 +1656,18 @@ Window {
         g.dashboard=0; g.vehicleModel=1; g.splashEnd=1; g.menuBarIndex=0; g.doorInfo=0; g.notifyTop=0; g.notifyText=0
         g.notifyDuration=0; g.shellInfoDuration=0; g.mcuUpdateTop=0; g.mainTentShow=0; g.tpmsInfoEnabled=1; g.tripType=1
         g.drivingInfoIndex=0; g.leftInfoIndex=0; g.rightInfoIndex=0; g.swcKey=0; g.swcState=0; g.swcChanged=0
-        g.turnLeftLight=0; g.turnRightLight=0; g.calls=[]
+        g.turnLeftLight=0; g.turnRightLight=0; g.notifyTakesAll=0; g.calls=[]; g.holds=[]
+        var layout=layoutLoader()
+        if(layout)
+            layout.active=true
+    }
+    function set(name, value) { g[name]=value }
+    function clear() { g.calls=[]; g.holds=[] }
+    // One wheel event, as VehicleEvent swcDeliver sets the event.
+    function deliver(key, state) {
+        if(state===1)
+            g.pressAt=Date.now()
+        g.swcKey=key; g.swcState=state; g.swcChanged=!g.swcChanged
     }
     function loaders() {
         var out=[]
@@ -1673,32 +1678,49 @@ Window {
         }
         return out
     }
-    // Wheel events through Global, as VehicleEvent swcDeliver sets them, across the Global states that change the routes.
+    // The Loader of the layout (Trucks/uiN/Dashboard.qml).
+    function layoutLoader() {
+        if(!page)
+            return null
+        for(var i=0; i<page.children.length; i++) {
+            var c=page.children[i]
+            if(c.active!==undefined && String(c.source).indexOf("/Trucks/ui")>=0)
+                return c
+        }
+        return null
+    }
+    function layoutActive(on) { layoutLoader().active=on }
+    function keyState() {
+        var item=layoutLoader().item
+        trace=JSON.stringify({menuBarIndex: g.menuBarIndex, dashboard: g.dashboard, drivingInfoIndex: g.drivingInfoIndex,
+                              leftInfoIndex: g.leftInfoIndex, rightInfoIndex: g.rightInfoIndex, doorInfo: g.doorInfo,
+                              calls: g.calls, holds: g.holds, tripHold: page.tripHold,
+                              layout: item?item.objectName:"", layoutHold: item && item.tripHold!==undefined?item.tripHold:null})
+    }
+    // Single wheel events across the Global states that change the routes. Each event starts from fixed Global values.
+    // SwcEvent acts only on a state change, so a key 0 event in state 9 first moves SwcEvent off the next state.
     // Each key starts from each info index 0-6, so the script reaches every wrap and every step of the info pages.
-    // A row keeps the Loader list only when the list changes.
     function runScript() {
         var keys=[g.swcBack, g.swcLeft, g.swcRight, g.swcUp, g.swcDown, g.swcEnter, g.swcModes]
-        var sequences=[[1, 0], [1, 2, 3, 0]]
+        var states=[1, 2, 3, 0]
         var out=[]
-        var last=""
         for(var dash=0; dash<6; dash++)
         for(var menu=0; menu<2; menu++)
         for(var notify=0; notify<2; notify++)
         for(var door=0; door<2; door++)
         for(var tpms=0; tpms<2; tpms++)
         for(var start=0; start<7; start++)
-        for(var k=0; k<keys.length; k++) {
-            g.menuBarIndex=menu; g.dashboard=dash; g.notifyTop=notify; g.doorInfo=door; g.tpmsInfoEnabled=tpms
-            g.drivingInfoIndex=start; g.leftInfoIndex=start%3; g.rightInfoIndex=start%3; g.calls=[]
-            for(var q=0; q<sequences.length; q++)
-            for(var s=0; s<sequences[q].length; s++) {
-                g.swcKey=keys[k]; g.swcState=sequences[q][s]; g.swcChanged=!g.swcChanged
-                var list=JSON.stringify(loaders())
-                out.push([dash, menu, notify, door, tpms, start, keys[k], sequences[q][s], g.menuBarIndex, g.dashboard,
-                          g.drivingInfoIndex, g.leftInfoIndex, g.rightInfoIndex, g.doorInfo, g.calls, list===last?"":list])
-                last=list
-                g.calls=[]
+        for(var k=0; k<keys.length; k++)
+        for(var s=0; s<states.length; s++) {
+            for(var pass=0; pass<2; pass++) {
+                g.menuBarIndex=menu; g.dashboard=dash; g.notifyTop=notify; g.doorInfo=door; g.tpmsInfoEnabled=tpms
+                g.drivingInfoIndex=start; g.leftInfoIndex=start%3; g.rightInfoIndex=start%3; g.calls=[]
+                if(pass===0)
+                    deliver(0, 9)
             }
+            deliver(keys[k], states[s])
+            out.push([dash, menu, notify, door, tpms, start, keys[k], states[s], g.menuBarIndex, g.dashboard,
+                      g.drivingInfoIndex, g.leftInfoIndex, g.rightInfoIndex, g.doorInfo, g.calls, loaders()])
         }
         trace=JSON.stringify(out)
     }
@@ -1733,7 +1755,36 @@ Window {
     }
     function snapshot() { tree=JSON.stringify(describe(page, 0)) }
 }
-""")
+"""
+
+
+def shell_harness(fixture, result, engine, ui_units):
+    # The harness that both dashboard phases use: the window, a stub Global, a stub event handler, and a Loader for
+    # the shell under test. Returns the window and the shared helpers.
+    from PyQt5 import QtCore, QtQml, QtQuick  # QtQuick types the root as QQuickWindow for capture()
+    warnings = []
+    def handler(kind, context, message):
+        result["messages"].append(message)
+        if kind not in (QtCore.QtDebugMsg, QtCore.QtInfoMsg) and "wrong permissions" not in message:
+            warnings.append(message)
+    QtCore.qInstallMessageHandler(handler)
+    checks = []
+    def verify(name, condition):
+        checks.append(dict(name=name, passed=bool(condition)))
+        print("CHECK " + name, flush=True)
+        require(condition, name)
+    precompiled = []
+    stand_ins = ["qrc:/" + name for name in ("Trucks/menu/MenuPage.qml", "Trucks/common/Notify.qml", "Trucks/common/DoorInfo.qml",
+                 "Trucks/common/MaintentNotify.qml", "Trucks/common/ShellInfoNotify.qml", "Trucks/common/Dragging.qml",
+                 "Trucks/common/update/UpdateMcu.qml")] + ["qrc:/Trucks/ui" + str(n) + "/Dashboard.qml" for n in range(1, 7)]
+    for url in list(ui_units) + stand_ins + ["file:///etc/vnD.qml"]:
+        dependency = QtQml.QQmlComponent(engine, QtCore.QUrl(url))
+        precompiled.append(dict(url=url, ready=dependency.status() == QtQml.QQmlComponent.Ready,
+                                errors=[error.toString() for error in dependency.errors()]))
+    result["precompiled"] = precompiled
+    verify("vnD, the compiled units, and the stand-ins compile", all(entry["ready"] for entry in precompiled))
+    harness = fixture / "ShellHarness.qml"
+    harness.write_text(SHELL_HARNESS)
     engine.load(QtCore.QUrl.fromLocalFile(str(harness)))
     roots = engine.rootObjects()
     require(roots, result["messages"])
@@ -1747,9 +1798,7 @@ Window {
         QtCore.QMetaObject.invokeMethod(window, name, QtCore.Qt.QueuedConnection,
                                         *[QtCore.Q_ARG("QVariant", argument) for argument in arguments])
         settle(wait)
-    shells = {"compiled": "qrc:/Trucks/Dashboard.qml", "owned": "file:///etc/vnD.qml"}
-    runs = {}
-    for label, url in shells.items():
+    def open_shell(label, url):
         call("open", "")
         call("reset")
         call("open", url)
@@ -1762,6 +1811,45 @@ Window {
                 break
             settle(50)
         verify(label + " shell SwcEvent takes keys", len(swc) == 1 and swc[0].property("mCompleted") == 1)
+        return page
+    return dict(window=window, warnings=warnings, checks=checks, verify=verify, settle=settle, call=call, open_shell=open_shell)
+
+
+def finish_shell(result, harness, callbacks, intercepted, denied, proof_scope):
+    checks, warnings = harness["checks"], harness["warnings"]
+    harness["call"]("open", "")
+    result.update(runtime_checks=checks, cache_callbacks=sorted(set(callbacks)),
+                  intercepted_urls=sorted(set(intercepted)), denied_urls=denied, qml_warnings=warnings,
+                  passed=all(entry["passed"] for entry in checks) and not warnings and not denied,
+                  native_writes=False, proof_scope=proof_scope)
+    harness["window"].setProperty("visible", False)
+    print(json.dumps(result), flush=True)
+    return 0 if result["passed"] else 1
+
+
+BACK, UP, DOWN, LEFT, RIGHT, ENTER, MODES = 3, 19, 20, 21, 22, 23, 26
+
+
+def dashboard_differential(fixture, result, engine, callbacks, intercepted, denied, ui_units):
+    # Differential test of the owned shell vnD against the compiled Trucks/Dashboard.qml (cache 023).
+    # Both shells run in one harness with one stub Global, the real compiled SwcEvent, Trip, and TurnLightIndicator,
+    # and stand-ins for the children loaded by URL. Failure modes, each with a check below:
+    # - vnD does not compile, reads a name that the compiled shell does not read, or logs a QML warning;
+    # - a wheel event reaches the menu or the notification differently, or hides the door popup differently;
+    # - Back or Modes, or any key on the menu, notification, or door route, changes a different Global value;
+    # - on a stock layout, Left or Right differs from the compiled Up or Down release;
+    # - a key that the key map leaves without a dashboard action (hold or release of Left and Right, Up, Down, OK alone)
+    #   changes a value;
+    # - a Loader opens a different URL, or turns on under different Global values (the Loader state in the trace);
+    # - an overlay, the trip text, or a turn arrow sits at a different place or size (the item tree and the pixels).
+    # The dashboard actions of Left, Right, Up, Down, and OK differ by design; dashboard-keys tests them in real time.
+    harness = shell_harness(fixture, result, engine, ui_units)
+    window, verify, call = harness["window"], harness["verify"], harness["call"]
+    renders = []
+    shells = {"compiled": "qrc:/Trucks/Dashboard.qml", "owned": "file:///etc/vnD.qml"}
+    runs = {}
+    for label, url in shells.items():
+        harness["open_shell"](label, url)
         run = runs[label] = {}
         call("runScript", wait=200)
         run["trace"] = json.loads(window.property("trace"))
@@ -1783,20 +1871,47 @@ Window {
     compiled, owned = runs["compiled"], runs["owned"]
     verify("compiled shell came from the cache", "qrc:/Trucks/Dashboard.qml" in callbacks)
     verify("owned shell opened by file:///etc/vnD.qml", "file:///etc/vnD.qml" in intercepted)
-    events = len(compiled["trace"])
-    verify("key script ran 28224 events in each shell", events == len(owned["trace"]) == 96 * 7 * 7 * 6)
-    differences = [index for index, (left, right) in enumerate(zip(compiled["trace"], owned["trace"])) if left != right]
-    result["key_trace"] = dict(events=events, identical=not differences, first_differences=[
-        dict(index=index, compiled=compiled["trace"][index], owned=owned["trace"][index]) for index in differences[:5]],
-        menu_calls=sum(1 for row in compiled["trace"] for entry in row[14] if entry[0] == "menu"),
-        notify_calls=sum(1 for row in compiled["trace"] for entry in row[14] if entry[0] == "notify"),
-        door_hides=sum(1 for row in compiled["trace"] for entry in row[14] if entry[0] == "doorInfoHide"),
-        distinct_global_results=len({tuple(row[8:14]) for row in compiled["trace"]}))
+    rows_c, rows_o = compiled["trace"], owned["trace"]
+    events = len(rows_c)
+    verify("key script ran 18816 events in each shell", events == len(rows_o) == 96 * 7 * 7 * 4)
+    # Row: dash, menu, notify, door, tpms, start, key, state | menuBarIndex, dashboard, drivingInfoIndex, leftInfoIndex,
+    # rightInfoIndex, doorInfo | calls | Loaders. The notification stand-in takes Back only.
+    def dashboard_route(row):
+        dash, menu, notify, door, tpms, start, key, state = row[:8]
+        return not (notify and key == BACK) and not (door and state == 0) and not menu
+    by_event = {tuple(row[:8]): row for row in rows_c}
+    differences = []
+    counts = dict(full=0, stock_card=0, no_action=0)
+    for index, (left, right) in enumerate(zip(rows_c, rows_o)):
+        dash, menu, notify, door, tpms, start, key, state = left[:8]
+        if left[:8] != right[:8] or left[14] != right[14]:
+            differences.append(dict(index=index, reason="event or route calls", compiled=left, owned=right))
+        elif not (dashboard_route(left) and key in (LEFT, RIGHT, UP, DOWN, ENTER)):
+            counts["full"] += 1
+            if left != right:
+                differences.append(dict(index=index, reason="full row", compiled=left, owned=right))
+        elif key in (LEFT, RIGHT) and state == 1 and not door:
+            # vnD Left and Right press on a stock layout = compiled Up and Down release from the same Global values.
+            counts["stock_card"] += 1
+            reference = by_event[(dash, menu, notify, door, tpms, start, UP if key == LEFT else DOWN, 0)]
+            if right[8:14] != reference[8:14]:
+                differences.append(dict(index=index, reason="stock card key", compiled=reference, owned=right))
+        else:
+            counts["no_action"] += 1
+            if right[8:14] != [menu, dash, start, start % 3, start % 3, door]:
+                differences.append(dict(index=index, reason="no dashboard action", compiled=left, owned=right))
+    result["key_trace"] = dict(events=events, identical=not differences, compared=counts, first_differences=differences[:5],
+        menu_calls=sum(1 for row in rows_c for entry in row[14] if entry[0] == "menu"),
+        notify_calls=sum(1 for row in rows_c for entry in row[14] if entry[0] == "notify"),
+        door_hides=sum(1 for row in rows_c for entry in row[14] if entry[0] == "doorInfoHide"),
+        distinct_global_results=len({json.dumps(row[8:14]) for row in rows_c}))
     if differences:
-        print("TRACE DIFFERENCES " + json.dumps(result["key_trace"]["first_differences"]), flush=True)
-    verify("key traces identical", not differences)
-    verify("key script reaches the menu, the notification, and the door popup",
-           result["key_trace"]["menu_calls"] and result["key_trace"]["notify_calls"] and result["key_trace"]["door_hides"])
+        print("TRACE DIFFERENCES " + json.dumps(differences[:5]), flush=True)
+    verify("routes identical for every event; full rows identical off the dashboard key map; stock card keys equal the "
+           "compiled Up and Down; other dashboard key map events change nothing", not differences)
+    verify("key script reaches the menu, the notification, the door popup, and each comparison",
+           result["key_trace"]["menu_calls"] and result["key_trace"]["notify_calls"] and result["key_trace"]["door_hides"]
+           and all(counts.values()))
     verify("Loader sources, states, and geometry identical for each layout and vehicle model", compiled["sweep"] == owned["sweep"])
     for menu in (0, 1):
         left, right = compiled["tree-menu-" + str(menu)], owned["tree-menu-" + str(menu)]
@@ -1818,16 +1933,209 @@ Window {
     collect(compiled["tree-menu-0"])
     result["visible_texts"] = sorted(set(texts))
     verify("trip texts present", {"TRIP A", "234.5"} <= set(texts))
-    call("open", "")
-    result.update(runtime_checks=checks, renders=renders, cache_callbacks=sorted(set(callbacks)),
-                  intercepted_urls=sorted(set(intercepted)), denied_urls=denied, qml_warnings=warnings,
-                  passed=all(entry["passed"] for entry in checks) and not warnings and not denied,
-                  native_writes=False,
-                  proof_scope="Compiled Dashboard (cache 023) and owned vnD in one harness with a stub Global, the real compiled "
-                              "SwcEvent, Trip, TurnLightIndicator, GlowText, and GlowImage, and stand-ins for the URL children.")
-    window.setProperty("visible", False)
-    print(json.dumps(result), flush=True)
-    return 0 if result["passed"] else 1
+    result["renders"] = renders
+    return finish_shell(result, harness, callbacks, intercepted, denied,
+                        "Compiled Dashboard (cache 023) and owned vnD in one harness with a stub Global, the real compiled "
+                        "SwcEvent, Trip, TurnLightIndicator, GlowText, and GlowImage, and stand-ins for the URL children.")
+
+
+def dashboard_keys(fixture, result, engine, callbacks, intercepted, denied, ui_units):
+    # Timed wheel key cases for the owned shell vnD, through the stub Global as VehicleEvent swcDeliver sets the keys.
+    # Slot 0 is a daily layout stand-in (trip, economy, tires, engine, level) and slot 1 a tow layout stand-in
+    # (trailer, tires, engine, level, trip); both have pages, tripHold, and flashTrip(). Slots 2-5 are stock stand-ins.
+    # Failure modes, written before the cases; each case names the failure modes that the case checks:
+    # F1  Left or Right pages the wrong way, does not wrap, or keeps a stale index outside the pages.
+    # F2  A hold state or the release of Left or Right pages again.
+    # F3  A short OK does not open the menu, opens the menu on the press, or the release also reaches the menu.
+    # F4  An OK hold released between 250 ms and 1200 ms opens the menu or resets Trip A, or tripHold stays above 0.
+    # F5  An OK hold on the trip page does not reset Trip A exactly once near 1200 ms, does not flash the trip card,
+    #     opens the menu on the release, or tripHold does not stay 0 for 250 ms, reach 1, and fall back to 0.
+    # F6  An OK hold on another page or on a stock layout starts the Trip A hold.
+    # F7  Up or Down changes a value.
+    # F8  With the menu open, a notification shown, or the door popup shown, a key takes the dashboard key map
+    #     instead of the compiled route.
+    # F9  A stock layout loses the compiled info switch on Left and Right.
+    # F10 A layout change or a missing layout item during a hold resets Trip A later, or any key logs a QML warning.
+    harness = shell_harness(fixture, result, engine, ui_units)
+    window, verify, call, settle = harness["window"], harness["verify"], harness["call"], harness["settle"]
+    harness["open_shell"]("owned", "file:///etc/vnD.qml")
+    def run(setup, steps):
+        call("reset", wait=300)
+        for name, value in setup.items():
+            call("set", name, value, wait=0)
+        # Move SwcEvent off state 1, then clear the records of that event and of the setup.
+        call("deliver", 0, 9, wait=50)
+        call("clear", wait=0)
+        samples, last = {}, 9
+        for step in steps + [("wait", 400), ("sample", "end")]:
+            if step[0] == "key":
+                # SwcEvent acts only on a state change; a case that repeats a state tests nothing.
+                require(step[2] != last, "key steps must change the state")
+                last = step[2]
+                call("deliver", step[1], step[2], wait=step[3])
+            elif step[0] == "set":
+                call("set", step[1], step[2], wait=step[3])
+            elif step[0] == "layout":
+                call("layoutActive", step[1], wait=step[2])
+            elif step[0] == "wait":
+                settle(step[1])
+            else:
+                call("keyState", wait=0)
+                samples[step[1]] = json.loads(window.property("trace"))
+        return samples
+    def press(key, held, states=(1, 0), gap=40):
+        # A press, optional hold states, and the release; "held" is the time from the press to the release.
+        steps = [("key", key, states[0], gap if len(states) > 2 else held)]
+        for state in states[1:-1]:
+            steps.append(("key", key, state, (held - gap) // (len(states) - 2)))
+        return steps + [("key", key, states[-1], 60)]
+    def calls(sample, name):
+        return [entry for entry in sample["calls"] if entry[0] == name]
+    def hold_shape(sample):
+        values = [entry[2] for entry in sample["holds"]]
+        rising = [entry for entry in sample["holds"] if entry[2] > 0]
+        return dict(changes=len(values), first_rise_ms=rising[0][1] if rising else None,
+                    peak=max(values) if values else 0, last=values[-1] if values else None)
+    def quiet(sample, menu=0):
+        # No reset, no flash, no menu change, and no hold progress.
+        return (not calls(sample, "resetTrip") and not calls(sample, "flashTrip") and sample["menuBarIndex"] == menu
+                and not sample["holds"] and sample["tripHold"] == 0)
+    def one_reset(sample):
+        shape = hold_shape(sample)
+        resets = calls(sample, "resetTrip")
+        return (len(resets) == 1 and resets[0][1] == 0 and 1150 <= resets[0][2] <= 1700
+                and len(calls(sample, "flashTrip")) == 1 and sample["menuBarIndex"] == 0
+                and shape["first_rise_ms"] is not None and shape["first_rise_ms"] >= 240 and shape["peak"] >= 0.999
+                and shape["last"] == 0 and sample["tripHold"] == 0 and sample["layoutHold"] == 0 and not calls(sample, "menu"))
+    cases = [
+        ("page Right wraps from the last daily page", "F1", "4 -> 0 -> 1",
+         dict(dashboard=0, drivingInfoIndex=4), press(RIGHT, 60) + [("sample", "a")] + press(RIGHT, 60),
+         lambda s: s["a"]["drivingInfoIndex"] == 0 and s["end"]["drivingInfoIndex"] == 1),
+        ("page Left wraps from the first tow page", "F1", "0 -> 4 -> 3",
+         dict(dashboard=1, drivingInfoIndex=0), press(LEFT, 60) + [("sample", "a")] + press(LEFT, 60),
+         lambda s: s["a"]["drivingInfoIndex"] == 4 and s["end"]["drivingInfoIndex"] == 3),
+        ("stale index 6 on 5 daily pages, then Right", "F1", "6 counts as 0; Right -> 1",
+         dict(dashboard=0, drivingInfoIndex=6), press(RIGHT, 60),
+         lambda s: s["end"]["drivingInfoIndex"] == 1),
+        ("stale index 6 on 5 daily pages, then Left", "F1", "6 counts as 0; Left -> 4",
+         dict(dashboard=0, drivingInfoIndex=6), press(LEFT, 60),
+         lambda s: s["end"]["drivingInfoIndex"] == 4),
+        ("Right held through states 2 and 3, then released", "F2", "1 -> 2 on the press only",
+         dict(dashboard=0, drivingInfoIndex=1), [("key", RIGHT, 1, 40), ("sample", "a"), ("key", RIGHT, 2, 300),
+                                                 ("key", RIGHT, 3, 300), ("key", RIGHT, 0, 60)],
+         lambda s: s["a"]["drivingInfoIndex"] == 2 and s["end"]["drivingInfoIndex"] == 2),
+        ("Left held through states 2 and 3, then released", "F2", "3 -> 2 on the press only",
+         dict(dashboard=1, drivingInfoIndex=3), [("key", LEFT, 1, 40), ("sample", "a"), ("key", LEFT, 2, 300),
+                                                 ("key", LEFT, 3, 300), ("key", LEFT, 0, 60)],
+         lambda s: s["a"]["drivingInfoIndex"] == 2 and s["end"]["drivingInfoIndex"] == 2),
+        ("short OK (100 ms) on the economy page", "F3", "menu opens on the release; the menu gets no key",
+         dict(dashboard=0, drivingInfoIndex=1), [("key", ENTER, 1, 100), ("sample", "a"), ("key", ENTER, 0, 60)],
+         lambda s: s["a"]["menuBarIndex"] == 0 and s["end"]["menuBarIndex"] == 1 and not calls(s["end"], "menu")
+         and not calls(s["end"], "resetTrip")),
+        ("short OK (100 ms) on the trip page", "F3 F5", "menu opens; no reset; tripHold stays 0",
+         dict(dashboard=0, drivingInfoIndex=0), [("key", ENTER, 1, 100), ("key", ENTER, 0, 60)],
+         lambda s: s["end"]["menuBarIndex"] == 1 and not calls(s["end"], "menu") and not calls(s["end"], "resetTrip")
+         and not calls(s["end"], "flashTrip") and hold_shape(s["end"])["peak"] < 0.05 and s["end"]["tripHold"] == 0),
+        ("OK held 600 ms on the trip page, then released", "F4", "no menu, no reset; tripHold rises, then returns to 0",
+         dict(dashboard=0, drivingInfoIndex=0), [("key", ENTER, 1, 150), ("sample", "early"), ("wait", 450),
+                                                 ("sample", "mid"), ("key", ENTER, 0, 60)],
+         lambda s: s["early"]["tripHold"] == 0 and 0.05 < s["mid"]["tripHold"] < 0.9 and s["mid"]["layoutHold"] == s["mid"]["tripHold"]
+         and s["end"]["menuBarIndex"] == 0 and not calls(s["end"], "resetTrip") and not calls(s["end"], "flashTrip")
+         and s["end"]["tripHold"] == 0 and s["end"]["layoutHold"] == 0),
+        ("OK held 1300 ms on the daily trip page, with hold states", "F5", "one resetTrip(0), one flashTrip, no menu; tripHold 0 -> 1 -> 0",
+         dict(dashboard=0, drivingInfoIndex=0), [("key", ENTER, 1, 150), ("sample", "early"), ("key", ENTER, 2, 550),
+                                                 ("key", ENTER, 3, 600), ("key", ENTER, 0, 60)],
+         lambda s: s["early"]["tripHold"] == 0 and one_reset(s["end"])),
+        ("OK held 1300 ms on the tow trip page (page 5)", "F5", "one resetTrip(0), one flashTrip, no menu; tripHold 0 -> 1 -> 0",
+         dict(dashboard=1, drivingInfoIndex=4), press(ENTER, 1300),
+         lambda s: one_reset(s["end"])),
+        ("OK held 1300 ms on the economy page", "F6", "nothing",
+         dict(dashboard=0, drivingInfoIndex=1), press(ENTER, 1300, (1, 2, 3, 0)),
+         lambda s: quiet(s["end"]) and s["end"]["drivingInfoIndex"] == 1),
+        ("OK held 1300 ms on a stock layout (slot 3)", "F6", "nothing",
+         dict(dashboard=2), press(ENTER, 1300, (1, 2, 3, 0)),
+         lambda s: quiet(s["end"]) and s["end"]["leftInfoIndex"] == 0),
+        ("short OK on a stock layout (slot 3)", "F3", "menu opens on the release",
+         dict(dashboard=2), press(ENTER, 100),
+         lambda s: s["end"]["menuBarIndex"] == 1 and not calls(s["end"], "menu")),
+        ("Up and Down through press, holds, and release", "F7", "no value changes",
+         dict(dashboard=0, drivingInfoIndex=2, leftInfoIndex=1, rightInfoIndex=1),
+         press(UP, 400, (1, 2, 3, 0)) + press(DOWN, 400, (1, 2, 3, 0)),
+         lambda s: quiet(s["end"]) and not s["end"]["calls"] and [s["end"][k] for k in ("drivingInfoIndex", "leftInfoIndex", "rightInfoIndex")] == [2, 1, 1]),
+        ("Up and Down on a stock layout (slot 3)", "F7", "no value changes",
+         dict(dashboard=2, leftInfoIndex=1), press(UP, 60) + press(DOWN, 60),
+         lambda s: not s["end"]["calls"] and s["end"]["leftInfoIndex"] == 1 and s["end"]["menuBarIndex"] == 0),
+        ("menu open: Left, Right, short OK, and a 1300 ms OK hold", "F8", "each event goes to the menu; no paging, no reset",
+         dict(dashboard=0, drivingInfoIndex=0, menuBarIndex=1),
+         press(LEFT, 60) + press(RIGHT, 60) + press(ENTER, 100) + press(ENTER, 1300),
+         lambda s: [entry[1:] for entry in calls(s["end"], "menu")] == [[LEFT, 1], [LEFT, 0], [RIGHT, 1], [RIGHT, 0],
+                                                                         [ENTER, 1], [ENTER, 0], [ENTER, 1], [ENTER, 0]]
+         and len(s["end"]["calls"]) == 8 and quiet(s["end"], 1) and s["end"]["drivingInfoIndex"] == 0),
+        ("notification that takes every key: Left, Right, and a 1300 ms OK hold on the trip page", "F8",
+         "each event goes to the notification; no paging, no reset, no menu",
+         dict(dashboard=0, drivingInfoIndex=0, notifyTop=1, notifyTakesAll=1),
+         press(LEFT, 60) + press(RIGHT, 60) + press(ENTER, 1300),
+         lambda s: len(calls(s["end"], "notify")) == 6 and len(s["end"]["calls"]) == 6 and quiet(s["end"])
+         and s["end"]["drivingInfoIndex"] == 0),
+        ("notification that takes Back only: Right, then Back", "F8", "Right asks the notification, then pages; Back stays with the notification",
+         dict(dashboard=0, drivingInfoIndex=0, notifyTop=1), press(RIGHT, 60) + press(BACK, 60),
+         lambda s: [entry[1:] for entry in calls(s["end"], "notify")] == [[RIGHT, 1], [RIGHT, 0], [BACK, 1], [BACK, 0]]
+         and s["end"]["drivingInfoIndex"] == 1 and s["end"]["menuBarIndex"] == 0),
+        ("door popup: Left", "F8", "press does nothing; the release closes the popup",
+         dict(dashboard=0, drivingInfoIndex=0, doorInfo=1), [("key", LEFT, 1, 60), ("sample", "a"), ("key", LEFT, 0, 60)],
+         lambda s: s["a"]["doorInfo"] == 1 and s["a"]["drivingInfoIndex"] == 0 and s["end"]["doorInfo"] == 0
+         and s["end"]["calls"] == [["doorInfoHide"]] and s["end"]["drivingInfoIndex"] == 0 and s["end"]["menuBarIndex"] == 0),
+        ("door popup: short OK, and a 1300 ms OK hold on the trip page", "F8",
+         "the first release closes the popup; no menu, no reset; the second release also closes the popup; no hold",
+         dict(dashboard=0, drivingInfoIndex=0, doorInfo=1), press(ENTER, 100) + [("sample", "a")] + [("set", "doorInfo", 1, 0)]
+         + press(ENTER, 1300),
+         lambda s: s["a"]["calls"] == [["doorInfoHide"]] and s["a"]["menuBarIndex"] == 0
+         and s["end"]["calls"] == [["doorInfoHide"], ["doorInfoHide"]] and quiet(s["end"])),
+        ("stock layout (slot 3): Left, Right, Right with holds", "F9 F2",
+         "Left = compiled Up (previous): 0 -> 1; Right = compiled Down (next): 1 -> 0 -> 1; holds do nothing",
+         dict(dashboard=2, leftInfoIndex=0), press(LEFT, 60) + [("sample", "a")] + press(RIGHT, 60) + [("sample", "b")]
+         + press(RIGHT, 400, (1, 2, 3, 0)),
+         lambda s: s["a"]["leftInfoIndex"] == 1 and s["b"]["leftInfoIndex"] == 0 and s["end"]["leftInfoIndex"] == 1
+         and not s["end"]["calls"]),
+        ("stock layout (slot 6): Left from 1, Right from 0", "F9", "1 -> 0 -> 1",
+         dict(dashboard=5, leftInfoIndex=1), press(LEFT, 60) + [("sample", "a")] + press(RIGHT, 60),
+         lambda s: s["a"]["leftInfoIndex"] == 0 and s["end"]["leftInfoIndex"] == 1),
+        ("layout change to a stock layout 600 ms into a trip hold", "F10", "no reset, no flash, no menu; tripHold returns to 0",
+         dict(dashboard=0, drivingInfoIndex=0), [("key", ENTER, 1, 600), ("sample", "mid"), ("set", "dashboard", 2, 900),
+                                                 ("sample", "after"), ("key", ENTER, 0, 60)],
+         lambda s: s["mid"]["tripHold"] > 0 and s["after"]["layout"] == "stock-ui3" and s["after"]["layoutHold"] is None
+         and not calls(s["end"], "resetTrip") and not calls(s["end"], "flashTrip") and s["end"]["menuBarIndex"] == 0
+         and s["end"]["tripHold"] == 0),
+        ("layout change to the tow layout 600 ms into a trip hold", "F10", "no reset, no flash, no menu; both holds 0",
+         dict(dashboard=0, drivingInfoIndex=0), [("key", ENTER, 1, 600), ("set", "dashboard", 1, 900), ("key", ENTER, 0, 60)],
+         lambda s: s["end"]["layout"] == "paged-tow" and not calls(s["end"], "resetTrip") and not calls(s["end"], "flashTrip")
+         and s["end"]["menuBarIndex"] == 0 and s["end"]["tripHold"] == 0 and s["end"]["layoutHold"] == 0),
+        ("no layout item: Left, Right, a 1300 ms OK hold, then a short OK", "F10",
+         "no paging, no reset; the short OK still opens the menu",
+         dict(dashboard=0, drivingInfoIndex=0), [("layout", False, 50)] + press(LEFT, 60) + press(RIGHT, 60)
+         + press(ENTER, 1300) + [("sample", "a")] + press(ENTER, 100),
+         lambda s: s["a"]["layout"] == "" and s["a"]["drivingInfoIndex"] == 0 and s["a"]["menuBarIndex"] == 0
+         and not calls(s["end"], "resetTrip") and s["end"]["menuBarIndex"] == 1),
+    ]
+    table = []
+    for name, modes, expected, setup, steps, check in cases:
+        samples = run(setup, steps)
+        passed = bool(check(samples))
+        end = samples["end"]
+        table.append(dict(case=name, failure_modes=modes, expected=expected, passed=passed,
+                          observed=dict(samples={label: {key: value for key, value in sample.items() if key != "holds"}
+                                                 for label, sample in samples.items()},
+                                        hold=hold_shape(end))))
+        print("CASE " + ("PASS " if passed else "FAIL ") + name + " " + json.dumps(table[-1]["observed"])[:600], flush=True)
+    result["key_cases"] = table
+    for entry in table:
+        verify("key case: " + entry["case"], entry["passed"])
+    if harness["warnings"]:
+        print("QML WARNINGS " + json.dumps(harness["warnings"][:5]), flush=True)
+    verify("no QML warnings during the key cases", not harness["warnings"])
+    return finish_shell(result, harness, callbacks, intercepted, denied,
+                        "Owned vnD with a stub Global, a stub event handler, the real compiled SwcEvent, Trip, and "
+                        "TurnLightIndicator, paged layout stand-ins in slots 0 and 1, and stock stand-ins in slots 2-5.")
 
 
 def main():
@@ -1854,7 +2162,8 @@ def main():
                                 sources=failed.get("settings_compile", []),
                                 evidence="Actual Qt5.14.2 object properties before source lifecycle correction."))
     runs = []
-    phases = ["empty-source-control", "original-vendor-header", "original-adapted", "patched-adapted", "dashboard-differential"]
+    phases = ["empty-source-control", "original-vendor-header", "original-adapted", "patched-adapted", "dashboard-differential",
+              "dashboard-keys"]
     if args.candidate_dir:
         phases.extend(("patched-settings-adapted", "patched-settings-redirects"))
     for phase in phases:
@@ -1862,7 +2171,8 @@ def main():
         command = [sys.executable, str(Path(__file__).resolve()), "--child", phase, "--fixture", str(fixture)]
         if phase in ("patched-settings-adapted", "patched-settings-redirects"):
             command += ["--candidate-dir", args.candidate_dir]
-        process = subprocess.run(command, capture_output=True, text=True, timeout=40)
+        # The key phase waits in real time for each timed key case.
+        process = subprocess.run(command, capture_output=True, text=True, timeout=150 if phase == "dashboard-keys" else 40)
         record = dict(phase=phase, command=command, exit_code=process.returncode,
                       stderr=process.stderr, stdout=process.stdout)
         try:
