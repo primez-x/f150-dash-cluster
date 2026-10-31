@@ -80,7 +80,15 @@ FAILURE_MODES = [
     "A power cut or a failed step during a rollback leaves a mixed cluster, no settings, or the wrong settings, and the next insert skips the rollback",
     "A failed rollback step leaves the dashboard stopped",
     "A rollback reports success when the restarted Launcher fails the start check",
+    "Two runs at once share the rollback journal, or a lock left by a stopped run blocks every later run",
+    "The installer changes the cluster while a Launcher that does not stop still runs",
+    "A damaged or changed stock settings backup reaches the cluster",
 ]
+# A real truck settings archive: the run backup of the menu-v2 install (Launcher/Databases sqlite and ini files).
+TRUCK_SETTINGS = ROOT / "analysis/capture-04/vehicle-runs/menu-v2-install-1/private-Launcher.tar"
+BACKUP_HELP = "Copy private-Launcher.tar from the first install folder to viknav-ui/settings-before-install.tar."
+HASH_NOTE = "settings backup hash recorded now"
+BUSY = "BUSY another viknav-ui run is active"
 
 sha = lambda data: hashlib.sha256(data).hexdigest()
 ORIGINAL_BYTES = ORIGINAL.read_bytes()
@@ -114,9 +122,11 @@ mode=healthy
 [ "$mode" = locksound ] && chmod 555 "$R/etc/sound"
 # breakstock: the candidate does not start, and one stock sound on the drive turns bad, so the stock copy fails.
 [ "$mode" = breakstock ] && printf x >> "$T/usb/sda1/viknav-ui/original/sound/door.wav"
+# sticky: the candidate does not start, and the Launcher process then ignores every stop signal.
+[ "$mode" = sticky ] && echo ignore-all > "$T/killall-mode"
 log=$R/tmp/Launcher.log
 printf 'qml: [Translation Starting...]\n' > "$log"
-case "$mode" in nomarker|locksound|breakstock) ;; *)
+case "$mode" in nomarker|locksound|breakstock|sticky) ;; *)
     printf 'qml: [Starting VehicleEvent .....]\nqml: [VehicleEvent Ver:VehicleEvent@20250714 r36577]\nqml: [main.qml starting...]\n' >> "$log" ;; esac
 [ "$mode" = vnerror ] && printf 'file:///etc/vnG.qml:120: ReferenceError: x is not defined\n' >> "$log"
 [ "$h" = "__CANDIDATE__" ] && printf 'changed by candidate\n' > "$R/private/Launcher/settings.db"
@@ -128,7 +138,12 @@ echo '  PID USER       COMMAND'
 exit 0
 """
 STUB_KILLALL = """#!/bin/sh
+# __T__/killall-mode: ignore-term (only KILL stops the Launcher) or ignore-all (the Launcher does not stop).
 echo "killall $*" >> __T__/calls
+case "$(cat __T__/killall-mode 2>/dev/null)" in
+    ignore-term) [ "$1" = -9 ] || exit 0 ;;
+    ignore-all) exit 0 ;;
+esac
 rm -f __T__/running
 exit 0
 """
@@ -257,6 +272,23 @@ class Case:
     def journal_path(self):
         return self.root / "etc/.viknav-rollback"
 
+    def lock_path(self):
+        """The run lock on tmpfs: a folder with the pid of the owner run."""
+        return self.root / "tmp/viknav-ui.lock"
+
+    def hold_lock(self, pid):
+        self.lock_path().mkdir()
+        if pid is not None:
+            (self.lock_path() / "pid").write_text(f"{pid}\n")
+
+    def sums(self):
+        """First field of the drive and the internal stock settings hash files (None when absent)."""
+        paths = (self.usb / "viknav-ui/settings-before-install.sha256", self.root / "etc/.viknav-stock-settings.sha256")
+        return [p.read_text().split()[0] if p.is_file() and p.read_text().split() else None for p in paths]
+
+    def lines(self):
+        return (self.out / "STATUS.txt").read_text().splitlines() if self.out and (self.out / "STATUS.txt").exists() else []
+
     def copy_path(self):
         """The internal copy of the settings tar that the journal names."""
         return self.root / "etc/.viknav-settings.tar"
@@ -286,7 +318,10 @@ class Case:
         then CUT_RESTORE (the rollback of that failed install, automatic=True) or CUT_REQUESTED (a requested rollback of a
         healthy install, automatic=False). Returns the settings that a finished rollback restores."""
         root, private = self.root, self.root / "private"
-        self.settings_tar(self.usb / "viknav-ui/settings-before-install.tar", SETTINGS)
+        stock = self.settings_tar(self.usb / "viknav-ui/settings-before-install.tar", SETTINGS)
+        # The first install over the original wrote the stock backup from the run backup of that install.
+        self.first_install().mkdir()
+        (self.first_install() / "private-Launcher.tar").write_bytes(stock.read_bytes())
         # The settings backup of the install run. A rollback of a failed install restores these settings.
         run_tar = self.settings_tar(self.usb / "viknav-ui-install-20261031-120000-99/private-Launcher.tar", AUTO_SETTINGS)
         expected = AUTO_SETTINGS if automatic else SETTINGS
@@ -432,12 +467,17 @@ class Case:
         for path in etc.iterdir():
             (self.root / "etc" / path.name).write_bytes(path.read_bytes())
         (self.root / "private/Launcher/settings.db").write_bytes(b"settings of v1\n")
-        stock = self.t / "stock"
-        (stock / "Launcher").mkdir(parents=True)
-        (stock / "Launcher/settings.db").write_bytes(SETTINGS)
-        with tarfile.open(self.usb / "viknav-ui/settings-before-install.tar", "w", format=tarfile.USTAR_FORMAT) as tar:
-            tar.add(stock / "Launcher", arcname="Launcher")
+        # As on the truck drive: the first install folder holds the run backup that became the stock backup, byte for byte.
+        # Earlier releases wrote no hash files.
+        stock = tarfile_bytes(SETTINGS)
+        (self.usb / "viknav-ui/settings-before-install.tar").write_bytes(stock)
+        self.first_install().mkdir()
+        (self.first_install() / "private-Launcher.tar").write_bytes(stock)
         return self
+
+    def first_install(self):
+        """The result folder of the first install on the drive (the name of the truck drive folder)."""
+        return self.usb / "viknav-ui-install-19700101-000007-1577"
 
     def backup(self):
         return sha((self.usb / "viknav-ui/settings-before-install.tar").read_bytes())
@@ -493,6 +533,8 @@ def unsafe_redirection_lines(text):
             heredoc = start.group(1)
         code = re.sub(r"'[^']*'|\"(?:\\.|[^\"\\])*\"", '""', line)
         code = re.sub(r"(^|\s)#.*", "", code).replace("<<", "")
+        # The closing brace of a parameter expansion is not a compound command.
+        code = re.sub(r"\$\{[^}]*\}", "x", code)
         for segment in re.split(r"&&|\|\||[;|&(){}]|\$\(", code):
             words = [word for word in segment.split() if word != "!"]
             if words and words[0] in SPECIAL_BUILTINS and REDIRECTION.search(segment):
@@ -1039,6 +1081,322 @@ def main():
                 c.run()
                 return [c.status(), c.leftovers(), c.running(), c.copy_path().exists()]
             check(f"abandoned-stages-at-min-free-then-{action}", 13, [status, [], True, False], stages_at_min_free)
+
+        # One drive insertion can start two runs: mdev sees the disk and the partition, the boot coldplug scan repeats the
+        # hotplug event, and /etc/mdev/udisk_insert starts each updater in the background. One lock serializes the runs.
+        for action in ("install", "rollback", "log"):
+            def busy(action=action):
+                c = install(new()) if action == "rollback" else new()
+                c.unmark()
+                c.hold_lock(os.getpid())
+                before, calls = c.state(), len(c.calls())
+                c.marker(action)
+                c.run()
+                return [c.status(), c.state() == before, c.calls()[calls:], (c.lock_path() / "pid").read_text(), c.running()]
+            check(f"busy-{action}-changes-nothing", 22, [BUSY, True, [], f"{os.getpid()}\n", True], busy)
+
+        def stale_lock():
+            gone = subprocess.Popen(["/bin/true"])
+            gone.wait()
+            c = new()
+            c.hold_lock(gone.pid)
+            install(c)
+            return [c.status(), c.device(), c.lock_path().exists()]
+        check("stale-lock-taken", 22, ["INSTALLED", "candidate", False], stale_lock)
+
+        def ownerless_lock():
+            c = new()
+            c.hold_lock(None)
+            install(c)
+            return [c.status(), c.device(), c.lock_path().exists()]
+        check("lock-without-pid-taken", 22, ["INSTALLED", "candidate", False], ownerless_lock)
+
+        def lock_released():
+            found = []
+            c = install(new())
+            found.append([c.status(), c.lock_path().exists()])
+            c.run()
+            found.append([c.status(), c.lock_path().exists()])
+            c.unmark()
+            c.marker("log")
+            c.run()
+            found.append([c.status(), c.lock_path().exists()])
+            c = install(new(), "dies")
+            found.append([c.status(), c.lock_path().exists()])
+            c = new()
+            (c.root / "usr/bin/Launcher").write_bytes(b"unknown\n")
+            install(c)
+            found.append([c.status(), c.lock_path().exists()])
+            return found
+        check("lock-released-on-every-exit", 22, [["INSTALLED", False], ["ALREADY_INSTALLED", False], ["LOGGED", False],
+                                                 ["ROLLED_BACK Launcher stopped", False], ["ABORTED unknown Launcher", False]],
+              lock_released)
+
+        def concurrent_runs():
+            # The first run holds at the journal removal of a healthy install. A rollback run starts from the same drive.
+            c = new()
+            c.marker("install")
+            source = c.script.read_text()
+            anchor = '    journal_clear || rollback_now "clear the rollback journal"\n'
+            gate = f'    printf ready > "{c.t}/first-ready"\n    while [ ! -f "{c.t}/first-release" ]; do "{BUSYBOX}" sleep 0.02; done\n'
+            first_script = c.t / "first.sh"
+            first_script.write_text(source.replace(anchor, gate + anchor))
+            first = subprocess.Popen([str(BUSYBOX), "ash", str(first_script)], env={"PATH": "/usr/bin:/bin"},
+                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            try:
+                ready = wait_for(lambda: (c.t / "first-ready").exists(), 60)
+                held = [c.device(), c.journal_path().exists()]
+                c.unmark()
+                c.marker("rollback")
+                c.run()
+                second = [c.status(), c.device(), c.journal_path().exists()]
+            finally:
+                (c.t / "first-release").write_text("go")
+                first.wait(timeout=120)
+            first_out = sorted(c.usb.glob("viknav-ui-install-*"))[0]
+            first_status = (first_out / "STATUS.txt").read_text().split("\n")[0]
+            return [ready, held, second, first_status, c.device(), c.journal_path().exists(), c.lock_path().exists(), c.running()]
+        check("concurrent-runs-serialized", 22,
+              [True, ["candidate", True], [BUSY, "candidate", True], "INSTALLED", "candidate", False, False, True], concurrent_runs)
+
+        # A Launcher that ignores TERM gets KILL. A Launcher that ignores both stops the run before any live change.
+        def term_ignored():
+            c = new()
+            (c.t / "killall-mode").write_text("ignore-term")
+            install(c)
+            return [c.status(), c.device(), "killall -9 Launcher" in c.calls()]
+        check("launcher-ignores-term-gets-kill", 23, ["INSTALLED", "candidate", True], term_ignored)
+
+        def stop_refused_install():
+            c = new()
+            (c.t / "killall-mode").write_text("ignore-all")
+            before = c.state()
+            install(c)
+            return [c.status(), c.state() == before, c.running(), c.starts(), (c.out / "private-Launcher.tar").exists(), c.leftovers(),
+                    c.journal_path().exists(), c.copy_path().exists()]
+        check("launcher-refuses-stop-install-changes-nothing", 23,
+              ["ABORTED Launcher did not stop", True, True, 0, False, [], False, False], stop_refused_install)
+
+        def stop_refused_rollback():
+            c = install(new())
+            c.unmark()
+            (c.t / "killall-mode").write_text("ignore-all")
+            before = c.state()
+            c.marker("rollback")
+            c.run()
+            return [c.status(), c.detail(), c.state() == before, c.running(), c.leftovers(), c.device()]
+        check("launcher-refuses-stop-rollback-changes-nothing", 23,
+              ["ROLLBACK_FAILED", "Launcher did not stop; nothing changed", True, True, [], "candidate"], stop_refused_rollback)
+
+        def stop_refused_automatic():
+            c = install(new(), "sticky")
+            failed = [c.status(), c.detail(), c.journal_path().exists(), c.running(), c.device(), c.leftovers()]
+            (c.t / "killall-mode").unlink()
+            c.run()
+            return failed + [c.status(), c.device(), c.settings() == SETTINGS, c.journal_path().exists(), c.running()]
+        check("launcher-refuses-stop-automatic-keeps-journal", 23,
+              ["ROLLBACK_FAILED startup markers missing", "Launcher did not stop; nothing changed; the next drive insert finishes the rollback",
+               True, True, "candidate", [], "ROLLED_BACK resumed", "original", True, False, True], stop_refused_automatic)
+
+        def stop_refused_start_phase():
+            c = new()
+            c.cut("journal-removal", True)
+            (c.t / "killall-mode").write_text("ignore-all")
+            c.marker("install")
+            c.run()
+            failed = [c.status(), c.detail(), c.journal_path().exists(), c.running()]
+            (c.t / "killall-mode").unlink()
+            c.run()
+            return failed + [c.status(), c.detail(), c.journal_path().exists(), c.running()]
+        check("launcher-refuses-stop-start-phase-keeps-journal", 23,
+              ["ROLLBACK_FAILED resumed", "Launcher did not stop; nothing changed; the next drive insert finishes the rollback", True, True,
+               "ROLLED_BACK resumed", "files already stock; original Launcher started", False, True], stop_refused_start_phase)
+
+        # The stock settings backup has a recorded hash: on the drive, and inside the cluster for a replacement drive.
+        def hash_recorded():
+            c = install(new())
+            return [c.sums() == [c.backup()] * 2, HASH_NOTE in c.lines()]
+        check("install-records-stock-backup-hash", 24, [True, False], hash_recorded)
+
+        def flip(path):
+            raw = bytearray(path.read_bytes())
+            raw[raw.index(SETTINGS)] ^= 1
+            path.write_bytes(raw)
+
+        for suffix, drop in (("", False), ("-replacement-drive", True)):
+            def flipped(drop=drop):
+                c = install(new())
+                c.unmark()
+                backup = c.usb / "viknav-ui/settings-before-install.tar"
+                good = backup.read_bytes()
+                flip(backup)
+                if drop:
+                    (c.usb / "viknav-ui/settings-before-install.sha256").unlink()
+                before = c.state()
+                c.marker("rollback")
+                c.run()
+                refused = [c.status(), c.detail(), c.state() == before, c.running(), c.journal_path().exists()]
+                # A repair of the drive archive clears the refusal.
+                backup.write_bytes(good)
+                c.run()
+                return refused + [c.status(), c.device(), c.settings() == SETTINGS, c.journal_path().exists()]
+            check(f"stock-backup-bit-flip-refused{suffix}", 24,
+                  ["ABORTED settings-before-install.tar damaged", BACKUP_HELP, True, True, False,
+                   "ROLLED_BACK by request", "original", True, False], flipped)
+
+        def legacy_empty_then_repaired():
+            c = new().install_v1(V12_ETC)
+            backup = c.usb / "viknav-ui/settings-before-install.tar"
+            empty = __import__("io").BytesIO()
+            with tarfile.open(fileobj=empty, mode="w", format=tarfile.USTAR_FORMAT):
+                pass
+            backup.write_bytes(empty.getvalue())
+            before = c.state()
+            c.marker("rollback")
+            c.run()
+            refused = [c.status(), c.detail(), c.state() == before, c.running(), c.sums()]
+            backup.write_bytes(tarfile_bytes(SETTINGS))
+            c.run()
+            return refused + [c.status(), c.device(), c.settings() == SETTINGS, c.journal_path().exists(), HASH_NOTE in c.lines(),
+                              c.sums() == [c.backup()] * 2]
+        check("legacy-empty-backup-refused-then-repaired", 24,
+              ["ABORTED settings-before-install.tar damaged", BACKUP_HELP, True, True, [None, None],
+               "ROLLED_BACK by request", "original", True, False, True, True], legacy_empty_then_repaired)
+
+        def legacy_members(members):
+            import io
+            buffer = io.BytesIO()
+            with tarfile.open(fileobj=buffer, mode="w", format=tarfile.USTAR_FORMAT) as tar:
+                for name, data in members:
+                    info = tarfile.TarInfo(name)
+                    if data is None:
+                        info.type = tarfile.DIRTYPE
+                        info.mode = 0o755
+                        tar.addfile(info)
+                    else:
+                        info.size = len(data)
+                        tar.addfile(info, io.BytesIO(data))
+            return buffer.getvalue()
+
+        for name, members in (("outside-launcher", [("Launcher", None), ("Launcher/settings.db", SETTINGS), ("etc/passwd", b"x\n")]),
+                              ("parent-path", [("Launcher", None), ("Launcher/../etc/settings.db", SETTINGS)]),
+                              ("no-regular-file", [("Launcher", None), ("Launcher/Databases", None)]),
+                              ("empty-file", [("Launcher", None), ("Launcher/settings.db", b"")])):
+            def legacy_bad(members=members):
+                # No install folder on the drive: the member check decides.
+                c = new().install_v1(V12_ETC)
+                shutil.rmtree(c.first_install())
+                (c.usb / "viknav-ui/settings-before-install.tar").write_bytes(legacy_members(members))
+                before = c.state()
+                install(c)
+                return [c.status(), c.detail(), c.state() == before, c.running(), c.sums()]
+            check(f"legacy-backup-{name}-refused", 24,
+                  ["ABORTED settings-before-install.tar damaged", BACKUP_HELP, True, True, [None, None]], legacy_bad)
+
+        # A backup from before the hash files must match the run backup of an install folder on the drive.
+        for action in ("install", "rollback"):
+            def legacy_flip(action=action):
+                c = new().install_v1(V12_ETC)
+                flip(c.usb / "viknav-ui/settings-before-install.tar")
+                before = c.state()
+                c.marker(action)
+                c.run()
+                return [c.status(), c.detail(), c.state() == before, c.running(), c.sums()]
+            check(f"legacy-backup-bit-flip-refused-on-{action}", 24,
+                  ["ABORTED settings-before-install.tar damaged", BACKUP_HELP, True, True, [None, None]], legacy_flip)
+
+        def legacy_no_folder():
+            # Without any install folder, the member check and a first record of the hash decide.
+            c = new().install_v1(V12_ETC)
+            shutil.rmtree(c.first_install())
+            c.marker("rollback")
+            c.run()
+            return [c.status(), c.settings() == SETTINGS, HASH_NOTE in c.lines(), c.sums() == [c.backup()] * 2]
+        check("legacy-backup-without-install-folder-recorded", 24, ["ROLLED_BACK by request", True, True, True], legacy_no_folder)
+
+        for name, keep_folder in (("matched-by-install-folder", True), ("member-check", False)):
+            def truck_archive(keep_folder=keep_folder):
+                # The real truck settings archive (menu-v2 install run backup): Launcher/Databases with sqlite and ini files.
+                real = TRUCK_SETTINGS.read_bytes()
+                c = new().install_v1(V12_ETC)
+                (c.usb / "viknav-ui/settings-before-install.tar").write_bytes(real)
+                if keep_folder:
+                    (c.first_install() / "private-Launcher.tar").write_bytes(real)
+                else:
+                    shutil.rmtree(c.first_install())
+                install(c)
+                return [c.status(), HASH_NOTE in c.lines(), c.sums() == [sha(real)] * 2]
+            check(f"truck-settings-archive-accepted-{name}", 24, ["INSTALLED", True, True], truck_archive)
+
+        # A partial encrypt.sh (a second updater rewrote encrypt.zip during the unzip) must run no command at all.
+        def truncated(fraction):
+            def run_cut():
+                c = new()
+                c.marker("install")
+                text = c.script.read_text()
+                last = text.rstrip("\n").rsplit("\n", 1)[1]
+                stop = 'launcher_stop || abort "Launcher did not stop"\n'
+                offsets = {"early": text.index("\nlog() {"),
+                           "after-stop": text.index(stop) + len(stop),
+                           "mid-restore": text.index("restore_original() {") + 400,
+                           "before-last-line": len(text.rstrip("\n")) - len(last)}
+                c.script.write_text(text[:offsets[fraction]])
+                before, calls, outputs = c.state(), c.calls(), c.outputs()
+                c.run()
+                return [c.state() == before, c.calls() == calls, c.outputs() == outputs, c.running(), c.leftovers(),
+                        c.lock_path().exists()]
+            return run_cut
+        for fraction in ("early", "after-stop", "mid-restore", "before-last-line"):
+            check(f"truncated-installer-runs-nothing-{fraction}", 0, [True, True, True, True, [], False], truncated(fraction))
+
+        def legacy_upgrade_records():
+            c = new().install_v1(V12_ETC)
+            install(c)
+            return [c.status(), HASH_NOTE in c.lines(), c.sums() == [c.backup()] * 2]
+        check("legacy-backup-hash-recorded-on-upgrade", 24, ["INSTALLED", True, True], legacy_upgrade_records)
+
+        def internal_hash_beats_drive():
+            # The drive holds another valid settings archive with a matching drive hash file; the internal hash decides.
+            c = install(new())
+            c.unmark()
+            backup = c.usb / "viknav-ui/settings-before-install.tar"
+            backup.write_bytes(tarfile_bytes(b"other settings\n"))
+            (c.usb / "viknav-ui/settings-before-install.sha256").write_text(f"{c.backup()}  settings-before-install.tar\n")
+            before = c.state()
+            c.marker("rollback")
+            c.run()
+            return [c.status(), c.state() == before]
+        check("internal-stock-hash-preferred", 24, ["ABORTED settings-before-install.tar damaged", True], internal_hash_beats_drive)
+
+        def copy_missing_between():
+            # A bad settings copy at a cut between the two settings renames: the old settings folder goes back in place.
+            c = new()
+            c.cut("between", True)
+            c.copy_path().unlink()
+            c.marker("install")
+            c.run()
+            first = [c.status(), c.detail(), c.journal_path().exists(), c.running(), c.settings() == CANDIDATE_SETTINGS]
+            c.run()
+            return first + [c.status(), c.journal_path().exists(), c.running(), c.settings() == CANDIDATE_SETTINGS]
+        def drive_removed():
+            # The drive goes away after the first live rename. Cleanup on the cluster must not depend on the drive log.
+            c = new()
+            c.marker("install")
+            source = c.script.read_text()
+            anchor = '        mv -f "$R/etc/.$f.new" "$R/etc/$f" || rollback_now "move /etc/$f"\n'
+            hidden = c.t / "removed-usb"
+            c.script.write_text(source.replace(anchor, anchor + f'        [ "$f" != vnD.qml ] || mv "$usb_root" "{hidden}"\n'))
+            c.run()
+            removed = [c.device(), c.running(), c.journal_path().exists(), c.copy_path().exists(), c.leftovers()]
+            hidden.replace(c.usb)
+            c.script.write_text(source)
+            c.run()
+            return removed + [c.status(), c.device()]
+        check("drive-removed-during-install", 19, ["candidate", True, False, False, [], "ALREADY_INSTALLED", "candidate"], drive_removed)
+
+        check("settings-folder-kept-when-copy-bad", 19,
+              ["ROLLBACK_FAILED resumed", "settings copy check failed; original Launcher started", True, True, True,
+               "ROLLBACK_FAILED resumed", True, True, True], copy_missing_between)
 
         def temp_files_cut():
             # A power cut inside settings_copy and inside stock_backup_write: each temp file exists, the rename did not run.
