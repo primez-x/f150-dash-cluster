@@ -1,0 +1,13 @@
+/* Round 35: the two cards run off the screen edge. Loads after round-34/kit34.css. */
+/* The outer edge sits off the screen: no border and no radius there. The inner edge keeps the 22 px radius. */
+.card.t25 { border-left: 0; border-radius: 0 22px 22px 0; }
+.card.sec.sq { border-right: 0; border-radius: 22px 0 0 22px; }
+/* A: the content keeps the round 33 place; the extra 150 px of card is padding on the screen-edge side. */
+body.fit35-a .card.t25 { padding-left: 160px; }
+body.fit35-a .card.sec.sq { padding-right: 190px; }
+body.fit35-a .card.sec.sq .chev.r { right: 166px; }
+/* The page dots span the card (round 17); A keeps them under the content. */
+body.fit35-a .card.sec.sq .pnav { right: 150px; }
+/* B: the content centers in the visible card; the outer chevron stays 36 px inside the screen edge. */
+body.fit35-b .card.t25 { padding-left: 40px; padding-right: 40px; }
+body.fit35-b .card.sec.sq .chev.r { right: 36px; }
