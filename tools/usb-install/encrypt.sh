@@ -17,12 +17,12 @@ HEALTH_WAIT=90
 SETTLE_WAIT=20
 LOG_WAIT=180
 
-# Captured original Launcher (capture-04) and the ui-candidate-menu-v10 files.
+# Captured original Launcher (capture-04) and the ui-candidate-menu-v11 files.
 ORIGINAL_SHA256=2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b
-CANDIDATE_SHA256=00cd0fa4bc8c09f5ea87eb2e0fa7e16948f2cefd7b18daf18018978e6e2ae0e2
+CANDIDATE_SHA256=e5f223441e454e1c6707bec6f775eccdab4ab7760a874f0b16abe7bfc5db238c
 # Launcher files of earlier releases (space separated). An install replaces them. menu-v1 to menu-v8 share one Launcher.
 PREVIOUS_LAUNCHERS="3aee8242a8cb167069750bb721f34b5ab66e48cf634fe7c3fcb81b75abd49d8a"
-ETC_FILES="vnD.qml vnG.qml vnM.qml vnS.qml vnV.qml"
+ETC_FILES="vnD.qml vnG.qml vnM.qml vnN.qml vnS.qml vnV.qml"
 # /etc files that only an earlier release installed. An install and a rollback remove them.
 RETIRED_FILES="vnB.qml vnF.qml"
 etc_sha256() {
@@ -30,6 +30,7 @@ etc_sha256() {
         vnD.qml) echo 7cb87b4ba052d3b52934c2e8c57e61398c6bb638d8e64acace967b2b5d619c56 ;;
         vnG.qml) echo c300a6bf3999a7dd406c1b956ff64693b4b5a5f0e9ba45205e7a76c22b19f2b4 ;;
         vnM.qml) echo baf94b049c76bf491355ff1c56f66297500aa4ca34383cdff5857895f17f9911 ;;
+        vnN.qml) echo 976b5fb15f96b1a2c894ac8d23a993fd03890c8d58bdec952560990e48274595 ;;
         vnS.qml) echo 4d285e170e0de495842a247faf83c2d62834ceea8c1e25be7c56de45ee8bfa45 ;;
         vnV.qml) echo 0cf0ff8d8122a7e2f296098bfc012a85d3d168edb895079adde0747d0ec4c01a ;;
     esac
@@ -38,8 +39,8 @@ etc_sha256() {
 # menu-v2: native Factory pages and the key trace. menu-v3: the wheel key bounce filter.
 # menu-v4: oil pressure in the data log. menu-v5: the cruise fields in the data log.
 # menu-v6: boost and trailer brake readings in the data log. menu-v7: engine gauge frame, compass, and oil life.
-# menu-v8: menu motion. The menu-v8 files are the current files. menu-v9 did not ship.
-# menu-v10 adds vnD (the owned dashboard shell with the wheel key map) and a new Launcher.
+# menu-v8: menu motion. The menu-v8 files are the current files. menu-v9 and menu-v10 did not ship.
+# menu-v11 adds vnD (the owned dashboard shell with the wheel key map), vnN (the fixed notification text), and a new Launcher.
 etc_previous() {
     case "$1" in
         vnB.qml) echo cf4c014945f604b5a0da27d70ec0849a54fb57c972bd9ca55c3f0effd8504aee ;;

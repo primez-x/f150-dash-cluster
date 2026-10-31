@@ -35,12 +35,12 @@
 !/evidence/qt-5.14.2/LICENSE.GPL3
 !/patches/capture-04/etc/common/Global.qml
 !/patches/capture-04/etc/common/VehicleEvent.qml
-!/patches/capture-04/etc/common/NotifyTranslation.qml
 !/patches/capture-04/etc/init.d/S01private
 !/patches/capture-04/etc/init.d/S90mount
 !/patches/capture-04/etc/init.d/rcS
 !/patches/capture-04/etc/vnD.qml
 !/patches/capture-04/etc/vnM.qml
+!/patches/capture-04/etc/vnN.qml
 !/patches/capture-04/etc/vnS.qml
 !/handoff/claude-dashboard/**
 !/design/**

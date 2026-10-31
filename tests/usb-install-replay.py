@@ -18,10 +18,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools/usb-install/encrypt.sh"
 BUSYBOX = ROOT / "tools/busybox/busybox"
-CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v10"
+CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v11"
 ORIGINAL = ROOT / "installed/capture-04/rootfs/usr/bin/Launcher"
 RESULT = ROOT / "analysis/capture-04/usb-install-replay-results.json"
-ETC = ["vnD.qml", "vnG.qml", "vnM.qml", "vnS.qml", "vnV.qml"]
+ETC = ["vnD.qml", "vnG.qml", "vnM.qml", "vnN.qml", "vnS.qml", "vnV.qml"]
 # The first cluster install (menu-v1). The upgrade cases start from these files and the Launcher next to them.
 V1_ETC = ROOT / "analysis/capture-04/usb-install-menu-v1/drive/viknav-ui/etc"
 # The second release (menu-v2: native Factory pages and the key trace).
@@ -36,7 +36,7 @@ V5_ETC = ROOT / "analysis/capture-04/usb-install-menu-v5/drive/viknav-ui/etc"
 V6_ETC = ROOT / "analysis/capture-04/usb-install-menu-v6/drive/viknav-ui/etc"
 # The seventh release (menu-v7: engine gauge frame, compass, and oil life in the data log).
 V7_ETC = ROOT / "analysis/capture-04/usb-install-menu-v7/drive/viknav-ui/etc"
-# The eighth release (menu-v8: menu motion). menu-v8 has no vnD.qml.
+# The eighth release (menu-v8: menu motion). menu-v8 has no vnD.qml and no vnN.qml.
 V8_ETC = ROOT / "analysis/capture-04/usb-install-menu-v8/drive/viknav-ui/etc"
 RETIRED = ["vnB.qml", "vnF.qml"]
 APPLETS = ["awk", "cat", "chmod", "cp", "date", "df", "grep", "head", "mkdir", "mv", "rm", "sha256sum", "sync", "tar", "wc"]
@@ -65,6 +65,8 @@ ORIGINAL_BYTES = ORIGINAL.read_bytes()
 CANDIDATE_BYTES = (CANDIDATE / "Launcher").read_bytes()
 ETC_BYTES = {name: (CANDIDATE / "etc" / name).read_bytes() for name in ETC}
 SETTINGS = b"settings before install\n"
+# The stock notification text table on the cluster (/etc/common/NotifyTranslation.qml).
+STOCK_NOTIFY = (ROOT / "installed/capture-04/rootfs/etc/common/NotifyTranslation.qml").read_bytes()
 
 STUB_QTENV = r"""#!/bin/sh
 # Test stub for /etc/qtenv.sh: records the caller context, then writes the Launcher log.
@@ -446,15 +448,23 @@ def main():
 
         def upgrade_v8():
             c = new().install_v1(V8_ETC)
+            # The stock notification table stays in place; the candidate Launcher reads vnN.qml instead.
+            stock = c.root / "etc/common/NotifyTranslation.qml"
+            stock.parent.mkdir(parents=True, exist_ok=True)
+            stock.write_bytes(STOCK_NOTIFY)
             before = c.backup()
             install(c)
-            installed = [c.status(), c.device(), c.starts(), (c.root / "etc/vnD.qml").exists(), c.backup() == before, c.leftovers()]
+            added = [(c.root / "etc" / name).exists() for name in ("vnD.qml", "vnN.qml")]
+            installed = [c.status(), c.device(), c.starts(), added, c.backup() == before, c.leftovers(),
+                         stock.read_bytes() == STOCK_NOTIFY]
             c.unmark()
             c.marker("rollback")
             c.run()
-            return installed + [c.status(), c.device(), (c.root / "etc/vnD.qml").exists(), c.settings() == SETTINGS]
-        check("upgrade-from-v8-then-rollback", 11, ["INSTALLED", "candidate", 1, True, True, [],
-                                                    "ROLLED_BACK by request", "original", False, True], upgrade_v8)
+            removed = [(c.root / "etc" / name).exists() for name in ("vnD.qml", "vnN.qml")]
+            return installed + [c.status(), c.device(), removed, c.settings() == SETTINGS, stock.read_bytes() == STOCK_NOTIFY]
+        check("upgrade-from-v8-then-rollback", 11, ["INSTALLED", "candidate", 1, [True, True], True, [], True,
+                                                    "ROLLED_BACK by request", "original", [False, False], True, True],
+              upgrade_v8)
 
         def upgrade_again():
             c = install(new().install_v1())

@@ -52,6 +52,15 @@ LOADERS = {
         "source": BASE / "patches" / "capture-04" / "etc" / "vnD.qml",
         "destination": "etc/vnD.qml",
     },
+    # Translation (cache 012) loads mRccPrefix + this string; on Linux the prefix is "file:///etc/", so the fixed
+    # notification text table loads from file:///etc/vnN.qml.
+    "/common/NotifyTranslation.qml": {
+        "file_offset": 1487208,
+        "replacement": "vnN.qml",
+        "unit_qrc_path": "common/Translation.qml",
+        "source": BASE / "patches" / "capture-04" / "etc" / "vnN.qml",
+        "destination": "etc/vnN.qml",
+    },
 }
 
 
@@ -59,7 +68,7 @@ LOADERS = {
 COPIES = [
     {"source": BASE / "patches" / "capture-04" / "etc" / "vnS.qml", "destination": "etc/vnS.qml"},
 ]
-MODIFIED_UNITS = ["Trucks/menu/MenuPage.qml", "Trucks/menu/system/MenuSystemFactory.qml", "main.qml"]
+MODIFIED_UNITS = ["Trucks/menu/MenuPage.qml", "Trucks/menu/system/MenuSystemFactory.qml", "common/Translation.qml", "main.qml"]
 
 
 class ReplayFailure(Exception):

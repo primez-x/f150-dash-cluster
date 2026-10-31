@@ -56,6 +56,18 @@ PATCHES = (
         "destination": "etc/vnD.qml",
         "source_path": BASE / "patches" / "capture-04" / "etc" / "vnD.qml",
     },
+    {
+        # Translation (cache 012) fn 392, the mNotifyId Loader source: mGlobalId.item.mRccPrefix + this string.
+        # On Linux, Global sets mRccPrefix to "file:///etc/", so the stock URL is file:///etc//common/NotifyTranslation.qml.
+        # The fixed notification text table vnN replaces that file; the replacement string has no leading slash.
+        "unit_qrc_path": "common/Translation.qml",
+        "old_string": "/common/NotifyTranslation.qml",
+        "new_string": "vnN.qml",
+        "url_prefix": "file:///etc/",
+        "record_file_offset": 1487208,
+        "destination": "etc/vnN.qml",
+        "source_path": BASE / "patches" / "capture-04" / "etc" / "vnN.qml",
+    },
 )
 SOURCE_FILES = {item["destination"]: item["source_path"] for item in PATCHES}
 # Global loads the Factory screen grid vnS by file URL.
@@ -143,7 +155,12 @@ def patch_strings(binary: bytes, units: dict[str, dict[str, object]]) -> tuple[b
         matches = [row for row in unit["strings"] if row["file_offset"] == record]
         require(len(matches) == 1 and matches[0]["value"] == old_string, f"unexpected decoded loader at {record}")
         row = matches[0]
-        require(old_string.startswith("qrc:/") and old_string.endswith(".qml"), f"loader URI is unexpected at {record}")
+        # A row with url_prefix holds the part of the URL after a runtime prefix (Global mRccPrefix).
+        prefix = item.get("url_prefix", "")
+        require(old_string.endswith(".qml") and (prefix + old_string).startswith(("qrc:/", "file:///etc/")),
+                f"loader URI is unexpected at {record}")
+        require(prefix + new_string in ("file:/" + item["destination"], "file:///" + item["destination"]),
+                f"redirect URL does not name the destination: {prefix + new_string}")
         require(len([value for value in unit["strings"] if value["value"] == old_string]) == 1, f"loader URI is not unique in {unit_path}")
         require(record not in seen_records, f"duplicate loader record: {record}")
         seen_records.add(record)
@@ -258,7 +275,8 @@ def build_candidate(source: Path, output: Path) -> dict[str, object]:
     before_units, before_spans, before_registry = decode_binary(decoder, source_bytes, schema)
     gate = json.loads(GATE_FIXTURE.read_text(encoding="utf-8"))
     modified_units = {item["unit_qrc_path"] for item in PATCHES} | {gate["unit_qrc_path"]}
-    require(modified_units == {"main.qml", "Trucks/menu/MenuPage.qml", "Trucks/menu/system/MenuSystemFactory.qml"},
+    require(modified_units == {"main.qml", "Trucks/menu/MenuPage.qml", "Trucks/menu/system/MenuSystemFactory.qml",
+                               "common/Translation.qml"},
             "unexpected affected cache unit set")
     for path in modified_units:
         require(path in before_units, f"affected cache unit missing: {path}")

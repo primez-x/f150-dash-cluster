@@ -1,6 +1,7 @@
 """Load the notification text table with Qt 5.14.2 and check the English text that the banner shows.
 
-The cluster reads /etc/common/NotifyTranslation.qml. The banner shows mNotifyItems[id][language]; English is language 1.
+The stock cluster reads /etc/common/NotifyTranslation.qml. The UI candidate redirects that load to /etc/vnN.qml, the fixed
+table. The banner shows mNotifyItems[id][language]; English is language 1.
 The original phase must reproduce the known slot defect (id 1409 shows the id 1408 text). The patched phase must pass.
 """
 import json
@@ -10,7 +11,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCES = {"original": ROOT / "installed/capture-04/rootfs/etc/common/NotifyTranslation.qml",
-           "patched": ROOT / "patches/capture-04/etc/common/NotifyTranslation.qml"}
+           "patched": ROOT / "patches/capture-04/etc/vnN.qml"}
 RESULTS = ROOT / "analysis/capture-04"
 COUNT = 1456
 ENGLISH = 1

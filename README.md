@@ -104,6 +104,8 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
   - The truck has not run the key map.
 - The `dashboard-differential` Qt phase runs the compiled shell and vnD with the same stub Global through 18816 single wheel events. The menu, notification, and door popup routes are identical for every event. Back and Modes are identical. On a stock layout, Left and Right equal the compiled Up and Down. The Loader geometry, the overlay item tree, and the pixels are also identical.
 - The `dashboard-keys` Qt phase runs 26 timed key cases on vnD with layout stand-ins for the card pages, including holds, layout changes during a hold, and a missing layout. The phase fails on any QML warning.
+- Notification text (menu-v11): the banner for traction control off now reads "TRACTION CONTROL OFF". The stock table showed the "AdvanceTrac ON" text there. The Ford typos are fixed. The fixed table is the owned file `/etc/vnN.qml`. The stock `/etc/common/NotifyTranslation.qml` stays on the cluster unchanged. The truck has not shown the fixed text.
+- The candidate changes one string record in the compiled Translation (cache 012): the table name after the `file:///etc/` prefix becomes `vnN.qml`. The `original-notify-table` and `patched-notify-table` Qt phases run the compiled Translation with the stock tables. The original reproduces the defect; the candidate opens `/etc/vnN.qml` with no QML warning and shows the fixed text.
 - The candidate clears all 13 vendor factory-menu code records and exposes labeled settings and diagnostic entries.
 - All six layouts have detailed specifications, coordinate schematics, and genuine assets under `handoff/claude-dashboard/`.
 
@@ -164,11 +166,13 @@ Check cache routing with the exact host Qt version:
 wsl.exe -d Ubuntu --exec python3 -m venv /mnt/c/f150-dash-cluster/tools/qt-host/venv
 wsl.exe -d Ubuntu --exec /mnt/c/f150-dash-cluster/tools/qt-host/venv/bin/python -m pip install -r /mnt/c/f150-dash-cluster/tests/qt-host-requirements.txt
 wsl.exe -d Ubuntu --exec /mnt/c/f150-dash-cluster/tools/qt-host/venv/bin/python /mnt/c/f150-dash-cluster/tests/qt-ui-loader.py
+wsl.exe -d Ubuntu --exec /mnt/c/f150-dash-cluster/tools/qt-host/venv/bin/python /mnt/c/f150-dash-cluster/tests/notify-text-check.py original
+wsl.exe -d Ubuntu --exec /mnt/c/f150-dash-cluster/tools/qt-host/venv/bin/python /mnt/c/f150-dash-cluster/tests/notify-text-check.py patched
 ```
 
 The Qt probe requires the local Launcher, recovered resources, and decoded metadata under `analysis/capture-04/qml-cache/`.
 The Qt probe uses fixture components and a mocked native type. The probe never loads the captured ARM program or native plugins.
-The host accepts original and redirected caches for the main and MenuPage routes.
+The host accepts original and redirected caches for the main, MenuPage, and Translation routes.
 Global and VehicleEvent wrappers compile in isolated directories. The settings menu, Factory, and General pages run with safe context stubs.
 The compiled shell and vnD run in a 1920 × 932 window with a stub Global, a stub event handler, and stand-in child pages. The previews (`preview-shell-compiled-menu-0.png` and the other three) are in the `loader-*` fixture folder of the `dashboard-differential` run under `analysis/capture-04/qt-host/`.
 Wrapper startup and vehicle behavior remain unverified.
@@ -227,8 +231,8 @@ Do not put `dashboard.zip`, `Ford.zip`, `factory.zip`, or a `dashboard_backup` f
 
 Source replay verifies selected math and state transitions. Source replay does not verify Qt rendering, CAN interpretation, sensor calibration, or live vehicle behavior.
 
-The UI candidate redirects four compiled loaders and includes five source files.
-The generator clears 13 code records in the old factory gate. The generator preserves native code, ELF geometry, and the other 195 cache units.
+The UI candidate redirects five compiled loaders in three cache units and includes six source files.
+The generator clears 13 code records in the old factory gate. The generator preserves native code, ELF geometry, and the other 194 cache units.
 The menu-v1 and menu-v2 candidates are installed on the truck (2026-10-30). Both install logs show a clean start, and the menu-v2 key trace recorded the wheel bounce. Other vehicle checks remain open.
 
 System > Units shows independent Manual/Follow state and exposes `followVehicleUnits()`. Host tests verify the controls with recorded native-call stubs.

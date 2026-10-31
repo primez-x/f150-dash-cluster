@@ -20,11 +20,19 @@ MAIN_OFFSET = 39536
 MAIN_SIZE = 12308
 ORIGINAL_SHA256 = "2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b"
 # The release candidate Launcher (tools/usb-install/encrypt.sh CANDIDATE_SHA256).
-CANDIDATE_SHA256 = "00cd0fa4bc8c09f5ea87eb2e0fa7e16948f2cefd7b18daf18018978e6e2ae0e2"
+CANDIDATE_SHA256 = "e5f223441e454e1c6707bec6f775eccdab4ab7760a874f0b16abe7bfc5db238c"
 PHASES = ("empty-source-control", "original-vendor-header", "original-adapted", "patched-adapted",
           "patched-settings-adapted", "patched-settings-redirects", "candidate-compile", "settings-pages",
-          "dashboard-differential", "dashboard-keys")
+          "dashboard-differential", "dashboard-keys", "original-notify-table", "patched-notify-table")
 DASHBOARD_PHASES = ("dashboard-differential", "dashboard-keys")
+NOTIFY_PHASES = ("original-notify-table", "patched-notify-table")
+# Translation (cache 012) and the string record that names the notification text table (string 3327, fn 392).
+TRANSLATION_SPAN = (1170000, 332652)
+NOTIFY_RECORD = 1487208
+# The text tables that Translation loads by mRccPrefix + "/common/<name>" (fn 385-400).
+TRANSLATION_TABLES = ("VehicleSetupTranslation", "SystemSetupTranslation", "ServiceTranslation", "FactoryTranslation",
+                      "SeniorFactoryTranslation", "NotifyTranslation", "CenterInfoTranslation", "CommonTranslation",
+                      "VehicleMeter", "VehicleModels", "FuelWaterMeter", "AlarmTable")
 
 
 def require(condition, message):
@@ -88,6 +96,15 @@ def child(phase, fixture, candidate_dir=None):
             relative = payload_start - MAIN_OFFSET
             reconstructed[relative:relative + capacity] = encoded + bytes(capacity - len(encoded))
         require(unit == reconstructed, 'Candidate main differs beyond the three reviewed redirect records')
+        # Translation (cache 012): the one notification table record, "/common/NotifyTranslation.qml" -> "vnN.qml".
+        start, size = TRANSLATION_SPAN
+        translation = bytearray(original[start:start + size])
+        require(struct.unpack_from("<iiIIQ", translation, NOTIFY_RECORD - start) == (-1, 29, 0, 24, 24)
+                and translation[NOTIFY_RECORD - start + 24:NOTIFY_RECORD - start + 84] == "/common/NotifyTranslation.qml".encode("utf-16le") + bytes(2),
+                "Original notification table record mismatch")
+        struct.pack_into("<i", translation, NOTIFY_RECORD - start + 4, 7)
+        translation[NOTIFY_RECORD - start + 24:NOTIFY_RECORD - start + 84] = "vnN.qml".encode("utf-16le") + bytes(46)
+        require(raw[start:start + size] == translation, "Candidate Translation differs beyond the notification table record")
     else:
         require(raw == original, 'Probe validation failed: raw == original')
     result = dict(phase=phase, qt_version=QtCore.qVersion(), pyqt_version=QtCore.PYQT_VERSION_STR,
@@ -261,6 +278,27 @@ def child(phase, fixture, candidate_dir=None):
         external["file:///etc/vnM.qml"].write_text('import QtQuick 2.12\nItem { objectName: "route-menu"; property var keys: []; '
                                                    'function key(code,state) { keys=keys.concat([[code,state]]); return 1 } }')
         result["safe_directory_probe_mapping"] = {"file:///etc/qmldir": str(external["file:///etc/qmldir"])}
+    if phase in NOTIFY_PHASES:
+        # The compiled Translation (cache 012) from the Launcher under test, and the stock text tables at the URLs that
+        # the cluster forms: Global mRccPrefix "file:///etc/" + "/common/<name>.qml". The candidate reads vnN instead.
+        start, size = TRANSLATION_SPAN
+        decoded = json.loads(next((ROOT / "analysis/capture-04/qml-cache").glob("012-*.json")).read_text(encoding="utf-8"))
+        require(decoded["qrc_path"] == "common/Translation.qml" and (decoded["file_offset"], decoded["unit_size"]) == (start, size),
+                "Translation cache metadata mismatch")
+        require(hashlib.sha256(original[start:start + size]).hexdigest() == decoded["sha256"], "Translation cache unit hash mismatch")
+        ui_units["qrc:/common/Translation.qml"] = raw[start:start + size]
+        files["common/Translation.qml"] = ""
+        (fixture / "etc-common").mkdir()
+        for name in TRANSLATION_TABLES:
+            copy = fixture / "etc-common" / (name + ".qml")
+            copy.write_bytes((ROOT / "installed/capture-04/rootfs/etc/common" / (name + ".qml")).read_bytes())
+            external["file:///etc//common/" + name + ".qml"] = copy
+        # The cluster has no qmldir in /etc/common; the implicit directory import reads the empty fixture file.
+        external["file:///etc//common/qmldir"] = external["file:///etc/qmldir"]
+        if phase == "patched-notify-table":
+            (fixture / "etc").mkdir()
+            external["file:///etc/vnN.qml"] = fixture / "etc/vnN.qml"
+            external["file:///etc/vnN.qml"].write_bytes((ROOT / "patches/capture-04/etc/vnN.qml").read_bytes())
     if phase in DASHBOARD_PHASES:
         # The owned shell under the URL that main.qml opens, in an isolated directory.
         (fixture / "etc").mkdir()
@@ -341,7 +379,7 @@ def child(phase, fixture, candidate_dir=None):
     def lookup(pointer):
         url = sip.wrapinstance(pointer, QtCore.QUrl).toString()
         callbacks.append(url)
-        if phase in ("settings-pages", "patched-settings-redirects") + DASHBOARD_PHASES:
+        if phase in ("settings-pages", "patched-settings-redirects") + DASHBOARD_PHASES + NOTIFY_PHASES:
             return ctypes.addressof(ui_caches[url]) if url in ui_caches else None
         return ctypes.addressof(cache) if url == "qrc:/main.qml" and phase != "empty-source-control" else None
     library = ctypes.CDLL(str(Path(QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.LibrariesPath)) / "libQt5Qml.so.5"))
@@ -366,6 +404,11 @@ def child(phase, fixture, candidate_dir=None):
         engine.rootContext().setContextProperty("mTrucksModel", 1)
         test = dashboard_differential if phase == "dashboard-differential" else dashboard_keys
         return test(fixture, result, engine, callbacks, intercepted, denied, ui_units)
+    if phase in NOTIFY_PHASES:
+        engine.rootContext().setContextProperty("mTrucksModel", 1)
+        # The Launcher sets mRegion from its REGION argument: /etc/qtenv.sh passes REGION from /etc/model (2).
+        engine.rootContext().setContextProperty("mRegion", "2")
+        return notify_table(fixture, result, engine, callbacks, intercepted, denied)
     engine.load(QtCore.QUrl("qrc:/main.qml"))
     for unused in range(30):
         app.processEvents()
@@ -2138,6 +2181,157 @@ def dashboard_keys(fixture, result, engine, callbacks, intercepted, denied, ui_u
                         "TurnLightIndicator, paged layout stand-ins in slots 0 and 1, and stock stand-ins in slots 2-5.")
 
 
+NOTIFY_HARNESS = r"""import QtQuick 2.12
+Item {
+    width: 1920; height: 932
+    property string pageUrl: ""
+    property alias page: mTranslationId.item
+    property string trace: ""
+    QtObject {
+        id: mGlobalId
+        property QtObject item: QtObject {
+            id: g
+            // Each Global value that Translation and the stock text tables read, with the Global.qml defaults.
+            // mRccPrefix is the Linux value of Global.qml. Language 1 is English.
+            property string mRccPrefix: "file:///etc/"
+            property int language: 1
+            property int vehicleModel: 1
+            property int metricSystem: 0
+            property int notifyText: 0
+            property int nofifyDpf: 55
+            property int nofifyU16: 0
+            property int modelCarSelection: 0
+            property int screenFlipEnabled: 0
+            property int fordSetupInfoChanged: 0
+            property var fordSetupInfo: new Array(100).fill(0)
+            property int trucksSetupInfoChanged: 0
+            property var trucksSetupInfo: new Array(100).fill(0)
+            property int bsmOn: 0
+            property int bsmSensitivity: 0
+            property int bsmBright: 0
+            property int pcsOn: 0
+            property int pcsSensitivity: 0
+            property string fuelUnit: "MPG"
+            property string tripUnit: "mi"
+            property string outSideTempUnit: "F"
+            property string tpmsPressureUnit: " psi"
+            property int mainTentChanged: 0
+            property int mainTentId: 0
+            property int mainTentItem: 0
+            property int mainTentCustomize1: 0
+            property int mainTentCustomize2: 0
+            property int frontTpmsDoorExchange: 0
+            property int rearTpmsDoorExchange: 0
+            property int fuelRefuelingPortPositon: 0
+            property int tpmsInfoEnabled: 1
+            property int reverseAlarmEnabled: 0
+            property int tachoSpeedMax6000: 0
+            property int subTankEnabled: 0
+            property int mLc76VehicleSpeedMaxIndex: 0
+            property int angleInfoEnabled: 0
+            property int outSideTempInfoEnabled: 1
+            property int ecoInfoEnabled: 0
+            property int gearInfoEnabled: 0
+            property int oilTempEnabled: 0
+            property int dteEnabled: 0
+            property int clockInfoEnabled: 1
+            property int doorInfoEnabled: 1
+            property int oilPressureInfoEnabled: 0
+            property int chassisStateEnabled: 0
+            property int dialogId: 0
+            property int dashboard: 0
+            property int benzAdBlueTextMileage: 0xFFFF
+            property int menuPageIndex: 0
+        }
+    }
+    // main.qml loads Translation in the Loader mTranslationId; the text tables read that id.
+    Loader { id: mTranslationId; source: pageUrl }
+    // The probe queues these calls: a load from Python would hold the GIL that the type loader thread needs.
+    function open(url) { pageUrl = url }
+    function banner(id) {
+        g.notifyText=id
+        var loader=null
+        for(var i=0; i<page.data.length; i++) {
+            var source=page.data[i].source!==undefined?String(page.data[i].source):""
+            if(/(NotifyTranslation|vnN)\.qml$/.test(source))
+                loader=page.data[i]
+        }
+        trace=JSON.stringify({text: page.mNotifyTextItem, count: page.mNotifyTextItemLength,
+                              source: loader?String(loader.source):"", loaded: !!(loader && loader.item)})
+    }
+}
+"""
+
+
+def notify_table(fixture, result, engine, callbacks, intercepted, denied):
+    # The compiled Translation (cache 012) loads the notification text table and forms the banner text
+    # (mNotifyTextItem = mNotifyId.item.mNotifyItems[notifyText][language]). Failure modes, each with a check below:
+    # - the candidate unit differs from the original beyond the one record (checked before this function, in child());
+    # - the candidate loads the stock table, or a URL other than file:///etc/vnN.qml, or the original loads vnN;
+    # - the table at /etc/vnN.qml does not load, or a load logs a warning (the install health check rolls back on
+    #   any "/etc/vn" line);
+    # - the banner text for id 1409 is not "TRACTION CONTROL OFF" (the stock table shows the id 1408 text there).
+    from PyQt5 import QtCore
+    warnings = []
+    def handler(kind, context, message):
+        result["messages"].append(message)
+        if kind not in (QtCore.QtDebugMsg, QtCore.QtInfoMsg) and "wrong permissions" not in message:
+            warnings.append(message)
+    QtCore.qInstallMessageHandler(handler)
+    checks = []
+    def verify(name, condition):
+        checks.append(dict(name=name, passed=bool(condition)))
+        print("CHECK " + name, flush=True)
+        require(condition, name)
+    patched = result["phase"] == "patched-notify-table"
+    harness = fixture / "NotifyHarness.qml"
+    harness.write_text(NOTIFY_HARNESS)
+    engine.load(QtCore.QUrl.fromLocalFile(str(harness)))
+    roots = engine.rootObjects()
+    require(roots, result["messages"])
+    root = roots[0]
+    def settle(ms):
+        loop = QtCore.QEventLoop()
+        QtCore.QTimer.singleShot(ms, loop.quit)
+        loop.exec_()
+    def call(name, *arguments, wait=100):
+        QtCore.QMetaObject.invokeMethod(root, name, QtCore.Qt.QueuedConnection,
+                                        *[QtCore.Q_ARG("QVariant", argument) for argument in arguments])
+        settle(wait)
+    call("open", "qrc:/common/Translation.qml", wait=500)
+    verify("compiled Translation came from the cache", "qrc:/common/Translation.qml" in callbacks)
+    banners = {}
+    for number in (1407, 1408, 1409, 1410):
+        call("banner", number, wait=50)
+        banners[number] = json.loads(root.property("trace"))
+    stock = "file:///etc//common/NotifyTranslation.qml"
+    table = "file:///etc/vnN.qml" if patched else stock
+    result["banner_text"] = {number: value["text"] for number, value in banners.items()}
+    result["notify_loader"] = banners[1409]["source"]
+    if warnings:
+        print("QML WARNINGS " + json.dumps(warnings[:5]), flush=True)
+    verify("the mNotifyId Loader opens " + table, banners[1409]["source"] == table and banners[1409]["loaded"])
+    verify("the engine requested " + table + " and not the other table",
+           table in intercepted and (stock if patched else "file:///etc/vnN.qml") not in intercepted)
+    verify("the table has 1456 rows", banners[1409]["count"] == 1456)
+    if patched:
+        verify("banner 1409 shows TRACTION CONTROL OFF", banners[1409]["text"] == "TRACTION CONTROL OFF")
+        verify("banners 1407, 1408, 1410 show the fixed text",
+               [banners[n]["text"] for n in (1407, 1408, 1410)] == ["AdvanceTrac OFF", "AdvanceTrac ON", "TRACTION CONTROL ON"])
+    else:
+        verify("the stock table reproduces the slot defect: banner 1409 shows the 1408 text",
+               banners[1409]["text"] == banners[1408]["text"] != "TRACTION CONTROL OFF")
+    verify("no QML warnings", not warnings)
+    result.update(runtime_checks=checks, cache_callbacks=sorted(set(callbacks)), intercepted_urls=sorted(set(intercepted)),
+                  denied_urls=denied, qml_warnings=warnings, native_writes=False,
+                  passed=all(entry["passed"] for entry in checks) and not warnings and not denied,
+                  proof_scope="Compiled Translation (cache 012) from the Launcher under test, the stock text tables, and a stub "
+                              "Global with the Linux mRccPrefix.")
+    root.setProperty("pageUrl", "")
+    print(json.dumps(result), flush=True)
+    return 0 if result["passed"] else 1
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--child", choices=PHASES)
@@ -2163,13 +2357,13 @@ def main():
                                 evidence="Actual Qt5.14.2 object properties before source lifecycle correction."))
     runs = []
     phases = ["empty-source-control", "original-vendor-header", "original-adapted", "patched-adapted", "dashboard-differential",
-              "dashboard-keys"]
+              "dashboard-keys", "original-notify-table"]
     if args.candidate_dir:
-        phases.extend(("patched-settings-adapted", "patched-settings-redirects"))
+        phases.extend(("patched-settings-adapted", "patched-settings-redirects", "patched-notify-table"))
     for phase in phases:
         fixture = Path(tempfile.mkdtemp(prefix="loader-", dir=HOST))
         command = [sys.executable, str(Path(__file__).resolve()), "--child", phase, "--fixture", str(fixture)]
-        if phase in ("patched-settings-adapted", "patched-settings-redirects"):
+        if phase in ("patched-settings-adapted", "patched-settings-redirects", "patched-notify-table"):
             command += ["--candidate-dir", args.candidate_dir]
         # The key phase waits in real time for each timed key case.
         process = subprocess.run(command, capture_output=True, text=True, timeout=150 if phase == "dashboard-keys" else 40)
