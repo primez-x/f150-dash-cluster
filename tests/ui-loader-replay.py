@@ -64,9 +64,10 @@ LOADERS = {
 }
 
 
-# Copied with no cache redirect: Global opens vnS.
+# Copied with no cache redirect: Global opens vnS, and vnD opens the layouts vnL.
 COPIES = [
     {"source": BASE / "patches" / "capture-04" / "etc" / "vnS.qml", "destination": "etc/vnS.qml"},
+    {"source": BASE / "patches" / "capture-04" / "etc" / "vnL.qml", "destination": "etc/vnL.qml"},
 ]
 MODIFIED_UNITS = ["Trucks/menu/MenuPage.qml", "Trucks/menu/system/MenuSystemFactory.qml", "common/Translation.qml", "main.qml"]
 

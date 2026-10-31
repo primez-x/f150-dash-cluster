@@ -72,6 +72,8 @@ PATCHES = (
 SOURCE_FILES = {item["destination"]: item["source_path"] for item in PATCHES}
 # Global loads the Factory screen grid vnS by file URL.
 SOURCE_FILES["etc/vnS.qml"] = BASE / "patches/capture-04/etc/vnS.qml"
+# vnD loads the dashboard layouts vnL (Daily A and Towing A) by file URL.
+SOURCE_FILES["etc/vnL.qml"] = BASE / "patches/capture-04/etc/vnL.qml"
 ELF_HEADER = struct.Struct("<16sHHIQQQIHHHHHH")
 
 

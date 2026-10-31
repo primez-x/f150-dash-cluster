@@ -17,19 +17,20 @@ HEALTH_WAIT=90
 SETTLE_WAIT=20
 LOG_WAIT=180
 
-# Captured original Launcher (capture-04) and the ui-candidate-menu-v11 files.
+# Captured original Launcher (capture-04) and the ui-candidate-menu-v12 files.
 ORIGINAL_SHA256=2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b
 CANDIDATE_SHA256=e5f223441e454e1c6707bec6f775eccdab4ab7760a874f0b16abe7bfc5db238c
 # Launcher files of earlier releases (space separated). An install replaces them. menu-v1 to menu-v8 share one Launcher.
 PREVIOUS_LAUNCHERS="3aee8242a8cb167069750bb721f34b5ab66e48cf634fe7c3fcb81b75abd49d8a"
-ETC_FILES="vnD.qml vnG.qml vnM.qml vnN.qml vnS.qml vnV.qml"
+ETC_FILES="vnD.qml vnG.qml vnL.qml vnM.qml vnN.qml vnS.qml vnV.qml"
 # /etc files that only an earlier release installed. An install and a rollback remove them.
 RETIRED_FILES="vnB.qml vnF.qml"
 etc_sha256() {
     case "$1" in
-        vnD.qml) echo 7cb87b4ba052d3b52934c2e8c57e61398c6bb638d8e64acace967b2b5d619c56 ;;
-        vnG.qml) echo c300a6bf3999a7dd406c1b956ff64693b4b5a5f0e9ba45205e7a76c22b19f2b4 ;;
-        vnM.qml) echo baf94b049c76bf491355ff1c56f66297500aa4ca34383cdff5857895f17f9911 ;;
+        vnD.qml) echo 53a1070a5e35ec0af8af1d5698e67a024f5cd4f4af136570382432889587b99c ;;
+        vnG.qml) echo 2db5953fe0ddda609fab05f25fdda2449a71b7f63fde2a03e63024155bb9cb84 ;;
+        vnL.qml) echo 21f8317dec0db254af949fb71e5e28bac530cb651e1620a8bc18771c6b5d1419 ;;
+        vnM.qml) echo a4e24bb2b5b54bba6c59d0190f87fe066de2db26a58b010d6f18aaaf330ce8bf ;;
         vnN.qml) echo 976b5fb15f96b1a2c894ac8d23a993fd03890c8d58bdec952560990e48274595 ;;
         vnS.qml) echo 4d285e170e0de495842a247faf83c2d62834ceea8c1e25be7c56de45ee8bfa45 ;;
         vnV.qml) echo 0cf0ff8d8122a7e2f296098bfc012a85d3d168edb895079adde0747d0ec4c01a ;;
@@ -41,12 +42,14 @@ etc_sha256() {
 # menu-v6: boost and trailer brake readings in the data log. menu-v7: engine gauge frame, compass, and oil life.
 # menu-v8: menu motion. The menu-v8 files are the current files. menu-v9 and menu-v10 did not ship.
 # menu-v11 adds vnD (the owned dashboard shell with the wheel key map), vnN (the fixed notification text), and a new Launcher.
+# menu-v12 adds vnL (the Daily A and Towing A layouts) and changes vnD, vnG, and vnM for the two layouts. The Launcher stays.
 etc_previous() {
     case "$1" in
         vnB.qml) echo cf4c014945f604b5a0da27d70ec0849a54fb57c972bd9ca55c3f0effd8504aee ;;
+        vnD.qml) echo 7cb87b4ba052d3b52934c2e8c57e61398c6bb638d8e64acace967b2b5d619c56 ;;
         vnF.qml) echo e3b79fe488506ec3d1c096f3b545df1c166a3e9928f773b1b6507a63e1eb1e12 ;;
-        vnG.qml) echo ce54efec52bfda1778234c1939f29dae6c703d1aa3315856260e37543edaf33e 1f018311b704ef57c0ac2ba2c6dca7bf62ebd00e14a4a5394d0a71f075892e9b ;;
-        vnM.qml) echo bcfbcb20cf4e2ae1853fc442983170a4303c1f4765979378e65dfbb306e8746b 27fac58c773beab055b7f5baa3203be379f0aba3287a20ecd2d10d6ae9f0a76b 0fa4d685121b9c8df22fef7f15a034c3e6452f21868abe7b171e0e20f375935b ;;
+        vnG.qml) echo ce54efec52bfda1778234c1939f29dae6c703d1aa3315856260e37543edaf33e 1f018311b704ef57c0ac2ba2c6dca7bf62ebd00e14a4a5394d0a71f075892e9b c300a6bf3999a7dd406c1b956ff64693b4b5a5f0e9ba45205e7a76c22b19f2b4 ;;
+        vnM.qml) echo bcfbcb20cf4e2ae1853fc442983170a4303c1f4765979378e65dfbb306e8746b 27fac58c773beab055b7f5baa3203be379f0aba3287a20ecd2d10d6ae9f0a76b 0fa4d685121b9c8df22fef7f15a034c3e6452f21868abe7b171e0e20f375935b baf94b049c76bf491355ff1c56f66297500aa4ca34383cdff5857895f17f9911 ;;
         vnS.qml) echo 4d285e170e0de495842a247faf83c2d62834ceea8c1e25be7c56de45ee8bfa45 ;;
         vnV.qml) echo ef6d29dae3b736fa8239930c62cb582abc5c302441d47e35ac0f8c18634829c1 4d1c0e629904c709c651368c4b6465d8db3828b5737e11616060af3d7b040c3b 4a0c9f844b9dc1286c7a6db990659b2b8442b5e7a60b7b990d527204752ff367 787340b7ba86e2c5b116e923aad29ef62ea6bc109aeb659e2f403e4f6c02a512 f2f8ce13f2653d7560e162c28923c39ca08582c467219cb97c7119f8d93e09a9 ;;
     esac

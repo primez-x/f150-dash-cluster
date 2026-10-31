@@ -22,7 +22,10 @@ const failureModes = [
   'Tow/Haul off moves a driver who chose the towing layout before Tow/Haul',
   'Other telltale changes switch the layout',
   'A flashing TOW telltale counts as off',
-  'Telltale frames before the first TOW state switch the layout'
+  'Telltale frames before the first TOW state switch the layout',
+  'A saved layout from the retired six-layout set (2-5) stays, indexes past the two layouts, or is saved again',
+  'A write above 1 or below 0 from any path stays or is saved',
+  'Tow/Haul off moves a driver who chose the towing layout again while towing'
 ];
 
 function extract(text, marker) {
@@ -45,23 +48,26 @@ function propertyDefault(name, fallback) {
   return match ? Number(match[1]) : fallback;
 }
 const script = code => new vm.Script(code || '');
-const alarmHandler = script(extract(texts['Global.qml'], 'onAlarmChangedChanged:'));
+// A QML signal handler body may return early, so each handler runs as a function body.
+const handler = code => script(code === null ? '' : '(function() {' + code + '\n})()');
+const alarmHandler = handler(extract(texts['Global.qml'], 'onAlarmChangedChanged:'));
 const towFunction = extract(texts['Global.qml'], 'function updateTowDashboard(');
-const savedHandler = script(extract(texts['Global.qml'], 'onDashboardBeforeTowChanged:'));
-const dashboardHandler = script(extract(texts['Global.qml'], 'onDashboardChanged:'));
-const notify = script(extract(texts['VehicleEvent.qml'], 'onAlarmInfoNotify:'));
+const savedHandler = handler(extract(texts['Global.qml'], 'onDashboardBeforeTowChanged:'));
+const dashboardHandler = handler(extract(texts['Global.qml'], 'onDashboardChanged:'));
+const notify = handler(extract(texts['VehicleEvent.qml'], 'onAlarmInfoNotify:'));
 const restoreLines = texts['Global.qml'].split(/\r?\n/).filter(line => /^\s*(dashboard|dashboardBeforeTow)=Funcs\.restore_properity\(/.test(line));
 if (restoreLines.length !== (phase === 'original' ? 1 : 2)) throw new Error('Unexpected saved layout restore assignments');
 const restore = script(restoreLines.join('\n'));
 
 // One cluster boot: saved database, Global properties with change handlers, and the native alarm table.
 function boot(db) {
+  const writes = [];
   const values = {dashboard: 0, dashboardBeforeTow: propertyDefault('dashboardBeforeTow', -1), towState: propertyDefault('towState', -1), alarmChanged: 0, ill: 0};
   const native = new Array(300).fill(0);
   const handlers = {dashboard: dashboardHandler, dashboardBeforeTow: savedHandler, alarmChanged: alarmHandler};
   const state = {alarmMax: 300, alarmTable: [], towDashboard: propertyDefault('towDashboard', 1)};
   const context = vm.createContext({Math, Number, console: {log() {}}, mGlobalId: {item: state},
-    Funcs: {setProperty(key, value) { db[key] = String(value); }, restore_properity(key, fallback) { return db[key] ?? fallback; }},
+    Funcs: {setProperty(key, value) { db[key] = String(value); writes.push([key, String(value)]); }, restore_properity(key, fallback) { return db[key] ?? fallback; }},
     getAlarm: id => native[id]}, {codeGeneration: {strings: false, wasm: false}});
   for (const key of Object.keys(values)) {
     const descriptor = {enumerable: true, get: () => values[key], set(value) {
@@ -78,6 +84,7 @@ function boot(db) {
   restore.runInContext(context, {timeout: 100});
   return {
     state,
+    writes: key => writes.filter(entry => entry[0] === key).map(entry => entry[1]),
     frame(changes) { Object.assign(native, changes); notify.runInContext(context, {timeout: 100}); return values.dashboard; },
     choose(layout) { state.dashboard = layout; return values.dashboard; }
   };
@@ -89,9 +96,10 @@ function check(name, mode, expected, run) {
   try { actual = run(); } catch (error) { actual = 'error: ' + error.message; }
   rows.push({name, failureMode: failureModes[mode], expected, actual, pass: JSON.stringify(actual) === JSON.stringify(expected)});
 }
+// Two layouts: 0 Daily A and 1 Towing A (Global towDashboard). The driver layout is the one that is not the towing layout.
 const towLayout = propertyDefault('towDashboard', 1);
-const driver = towLayout === 3 ? 4 : 3;
-const other = towLayout === 5 ? 0 : 5;
+const driver = towLayout === 0 ? 1 : 0;
+const other = driver;
 const [ON, OFF] = [{[TOW]: 1}, {[TOW]: 0}];
 
 check('tow-on-shows-towing-layout', 0, towLayout, () => { const c = boot({dashboard: String(driver)}); c.frame(OFF); return c.frame(ON); });
@@ -113,11 +121,39 @@ check('other-telltales-do-not-switch', 7, [driver, driver], () => { const c = bo
 check('flashing-tow-counts-as-on', 8, [towLayout, towLayout, driver], () => { const c = boot({dashboard: String(driver)}); return [c.frame({[TOW]: 2}), c.frame({[TOW]: 3}), c.frame(OFF)]; });
 check('first-frame-tow-off-no-switch', 9, driver, () => { const c = boot({dashboard: String(driver)}); return c.frame(OFF); });
 check('saved-return-cleared-after-tow-off', 4, '-1', () => { const db = {dashboard: String(driver)}; const c = boot(db); c.frame(ON); c.frame(OFF); return db.dashboardBeforeTow ?? '-1'; });
+check('towing-chosen-again-while-towing-stays', 12, [towLayout, driver, towLayout, towLayout, '-1'], () => {
+  const db = {dashboard: String(driver)};
+  const c = boot(db); c.frame(OFF);
+  return [c.frame(ON), c.choose(driver), c.choose(towLayout), c.frame(OFF), db.dashboardBeforeTow];
+});
+// A driver choice while towing ends the automatic choice. A restart with Tow/Haul still on shows the towing layout again,
+// and Tow/Haul off then returns to the driver layout.
+check('restart-tow-on-after-driver-choice-shows-towing', 5, [driver, towLayout, driver], () => {
+  const db = {dashboard: String(driver)};
+  const first = boot(db); first.frame(ON); first.choose(driver);
+  const second = boot(db); return [second.state.dashboard, second.frame(ON), second.frame(OFF)];
+});
+// Migration: a saved value from the six-layout set becomes Daily A at boot. Global saves 0 once and never saves the old value.
+for (const saved of [2, 3, 4, 5]) {
+  check('saved-layout-' + saved + '-migrates-to-daily-once', 10, [0, '0', ['0']], () => {
+    const db = {dashboard: String(saved)}; const c = boot(db); return [c.state.dashboard, db.dashboard, c.writes('dashboard')];
+  });
+  check('saved-return-layout-' + saved + '-migrates-to-daily-once', 10, [towLayout, '0', ['0'], towLayout, 0, '-1'], () => {
+    const db = {dashboard: String(towLayout), dashboardBeforeTow: String(saved)}; const c = boot(db);
+    return [c.state.dashboard, db.dashboardBeforeTow, c.writes('dashboardBeforeTow'), c.frame(ON), c.frame(OFF), db.dashboardBeforeTow];
+  });
+}
+for (const value of [-1, 2, 5, 6]) {
+  check('write-' + value + '-becomes-daily', 11, [0, ['0']], () => {
+    const c = boot({dashboard: String(towLayout)}); const before = c.writes('dashboard').length;
+    return [c.choose(value), c.writes('dashboard').slice(before)];
+  });
+}
 
 const resultPath = path.join(base, 'analysis/capture-04/tow-layout-replay-results.json');
 const results = fs.existsSync(resultPath) ? JSON.parse(fs.readFileSync(resultPath, 'utf8')) : {};
 results.failureModes = failureModes;
-results.scope = 'Actual Global.qml and VehicleEvent.qml handlers in Node VM with mock native alarm frames and a mock settings database. Alarm 90 is the TOW telltale shown by all six stock layouts. No Qt lifecycle, MCU response, or vehicle proof.';
+results.scope = 'Actual Global.qml and VehicleEvent.qml handlers in Node VM with mock native alarm frames and a mock settings database. Alarm 90 is the TOW telltale. Two layouts: 0 Daily A and 1 Towing A (/etc/vnL.qml). No Qt lifecycle, MCU response, or vehicle proof.';
 results[phase] = {source: folder, hashes: Object.fromEntries(Object.entries(texts).map(([name, text]) => [name, crypto.createHash('sha256').update(text).digest('hex')])),
   towLayout, count: rows.length, passed: rows.filter(row => row.pass).length, failed: rows.filter(row => !row.pass).length, rows};
 fs.mkdirSync(path.dirname(resultPath), {recursive: true});

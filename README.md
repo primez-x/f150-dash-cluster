@@ -57,7 +57,7 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - The source candidate corrects pressure conversion, low-RPM updates, DPC assignments, and idle fuel units.
 - The candidate keeps temperature and speed preferences independent. Separate saved overrides prevent native unit snapshots from changing manual choices.
 - Both source replays pass: 632 gauge cases and 194 unit-state cases. Earlier independent review covered the original unit and persistence changes.
-- The TOW telltale (alarm 90) selects the towing layout (`towDashboard`, now stock UI2). Tow/Haul off returns to the saved driver layout. The tow replay passes 11 cases, and host Qt compiles the source.
+- The TOW telltale (alarm 90) selects Towing A (`towDashboard` 1). Tow/Haul off returns to the saved driver layout. A layout that the driver chooses while towing stays after Tow/Haul ends. The tow replay passes 25 cases, including the layout migration below, and host Qt compiles the source.
 - The MCU source of alarm 90 on this truck is not yet verified. Confirm on the vehicle that the stock TOW telltale lights with Tow/Haul.
 - The GPS clock sets the MCU clock from GPS UTC (NMEA RMC) with the time zone from the GPS position and US and Canada daylight saving time. The MCU clock loses the time when the relay cuts power.
 - The clock replay passes 39 cases. The zone grid matches Python zoneinfo for 45 test cities. Host Qt compiles the source.
@@ -70,7 +70,7 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - Each menu key event writes one `viknav-key <ms> <code> <state> <page path> <cursor>` line to `/tmp/Launcher.log`. The install copies the log to the drive (`Launcher-later.log`) 3 minutes after the restart. The lines show repeated, held, or missing wheel events.
 - Wheel key bounce filter (`VehicleEvent.qml`, all pages and the dashboard). The menu-v2 truck trace (2026-10-30) shows one Down press as two or three press-release pairs; each extra press starts 9–20 ms after a release. Real presses start 120 ms or more after a release. A release now reaches the pages 50 ms later. A press of the same key inside that time joins the key press; a press of another key is dropped with its hold and release. Each drop writes a `viknav-key-drop <ms> <code> <state> <reason>` line. The Up key showed no bounce. The replay passes 17 cases against the truck trace.
 - The menu uses the locked round 21 design: layout A (each open page stays on screen as a column), values B (switches, segments, and a percent meter), and confirm A (press OK twice). The accent is blue, and teal while the towing layout is on. The menu uses the BMW Type Global font from `/usr/share/fonts`. At most three columns show; a fourth level (Factory > General settings) moves the oldest column off the left side, and the narrow first column shows titles only.
-- System > Display > Dashboard layout selects one of the six layouts (Layout 1–6 are UI1–UI6), the same set as the OK hold on the dashboard. OK opens the editor, Up and Down change the layout, and OK saves the layout. While Tow/Haul shows the towing layout automatically, the row shows "· Towing"; a layout chosen then stays after Tow/Haul ends.
+- System > Display > Dashboard layout shows two segments, Daily and Towing. OK switches the layout. While Tow/Haul shows Towing automatically, the row shows a "Tow/Haul" note; a layout chosen then stays after Tow/Haul ends.
 - Factory > Screen grid closes the menu and covers the whole screen with a pixel grid (`/etc/vnS.qml`): lines every 20 px, x,y labels, colored frames every 10 px from each edge, the screen size, and the dashboard transform. A photo of the grid maps the area that the bezel and the steering column leave visible. Any wheel key after the first second, or a power cycle, hides the grid. The truck photos (2026-10-30) show a 1920 × 932 screen drawn 1:1; `handoff/claude-dashboard/START-HERE.md` describes the visible area.
 - Menu keys act on release. Up and Down wrap; Left goes back; Right and OK open or change; Modes steps down; a Modes hold acts as OK; a Back hold closes the menu. The release after a hold is ignored. Each page opens on the first row and drops any unfinished edit.
 - Settings with more than two values open an editor: Up and Down change the value, OK sends the value once, and Back cancels. Oil life start value stays between 10% and 100%. The off-road camera never sends the camera fault value. Ford settings show "Waiting for truck" until the first settings frame, and 500 ms after a change the menu reads the settings back once.
@@ -93,17 +93,19 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - A failed copy preserves the migration backup. Independent review approved the boot candidates for a local commit.
 - The settings menu, including Factory and General settings, passes 249 host Qt checks.
 - Eight additional Qt checks execute the patched MenuPage cache. The checks verify that MenuPage loads `/etc/vnM.qml` and passes the keys.
-- Native Qt fixture previews cover eight settings menu states, including the layout editor, Factory, and General settings, and the screen grid. Real vehicle rendering remains unverified.
-- The dashboard shell is the owned source file `/etc/vnD.qml`. The candidate changes the one main.qml record that both Ford trucks read (`qrc:/Trucks/Dashboard.qml`). vnD started as a function-by-function copy of the compiled shell (cache 023); the six layouts stay compiled.
+- Native Qt fixture previews cover eight settings menu states, including the layout segments, Factory, and General settings, and the screen grid. Real vehicle rendering remains unverified.
+- The dashboard shell is the owned source file `/etc/vnD.qml`. The candidate changes the one main.qml record that both Ford trucks read (`qrc:/Trucks/Dashboard.qml`). vnD started as a function-by-function copy of the compiled shell (cache 023).
+- Dashboard layouts (menu-v12): the truck has two layouts, Daily A (`dashboard` 0) and Towing A (`dashboard` 1), in the owned file `/etc/vnL.qml`. vnD loads vnL at 0,0 over the full 1920 × 932 screen. A switch between the two layouts keeps the same layout item; vnL follows `dashboard`. vnL draws the trip and odometer, the turn arrows, the warning lights, the overspeed badge, the notification banner, and the trailer brake gain, so vnD no longer loads the compiled Trip, TurnLightIndicator, Notify, Dragging, and ShellInfoNotify items. vnD keeps the notification timeout, the door popup, the menu, the service reminder, and the MCU update popup. The truck has not shown vnL.
+- Layout migration: Global keeps `dashboard` at 0 or 1. A saved layout from the six-layout set (2–5) becomes Daily A at the first start, and Global saves 0 once. Any later write of another value (for example the native dashboard notification) also becomes Daily A. A Modes hold switches between the two layouts.
 - Wheel keys on the dashboard (menu-v10):
-  - Left and Right show the previous and the next card when you press the key. Holding or releasing the key does nothing more. On a stock layout, Left and Right switch the info panel, as Up and Down did before.
+  - Left and Right show the previous and the next card when you press the key. Holding or releasing the key does nothing more.
   - A short OK press (under 250 ms) opens the menu when you release the key.
   - On the trip card, hold OK. The hold bar fills from 0.25 s to 1.2 s, and then Trip A resets and the card flashes. A release before 1.2 s cancels the reset. On other cards, a long OK press does nothing.
   - Up and Down do nothing on the dashboard. Back and Modes work as before.
-  - With the menu open, a notification shown, or the door popup shown, the keys go to the menu, the notification, or the popup, as before.
+  - With the menu open or the door popup shown, the keys go to the menu or the popup, as before. A notification takes no key: the compiled Notify answered 0 for every key, so the keys work on the dashboard while a notification shows.
   - The truck has not run the key map.
-- The `dashboard-differential` Qt phase runs the compiled shell and vnD with the same stub Global through 18816 single wheel events. The menu, notification, and door popup routes are identical for every event. Back and Modes are identical. On a stock layout, Left and Right equal the compiled Up and Down. The Loader geometry, the overlay item tree, and the pixels are also identical.
-- The `dashboard-keys` Qt phase runs 26 timed key cases on vnD with layout stand-ins for the card pages, including holds, layout changes during a hold, and a missing layout. The phase fails on any QML warning.
+- The `dashboard-differential` Qt phase runs the compiled shell and vnD with the same stub Global through 6272 single wheel events on layouts 0 and 1. The menu and door popup routes are identical for every event. Back and Modes are identical, except that a Modes hold switches between the two layouts. The door popup, menu, service reminder, and MCU update Loaders are identical in state, place, and size. vnD shows none of the stock overlays, and the layout fills 1920 × 932 at 0,0 for each `dashboard` value 0–5.
+- The `dashboard-keys` Qt phase runs 24 timed key cases on vnD with a vnL stand-in, including holds, Tow/Haul on and off, a stale `dashboard` 2–5, layout changes during a hold, a missing layout, and a layout without the optional members. The `dashboard-layout` phase runs the same cases, except the last, on the real `/etc/vnL.qml`. Both phases fail on any QML warning.
 - Notification text (menu-v11): the banner for traction control off now reads "TRACTION CONTROL OFF". The stock table showed the "AdvanceTrac ON" text there. The Ford typos are fixed. The fixed table is the owned file `/etc/vnN.qml`. The stock `/etc/common/NotifyTranslation.qml` stays on the cluster unchanged. The truck has not shown the fixed text.
 - The candidate changes one string record in the compiled Translation (cache 012): the table name after the `file:///etc/` prefix becomes `vnN.qml`. The `original-notify-table` and `patched-notify-table` Qt phases run the compiled Translation with the stock tables. The original reproduces the defect; the candidate opens `/etc/vnN.qml` with no QML warning and shows the fixed text.
 - The candidate clears all 13 vendor factory-menu code records and exposes labeled settings and diagnostic entries.
@@ -168,13 +170,14 @@ wsl.exe -d Ubuntu --exec /mnt/c/f150-dash-cluster/tools/qt-host/venv/bin/python 
 wsl.exe -d Ubuntu --exec /mnt/c/f150-dash-cluster/tools/qt-host/venv/bin/python /mnt/c/f150-dash-cluster/tests/qt-ui-loader.py
 wsl.exe -d Ubuntu --exec /mnt/c/f150-dash-cluster/tools/qt-host/venv/bin/python /mnt/c/f150-dash-cluster/tests/notify-text-check.py original
 wsl.exe -d Ubuntu --exec /mnt/c/f150-dash-cluster/tools/qt-host/venv/bin/python /mnt/c/f150-dash-cluster/tests/notify-text-check.py patched
+wsl.exe -d Ubuntu --exec /mnt/c/f150-dash-cluster/tools/qt-host/venv/bin/python /mnt/c/f150-dash-cluster/tests/qt-layout-preview.py
 ```
 
 The Qt probe requires the local Launcher, recovered resources, and decoded metadata under `analysis/capture-04/qml-cache/`.
 The Qt probe uses fixture components and a mocked native type. The probe never loads the captured ARM program or native plugins.
 The host accepts original and redirected caches for the main, MenuPage, and Translation routes.
 Global and VehicleEvent wrappers compile in isolated directories. The settings menu, Factory, and General pages run with safe context stubs.
-The compiled shell and vnD run in a 1920 × 932 window with a stub Global, a stub event handler, and stand-in child pages. The previews (`preview-shell-compiled-menu-0.png` and the other three) are in the `loader-*` fixture folder of the `dashboard-differential` run under `analysis/capture-04/qt-host/`.
+The compiled shell and vnD run in a 1920 × 932 window with a stub Global, a stub event handler, and stand-in child pages. The previews (`preview-shell-compiled-menu-0.png` and the other three) are in the `loader-*` fixture folder of the `dashboard-differential` run under `analysis/capture-04/qt-host/`. The `dashboard-layout` run saves vnD with the real vnL (`preview-shell-vnL-daily.png`, `preview-shell-vnL-towing.png`).
 Wrapper startup and vehicle behavior remain unverified.
 
 Decode the installed Launcher metadata:
@@ -231,7 +234,7 @@ Do not put `dashboard.zip`, `Ford.zip`, `factory.zip`, or a `dashboard_backup` f
 
 Source replay verifies selected math and state transitions. Source replay does not verify Qt rendering, CAN interpretation, sensor calibration, or live vehicle behavior.
 
-The UI candidate redirects five compiled loaders in three cache units and includes six source files.
+The UI candidate redirects five compiled loaders in three cache units and includes seven source files.
 The generator clears 13 code records in the old factory gate. The generator preserves native code, ELF geometry, and the other 194 cache units.
 The menu-v1 and menu-v2 candidates are installed on the truck (2026-10-30). Both install logs show a clean start, and the menu-v2 key trace recorded the wheel bounce. Other vehicle checks remain open.
 

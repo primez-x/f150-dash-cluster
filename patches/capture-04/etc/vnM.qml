@@ -73,7 +73,6 @@ ItemInfo {
     readonly property var mFactoryNoEffect: [6, 10, 11, 12, 13, 16, 17]
     readonly property var mDebugLevels: [0, 1, 2, 4, 8]
     readonly property var mDebugTexts: ["Off", "Warnings", "UART receive", "UART transmit", "MCU"]
-    readonly property var mLayouts: [0, 1, 2, 3, 4, 5]
 
     Component.onCompleted: {
         mGlobalId.item.menuBarItemIndex=0
@@ -485,15 +484,15 @@ ItemInfo {
     function clockSummary() {
         return (mGlobalId.item.gpsAutoSetRtcEnabled?"GPS · ":"")+clockText()
     }
-    // Dashboard layouts ui1-ui6 (Global.dashboard 0-5), the same set as the OK hold on the dashboard (Dashboard.key_right).
-    // Global saves the choice. A choice while Tow/Haul shows the towing layout stays after Tow/Haul ends.
+    // The two layouts of /etc/vnL.qml (Global.dashboard 0 Daily A, 1 Towing A), the same switch as a Modes hold on the
+    // dashboard (vnD key_right). Global saves the choice. The note shows while Tow/Haul holds the towing layout; a choice
+    // while towing stays after Tow/Haul ends.
     function layoutRow() {
         var g=mGlobalId.item
-        var texts=mLayouts.map(function(index) { return "Layout "+(index+1) })
-        var current=mLayouts.indexOf(g.dashboard)
-        return makeRow("choice", "Dashboard layout", (current>=0?texts[current]:"Value "+g.dashboard)+
-                                                     (g.dashboardBeforeTow>=0 && g.dashboard===g.towDashboard?" · Towing":""),
-                       {"op": "layout", "options": mLayouts, "texts": texts, "start": nearest(mLayouts, g.dashboard), "current": current})
+        var towing=g.dashboard===1
+        var auto=towing && g.dashboardBeforeTow>=0
+        return makeRow("toggle", "Dashboard layout", (towing?"Towing":"Daily")+(auto?" · Tow/Haul":""),
+                       {"op": "layout", "seg": ["Daily", "Towing"], "current": towing?1:0, "note": auto?"Tow/Haul":undefined})
     }
     function brightnessRow(title, dark) {
         var level=mGlobalId.item.getBrightnessLevel(dark)
@@ -698,6 +697,7 @@ ItemInfo {
         case "factory": g.setFactory(row.arg); break
         case "preview": g.mediaImageEnabled=g.mediaImageEnabled?0:1; break
         case "model": g.modelCarSelection=!g.modelCarSelection; break
+        case "layout": g.dashboard=g.dashboard===1?0:1; break
         }
     }
     function editStep(step) {
@@ -759,7 +759,6 @@ ItemInfo {
         case "svcInterval": serviceSend("mileage", row.arg, value); break
         case "svcItem": serviceSend("item", row.arg, value); break
         case "debug": g.uartDebugEnabled=value; break
-        case "layout": g.dashboard=value; break
         }
     }
     // Maintenance sends. One read-back inquiry follows the last send.

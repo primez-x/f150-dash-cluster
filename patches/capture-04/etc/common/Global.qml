@@ -1899,7 +1899,12 @@ Item {
     property int towDashboard: 1
     property int dashboardBeforeTow: -1     // driver layout to restore; -1 when the towing layout was not selected automatically
     property int towState: -1               // -1 until the first alarm frame after startup
+    // A saved layout from the retired six-layout set (2-5) becomes Daily A (0). The second change saves 0.
     onDashboardBeforeTowChanged: {
+        if(dashboardBeforeTow>1) {
+            dashboardBeforeTow=0
+            return
+        }
         Funcs.setProperty("dashboardBeforeTow", dashboardBeforeTow)
     }
     function updateTowDashboard(){
@@ -2363,9 +2368,10 @@ Item {
     ////////////////////////////////
     // 【0x07】界面 ID & 弹窗 ID dashboardInfoNotify
     ////////////////////////////////
+    // Two layouts in /etc/vnL.qml: 0 Daily A, 1 Towing A. onDashboardChanged keeps the value in that set.
     property int dashboard: 0
-    property int dashboardCounts: 3
-    property int dashboardNum: 3
+    property int dashboardCounts: 2
+    property int dashboardNum: 2
     property int drivingInfoIndex: 0
     property int drivingInfoIndexCounts: 0
     property int drivingInfoIndexLast: 0
@@ -2393,6 +2399,15 @@ Item {
 
     // 只要上面數據有改變就儲存
     onDashboardChanged: {
+        // Any other value (a saved layout 2-5 from the retired set, or a write from another path) becomes Daily A.
+        // The second change saves 0, so the old value is not saved.
+        if(dashboard!==0 && dashboard!==1) {
+            dashboard=0
+            return
+        }
+        // A change away from the towing layout ends the automatic Tow/Haul choice, so the next choice stays after Tow/Haul.
+        if(dashboardBeforeTow>=0 && dashboard!==towDashboard)
+            dashboardBeforeTow=-1
         Funcs.setProperty("dashboard", dashboard)
     }
     onDrivingInfoIndexChanged: {

@@ -15,7 +15,8 @@ const expected = [
   'General settings runs the original system inquiry once on entry, without arguments.',
   'Compiled Factory pages open on release and return to the Factory row with their compiled Back values.',
   'ADB, Debug logging, USB image preview, Car model options, and Screen grid send the vendor values.',
-  'Factory code contains no vendor code gate and loads no retired Factory file.'
+  'Factory code contains no vendor code gate and loads no retired Factory file.',
+  'Display > Dashboard layout offers two segments, Daily and Towing; OK switches the layout and a Tow/Haul choice shows a note.'
 ];
 const report = {schema_version: 2, authority: 'PC source and reduced decoded vendor metadata replay',
   command: 'node tests/settings-menu-replay.cjs', expected_cases: expected,
@@ -273,6 +274,26 @@ try {
   check(g.modelCarSelection === true && menu.mFocusRow.current === 1, 'Car model options toggle');
   open('Screen grid');
   check(g.screenGridEnabled === 1 && g.menuBarIndex === 0, 'Screen grid shows the grid and closes the menu');
+  g.menuBarIndex = 1;
+
+  // Display > Dashboard layout: two segments (Daily, Towing) for Global dashboard 0 and 1. OK switches the layout.
+  Object.assign(g, {dashboard: 0, dashboardBeforeTow: -1, towDashboard: 1, overSpeedWarningEnabled: 0, vehicleSpeedUnit: 'mph',
+    getOverSpeedWaningSpeed() { return '70'; }, getBrightnessLevel() { return 5; }});
+  menu.mPath = ['home', 'display'];
+  menu.mCursors = [0];
+  const layout = () => menu.mRows.find(row => row.title === 'Dashboard layout');
+  check(layout().kind === 'toggle' && JSON.stringify(layout().seg) === JSON.stringify(['Daily', 'Towing']) &&
+    layout().current === 0 && layout().value === 'Daily' && layout().note === undefined, 'Layout row shows two segments at Daily');
+  open('Dashboard layout');
+  check(g.dashboard === 1 && layout().current === 1 && layout().value === 'Towing' && !menu.mEditing, 'Layout OK selects Towing');
+  menu.release(g.swcEnter);
+  check(g.dashboard === 0 && layout().current === 0, 'Layout OK selects Daily');
+  Object.assign(g, {dashboard: 1, dashboardBeforeTow: 0});
+  check(layout().current === 1 && layout().value === 'Towing · Tow/Haul' && layout().note === 'Tow/Haul',
+    'Layout row notes the Tow/Haul choice');
+  menu.release(g.swcEnter);
+  check(g.dashboard === 0 && layout().note === undefined, 'Layout choice while towing selects Daily');
+  check(!/"Layout "|mLayouts/.test(menuText), 'Menu offers no retired layout numbers');
 
   report.pages = ['vnM.qml'].map(name => ({path: 'patches/capture-04/etc/' + name,
     sha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(pages, name))).digest('hex')}));
