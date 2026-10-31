@@ -1,0 +1,5 @@
+/* Round 37: the speed bar under the digits, the steering arc above. Loads after round-36/kit36.css. */
+/* A: digit glyphs y 305 to 445, MPH y 458 to 482, bar y 512 (ticks to y 538), set-speed number from y 544. */
+/* B: MPH y 262 to 286 under the arc (apex y 218, ends y 250), digit glyphs y 315 to 455, bar y 488 (ticks to y 514). */
+body.unit37-b .sunit { top: 262px; }
+body.unit37-b .speed { top: 276px; }

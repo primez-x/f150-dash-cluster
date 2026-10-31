@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 37</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 37 · Towing A · Speed bar under, steering arc above</h1>
+<p>Your direction: the speed bar goes below the big speed number; an arc above the number shows the steering position; flip the markers.
+Your message put MPH and the cruise symbol both above and below the number, so the pick covers both. Every shot passes the margin check (<code>capture.js</code>: 14 shots).</p>
+<ul>
+  <li><b>A:</b> MPH and the cruise symbol stay under the digits. The speed bar sits under MPH.</li>
+  <li><b>B:</b> MPH and the cruise symbol move above the digits, under the steering arc. The speed bar takes the old MPH place under the digits.</li>
+  <li>Both: the speed bar ticks hang below the bar. The cruise arrow sits under the bar and points up at the set speed. The set-speed number shows under the arrow while the set speed changes.</li>
+  <li>Both: the steering arc shows at every speed. The fill runs from straight ahead to the wheel position; the pill marks the position. The round 20 to 36 steering bar showed at crawl speed only.</li>
+  <li>Both: in reverse the speed bar hides, so the large R keeps the center row. The steering arc stays.</li>
+</ul>
+<p>Recommendation: <b>B</b>. The digits sit between two tracks (steering above, speed below), and the speed bar sits close to the number the bar repeats.</p>
+<h2>A and B</h2>
+<div class="grid">
+  <div><h3>A · cruise off</h3><a href="tow-a.html?unit=a&"><img src="shots/tow-a-a-off.png" alt=""></a></div>
+  <div><h3>B · cruise off</h3><a href="tow-a.html?unit=b&"><img src="shots/tow-a-b-off.png" alt=""></a></div>
+  <div><h3>A · cruise set</h3><a href="tow-a.html?unit=a&scene=cruise"><img src="shots/tow-a-a-set.png" alt=""></a></div>
+  <div><h3>B · cruise set</h3><a href="tow-a.html?unit=b&scene=cruise"><img src="shots/tow-a-b-set.png" alt=""></a></div>
+  <div><h3>A · set speed changes</h3><a href="tow-a.html?unit=a&scene=cruiseadj"><img src="shots/tow-a-a-adjust.png" alt=""></a></div>
+  <div><h3>B · set speed changes</h3><a href="tow-a.html?unit=b&scene=cruiseadj"><img src="shots/tow-a-b-adjust.png" alt=""></a></div>
+  <div><h3>A · cruise on after a cancel</h3><a href="tow-a.html?unit=a&scene=cruiseon"><img src="shots/tow-a-a-resume.png" alt=""></a></div>
+  <div><h3>B · cruise on after a cancel</h3><a href="tow-a.html?unit=b&scene=cruiseon"><img src="shots/tow-a-b-resume.png" alt=""></a></div>
+  <div><h3>A · crawl, wheel turned left</h3><a href="tow-a.html?unit=a&scene=crawl"><img src="shots/tow-a-a-crawl.png" alt=""></a></div>
+  <div><h3>B · crawl, wheel turned left</h3><a href="tow-a.html?unit=b&scene=crawl"><img src="shots/tow-a-b-crawl.png" alt=""></a></div>
+  <div><h3>A · reversing, wheel turned right</h3><a href="tow-a.html?unit=a&scene=backing"><img src="shots/tow-a-a-backing.png" alt=""></a></div>
+  <div><h3>B · reversing, wheel turned right</h3><a href="tow-a.html?unit=b&scene=backing"><img src="shots/tow-a-b-backing.png" alt=""></a></div>
+  <div><h3>A · hot head temperature alert</h3><a href="tow-a.html?unit=a&scene=hotcht"><img src="shots/tow-a-a-alert.png" alt=""></a></div>
+  <div><h3>B · hot head temperature alert</h3><a href="tow-a.html?unit=b&scene=hotcht"><img src="shots/tow-a-b-alert.png" alt=""></a></div>
+</div>
+</body>
+</html>
