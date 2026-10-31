@@ -209,7 +209,8 @@ for (const name of ['getSinceResetTravelTime', 'getSinceStartTravelTime', 'getId
 for (const name of ['tripFactor', 'trucksOilLifeTrip']) bind(name);
 const trailerNative = vm.createContext({mGlobalId: {item: context}, getTrucksTrailerDistance: () => 0, getTrucksTrailerGain: () => 0,
   getTrucksTrailerOilLifePercentage: () => 80, getTrucksTrailerOilLifeTrip: () => trailerTrip, getTrucksTrailerFrontRadarState: () => 0,
-  getTrucksTrailerRrearRadarState: () => 0, getTrucksTrailerOilPressure: () => 0}, {codeGeneration: {strings: false, wasm: false}});
+  getTrucksTrailerRrearRadarState: () => 0, getTrucksTrailerOilPressure: () => 0, getTrucksTrailerBrakeState: () => 0,
+  getTrucksTrailerOutputState: () => 0, getTrucksTrailerOutput: () => 0}, {codeGeneration: {strings: false, wasm: false}});
 const trailerHandler = new vm.Script(extract(texts['VehicleEvent.qml'], 'onTrucksTrailerInfoNotify:'));
 let trailerTrip = 0;
 for (const metric of [1, 0]) for (const [raw, expected] of [[0, '0'], [1000, metric ? '1000' : '621'], [8047, metric ? '8047' : '5000'], [65534, metric ? '65534' : '40721'], [65535, '---']]) {
