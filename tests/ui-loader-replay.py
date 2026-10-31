@@ -44,6 +44,14 @@ LOADERS = {
         "source": BASE / "patches" / "capture-04" / "etc" / "vnM.qml",
         "destination": "etc/vnM.qml",
     },
+    # main.qml mDashboard indexes 0 and 1 (Ford trucks) share this record. The owned shell vnD replaces Trucks/Dashboard.qml.
+    "qrc:/Trucks/Dashboard.qml": {
+        "file_offset": 48136,
+        "replacement": "file:/etc/vnD.qml",
+        "unit_qrc_path": "main.qml",
+        "source": BASE / "patches" / "capture-04" / "etc" / "vnD.qml",
+        "destination": "etc/vnD.qml",
+    },
 }
 
 

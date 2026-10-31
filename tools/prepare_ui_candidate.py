@@ -46,6 +46,16 @@ PATCHES = (
         "destination": "etc/vnM.qml",
         "source_path": BASE / "patches" / "capture-04" / "etc" / "vnM.qml",
     },
+    {
+        # main.qml mDashboard: Ford trucks (mTrucksModel 0 and 1) both read this one record.
+        # The owned dashboard shell vnD replaces the compiled Trucks/Dashboard.qml.
+        "unit_qrc_path": "main.qml",
+        "old_string": "qrc:/Trucks/Dashboard.qml",
+        "new_string": "file:/etc/vnD.qml",
+        "record_file_offset": 48136,
+        "destination": "etc/vnD.qml",
+        "source_path": BASE / "patches" / "capture-04" / "etc" / "vnD.qml",
+    },
 )
 SOURCE_FILES = {item["destination"]: item["source_path"] for item in PATCHES}
 # Global loads the Factory screen grid vnS by file URL.

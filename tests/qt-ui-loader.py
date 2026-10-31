@@ -19,8 +19,11 @@ HOST = ROOT / "analysis/capture-04/qt-host"
 MAIN_OFFSET = 39536
 MAIN_SIZE = 12308
 ORIGINAL_SHA256 = "2451c3fb6f6c1344625aa2882760eaaccd3dc0979ad1296c9028838e77e2823b"
+# The release candidate Launcher (tools/usb-install/encrypt.sh CANDIDATE_SHA256).
+CANDIDATE_SHA256 = "00cd0fa4bc8c09f5ea87eb2e0fa7e16948f2cefd7b18daf18018978e6e2ae0e2"
 PHASES = ("empty-source-control", "original-vendor-header", "original-adapted", "patched-adapted",
-          "patched-settings-adapted", "patched-settings-redirects", "candidate-compile", "settings-pages")
+          "patched-settings-adapted", "patched-settings-redirects", "candidate-compile", "settings-pages",
+          "dashboard-differential")
 
 
 def require(condition, message):
@@ -77,12 +80,13 @@ def child(phase, fixture, candidate_dir=None):
         reconstructed = bytearray(original[MAIN_OFFSET:MAIN_OFFSET + MAIN_SIZE])
         for length_start, payload_start, capacity, value in (
                 (46804, 46824, 58, "file:/etc/vnV.qml"),
-                (47188, 47208, 46, "file:/etc/vnG.qml")):
+                (47188, 47208, 46, "file:/etc/vnG.qml"),
+                (48140, 48160, 52, "file:/etc/vnD.qml")):
             encoded = value.encode("utf-16le")
             struct.pack_into("<I", reconstructed, length_start - MAIN_OFFSET, len(value))
             relative = payload_start - MAIN_OFFSET
             reconstructed[relative:relative + capacity] = encoded + bytes(capacity - len(encoded))
-        require(unit == reconstructed, 'Candidate main differs beyond the two reviewed redirect records')
+        require(unit == reconstructed, 'Candidate main differs beyond the three reviewed redirect records')
     else:
         require(raw == original, 'Probe validation failed: raw == original')
     result = dict(phase=phase, qt_version=QtCore.qVersion(), pyqt_version=QtCore.PYQT_VERSION_STR,
@@ -138,7 +142,7 @@ def child(phase, fixture, candidate_dir=None):
         allowed = ["ItemInfo.qml", "MenuSetupButton.qml", "MenuItemButton.qml",
                    "MenuItemSelectButton.qml", "GlowImage.qml", "GlowText.qml"]
         if phase == "patched-settings-redirects":
-            require(original_digest == "3aee8242a8cb167069750bb721f34b5ab66e48cf634fe7c3fcb81b75abd49d8a", "Menu candidate identity mismatch")
+            require(original_digest == CANDIDATE_SHA256, "Menu candidate identity mismatch")
             allowed.remove("MenuItemSelectButton.qml")
         for name in allowed:
             metadata = next((ROOT / "analysis/capture-04/qml-cache").glob("*" + name + ".json"))
@@ -176,6 +180,43 @@ def child(phase, fixture, candidate_dir=None):
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes((ROOT / "recovered-resources/latest-Launcher" / alias).read_bytes())
             files[alias] = None
+    if phase == "dashboard-differential":
+        # Compiled units that run unchanged under both shells, from the original Launcher: the compiled shell
+        # Trucks/Dashboard.qml (cache 023), SwcEvent, Trip, TurnLightIndicator, and the GlowText and GlowImage parts.
+        for path in ("Trucks/Dashboard.qml", "common/SwcEvent.qml", "Trucks/common/Trip.qml",
+                     "Trucks/common/TurnLightIndicator.qml", "Trucks/common/text/GlowText.qml", "Trucks/common/text/GlowImage.qml"):
+            metadata = next((ROOT / "analysis/capture-04/qml-cache").glob("*-" + path.replace("/", "_") + ".json"))
+            decoded = json.loads(metadata.read_text())
+            require(decoded["qrc_path"] == path, "Cache metadata mismatch: " + path)
+            require(all(entry["type"] != 1 or entry["uri"].startswith("Qt") for entry in decoded["imports"]), "Unexpected module import: " + path)
+            payload = original[decoded["file_offset"]:decoded["file_offset"] + decoded["unit_size"]]
+            require(hashlib.sha256(payload).hexdigest() == decoded["sha256"], "Cache unit hash mismatch: " + path)
+            require(payload[:8] == b"qv4cdata" and struct.unpack_from("<II", payload, 8) == (37, 331266), "Cache unit header mismatch: " + path)
+            ui_units["qrc:/" + path] = payload
+            files[path] = ""
+        # Stand-ins for the children that both shells load by URL. Menu and Notify record each key they receive;
+        # the menu stand-in closes on a Back release, as the compiled menu does. A translucent fill shows each place.
+        fill = 'Rectangle { anchors.fill: parent; color: "#3080c0"; opacity: 0.35; border.color: "#ffffff" }'
+        files["Trucks/menu/MenuPage.qml"] = marker("stand-in-menu", "width: 1720; height: 511\n" + fill + "\n"
+            "function key(code, state) { mGlobalId.item.note(['menu', code, state]); "
+            "if(code===mGlobalId.item.swcBack && state===0) mGlobalId.item.menuBarIndex=0; return 1 }")
+        files["Trucks/common/Notify.qml"] = marker("stand-in-notify", "width: 640; height: 90\n" + fill + "\n"
+            "function key(code, state) { mGlobalId.item.note(['notify', code, state]); return code===mGlobalId.item.swcBack?1:0 }")
+        for name, size in (("common/DoorInfo", "520; height: 300"), ("common/MaintentNotify", "820; height: 110"),
+                           ("common/ShellInfoNotify", "900; height: 140"), ("common/Dragging", "700; height: 120"),
+                           ("common/update/UpdateMcu", "760; height: 160")):
+            files["Trucks/" + name + ".qml"] = marker("stand-in-" + name.split("/")[-1], "width: " + size + "\n" + fill)
+        for number in range(1, 7):
+            files["Trucks/ui" + str(number) + "/Dashboard.qml"] = marker("stock-ui" + str(number),
+                "width: " + str(1880 + number) + "; height: " + str(700 + number) + "\n" + fill)
+        # Turn arrow images: the compiled TurnLightIndicator names each image without the file suffix.
+        for name in ("tsico_left_n", "tsico_left_h", "tsico_right_n", "tsico_right_h"):
+            image = (ROOT / "recovered-resources/latest-Launcher/Trucks/images/common/turnlight" / (name + ".png")).read_bytes()
+            for alias in ("Trucks/images/common/turnlight/" + name, "Trucks/images/common/turnlight/" + name + ".png"):
+                (fixture / alias).parent.mkdir(parents=True, exist_ok=True)
+                (fixture / alias).write_bytes(image)
+                files[alias] = None
+        result["compiled_units"] = {url: hashlib.sha256(payload).hexdigest() for url, payload in ui_units.items()}
     if phase == "settings-pages":
         for name, index in (("FactorySeniorSetting",1),("FactoryOdoSetup",2),("FactoryTankSetup",3),
                             ("FactoryVehicleModel",4),("FactoryShellCmd",6)):
@@ -194,19 +235,24 @@ def child(phase, fixture, candidate_dir=None):
             continue
         (fixture / name).write_text(text)
     external = {"file:///etc/vnG.qml": fixture / "ExternalGlobal.qml",
-                "file:///etc/vnV.qml": fixture / "ExternalVehicle.qml"}
+                "file:///etc/vnV.qml": fixture / "ExternalVehicle.qml",
+                "file:///etc/vnD.qml": fixture / "ExternalDashboard.qml"}
     external["file:///etc/vnG.qml"].write_text(marker("external-global", props))
     external["file:///etc/vnV.qml"].write_text(marker("external-vehicle"))
-    if phase == "settings-pages":
-        external["file:///etc/qmldir"] = fixture / "isolated-etc-qmldir"
-        external["file:///etc/qmldir"].write_text("")
+    external["file:///etc/vnD.qml"].write_text(marker("external-dashboard"))
+    # A component opened from /etc makes the engine read /etc/qmldir for the implicit directory import.
+    external["file:///etc/qmldir"] = fixture / "isolated-etc-qmldir"
+    external["file:///etc/qmldir"].write_text("")
     if phase == "patched-settings-redirects":
         external["file:///etc/vnM.qml"] = fixture / "RouteMenu.qml"
         external["file:///etc/vnM.qml"].write_text('import QtQuick 2.12\nItem { objectName: "route-menu"; property var keys: []; '
                                                    'function key(code,state) { keys=keys.concat([[code,state]]); return 1 } }')
-        external["file:///etc/qmldir"] = fixture / "isolated-etc-qmldir"
-        external["file:///etc/qmldir"].write_text("")
         result["safe_directory_probe_mapping"] = {"file:///etc/qmldir": str(external["file:///etc/qmldir"])}
+    if phase == "dashboard-differential":
+        # The owned shell under the URL that main.qml opens, in an isolated directory.
+        (fixture / "etc").mkdir()
+        external["file:///etc/vnD.qml"] = fixture / "etc/vnD.qml"
+        external["file:///etc/vnD.qml"].write_bytes((ROOT / "patches/capture-04/etc/vnD.qml").read_bytes())
     qrc = fixture / "fixture.qrc"
     qrc.write_text('<RCC><qresource prefix="/">' + ''.join('<file>' + name + '</file>' for name in files) + '</qresource></RCC>')
     subprocess.run([sys.executable, "-m", "PyQt5.pyrcc_main", "-o", str(fixture / "resources.py"), str(qrc)], check=True, capture_output=True, text=True)
@@ -282,7 +328,7 @@ def child(phase, fixture, candidate_dir=None):
     def lookup(pointer):
         url = sip.wrapinstance(pointer, QtCore.QUrl).toString()
         callbacks.append(url)
-        if phase in ("settings-pages", "patched-settings-redirects"):
+        if phase in ("settings-pages", "patched-settings-redirects", "dashboard-differential"):
             return ctypes.addressof(ui_caches[url]) if url in ui_caches else None
         return ctypes.addressof(cache) if url == "qrc:/main.qml" and phase != "empty-source-control" else None
     library = ctypes.CDLL(str(Path(QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.LibrariesPath)) / "libQt5Qml.so.5"))
@@ -303,6 +349,9 @@ def child(phase, fixture, candidate_dir=None):
     if phase in ("settings-pages", "patched-settings-redirects"):
         engine.rootContext().setContextProperty("mTrucksModel", 1)
         return settings_pages(fixture, result, app, engine, callbacks, intercepted, denied, ui_units)
+    if phase == "dashboard-differential":
+        engine.rootContext().setContextProperty("mTrucksModel", 1)
+        return dashboard_differential(fixture, result, app, engine, callbacks, intercepted, denied, ui_units)
     engine.load(QtCore.QUrl("qrc:/main.qml"))
     for unused in range(30):
         app.processEvents()
@@ -316,12 +365,14 @@ def child(phase, fixture, candidate_dir=None):
     result["stub_global_values"] = {name: obj.property(name) for obj in objects
                                     if obj.objectName() in {"embedded-global", "external-global"}
                                     for name in ("mLinkMfiBus", "brightnessMin", "brightnessMax", "autoRun")}
-    expected = {"embedded-global", "embedded-vehicle"} if phase.startswith("original") else {"external-global", "external-vehicle"}
+    expected = ({"embedded-global", "embedded-vehicle", "dashboard-stub"} if phase.startswith("original")
+                else {"external-global", "external-vehicle", "external-dashboard"})
     result["expected_markers"] = sorted(expected)
     if phase == "empty-source-control":
         expected = set()
     result["expected_markers"] = sorted(expected)
-    actual_pair = set(markers) & {"embedded-global", "embedded-vehicle", "external-global", "external-vehicle"}
+    actual_pair = set(markers) & {"embedded-global", "embedded-vehicle", "external-global", "external-vehicle",
+                                  "dashboard-stub", "external-dashboard"}
     requested_external = {value for value in intercepted if value in external}
     result["requested_external_urls"] = sorted(requested_external)
     routes_match = requested_external == (set(external) if phase.startswith("patched") else set())
@@ -343,6 +394,21 @@ def child(phase, fixture, candidate_dir=None):
     result["passed"] = result["passed"] and result["source_bytes_unchanged"] and not result["message_classifications"]["qml_errors"]
     print(json.dumps(result), flush=True)
     return 0 if result["passed"] else 1
+
+
+def capture(window):
+    from PyQt5 import QtCore
+    image = window.grabWindow()
+    if not image.isNull():
+        return image, "QQuickWindow.grabWindow"
+    grab = window.contentItem().grabToImage()
+    if grab is not None:
+        loop = QtCore.QEventLoop()
+        grab.ready.connect(loop.quit)
+        QtCore.QTimer.singleShot(2000, loop.quit)
+        loop.exec_()
+        image = grab.image()
+    return image, "QQuickItem.grabToImage"
 
 
 def settings_pages(fixture, result, app, engine, callbacks, intercepted, denied, ui_units):
@@ -626,18 +692,6 @@ Window {
     def release(key):
         app.postEvent(window, QtGui.QKeyEvent(QtCore.QEvent.KeyRelease, key, QtCore.Qt.NoModifier))
         advance()
-    def capture():
-        image = window.grabWindow()
-        if not image.isNull():
-            return image, "QQuickWindow.grabWindow"
-        grab = window.contentItem().grabToImage()
-        if grab is not None:
-            loop = QtCore.QEventLoop()
-            grab.ready.connect(loop.quit)
-            QtCore.QTimer.singleShot(2000, loop.quit)
-            loop.exec_()
-            image = grab.image()
-        return image, "QQuickItem.grabToImage"
     global_state = window.property("globalState")
     event_state = window.property("eventState")
     if result["phase"] == "patched-settings-redirects":
@@ -1386,7 +1440,7 @@ Window {
     def preview(name, label):
         # Wait past the longest menu motion (280 ms page enter) so the preview shows the settled frame.
         QtTest.QTest.qWait(400)
-        image, render_method = capture()
+        image, render_method = capture(window)
         target = fixture / ("preview-menu-" + name + ".png")
         verify("menu preview saved: " + name, not image.isNull() and image.save(str(target)))
         renders.append(dict(path=str(target), method=render_method, sha256=hashlib.sha256(target.read_bytes()).hexdigest(),
@@ -1459,7 +1513,7 @@ Window {
            and {"white 0", "red 10", "purple 70"} <= texts)
     verify("grid labels points every 200 x 100 px", {"200,100", "1600,600"} <= texts and "1800,100" not in texts)
     QtTest.QTest.qWait(150)
-    image, render_method = capture()
+    image, render_method = capture(window)
     target = fixture / "preview-screen-grid.png"
     verify("grid preview saved", not image.isNull() and image.save(str(target)))
     renders.append(dict(path=str(target), method=render_method, sha256=hashlib.sha256(target.read_bytes()).hexdigest(),
@@ -1482,6 +1536,296 @@ Window {
                   native_writes=False,
                   limitation="Qt fixture runtime and key routes verified. Safe methods record calls only; vehicle behavior remains unverified.")
     window.setProperty("visible",False)
+    print(json.dumps(result), flush=True)
+    return 0 if result["passed"] else 1
+
+
+def tree_differences(left, right, path="shell", found=None):
+    # Paths of the first differing item fields in two describe() trees.
+    found = [] if found is None else found
+    for key in sorted(set(left) | set(right)):
+        if key == "children" or len(found) >= 5:
+            continue
+        if left.get(key) != right.get(key):
+            found.append(dict(path=path + "." + key, compiled=left.get(key), owned=right.get(key)))
+    pairs = list(zip(left.get("children", []), right.get("children", [])))
+    if len(left.get("children", [])) != len(right.get("children", [])) and len(found) < 5:
+        found.append(dict(path=path + ".children", compiled=len(left["children"]), owned=len(right["children"])))
+    for index, (a, b) in enumerate(pairs):
+        tree_differences(a, b, path + "/" + str(index) + ":" + a["type"], found)
+    return found
+
+
+def dashboard_differential(fixture, result, app, engine, callbacks, intercepted, denied, ui_units):
+    # Differential test of the owned shell vnD against the compiled Trucks/Dashboard.qml (cache 023).
+    # Both shells run in one harness with one stub Global, the real compiled SwcEvent, Trip, and TurnLightIndicator,
+    # and stand-ins for the children loaded by URL. Failure modes, each with a check below:
+    # - vnD does not compile, reads a name that the compiled shell does not read, or logs a QML warning;
+    # - a wheel event changes a different Global value, reaches the menu or the notification differently, or hides
+    #   the door popup differently (the key trace);
+    # - a Loader opens a different URL, or turns on under different Global values (the Loader state in the trace);
+    # - an overlay, the trip text, or a turn arrow sits at a different place or size (the item tree and the pixels).
+    from PyQt5 import QtCore, QtQml, QtQuick  # QtQuick types the root as QQuickWindow for capture()
+    warnings = []
+    def handler(kind, context, message):
+        result["messages"].append(message)
+        if kind not in (QtCore.QtDebugMsg, QtCore.QtInfoMsg) and "wrong permissions" not in message:
+            warnings.append(message)
+    QtCore.qInstallMessageHandler(handler)
+    checks = []
+    renders = []
+    def verify(name, condition):
+        checks.append(dict(name=name, passed=bool(condition)))
+        print("CHECK " + name, flush=True)
+        require(condition, name)
+    precompiled = []
+    stand_ins = ["qrc:/" + name for name in ("Trucks/menu/MenuPage.qml", "Trucks/common/Notify.qml", "Trucks/common/DoorInfo.qml",
+                 "Trucks/common/MaintentNotify.qml", "Trucks/common/ShellInfoNotify.qml", "Trucks/common/Dragging.qml",
+                 "Trucks/common/update/UpdateMcu.qml")] + ["qrc:/Trucks/ui" + str(n) + "/Dashboard.qml" for n in range(1, 7)]
+    for url in list(ui_units) + stand_ins + ["file:///etc/vnD.qml"]:
+        dependency = QtQml.QQmlComponent(engine, QtCore.QUrl(url))
+        precompiled.append(dict(url=url, ready=dependency.status() == QtQml.QQmlComponent.Ready,
+                                errors=[error.toString() for error in dependency.errors()]))
+    result["precompiled"] = precompiled
+    verify("vnD, the compiled units, and the stand-ins compile", all(entry["ready"] for entry in precompiled))
+    harness = fixture / "ShellHarness.qml"
+    harness.write_text(r"""import QtQuick 2.12
+import QtQuick.Window 2.12
+Window {
+    width: 1920; height: 932; visible: true; color: "#000000"
+    property string pageUrl: ""
+    property alias page: pageLoader.item
+    property string trace: ""
+    property string tree: ""
+    QtObject {
+        id: mGlobalId
+        property QtObject item: QtObject {
+            id: g
+            // Each Global value that the shells and the compiled children read. Key codes as in Global.qml.
+            property int dashboard: 0
+            property int vehicleModel: 1
+            property int splashEnd: 1
+            property int menuBarIndex: 0
+            property int doorInfo: 0
+            property int notifyTop: 0
+            property int notifyText: 0
+            property int notifyDuration: 0
+            property int shellInfoDuration: 0
+            property int mcuUpdateTop: 0
+            property int mainTentShow: 0
+            property int tpmsInfoEnabled: 1
+            property int tripType: 1
+            property int drivingInfoIndex: 0
+            property int leftInfoIndex: 0
+            property int rightInfoIndex: 0
+            property int swcKey: 0
+            property int swcState: 0
+            property int swcChanged: 0
+            property int swcBack: 3
+            property int swcUp: 19
+            property int swcDown: 20
+            property int swcLeft: 21
+            property int swcRight: 22
+            property int swcEnter: 23
+            property int swcModes: 26
+            property int swcSingleUp: 29
+            property int swcSingleDn: 30
+            property int turnLeftLight: 0
+            property int turnRightLight: 0
+            property int turnLeftLightEnabled: 1
+            property int turnRightLightEnabled: 1
+            property string tripUnit: "mi"
+            function getOdo(unit) { return "123456" }
+            function getTripA(unit) { return "234.5" }
+            function getTripB(unit) { return "17.8" }
+            property var calls: []
+            function note(entry) { calls=calls.concat([entry]) }
+            function doorInfoHide() { note(["doorInfoHide"]); doorInfo=0 }
+        }
+    }
+    QtObject {
+        id: mTranslationId
+        property QtObject item: QtObject {
+            property string mTotal: "ODO"
+            property string mTripA: "TRIP A"
+            property string mTripB: "TRIP B"
+            property string mFontType: "BMW Type Global"
+        }
+    }
+    // A dark ground, so the white trip text shows in the previews.
+    Rectangle { anchors.fill: parent; color: "#101317" }
+    Loader { id: pageLoader; width: 1920; height: 932; source: pageUrl }
+
+    // The probe queues these calls: a load from Python would hold the GIL that the type loader thread needs.
+    function open(url) { pageUrl = url }
+    function reset() {
+        g.dashboard=0; g.vehicleModel=1; g.splashEnd=1; g.menuBarIndex=0; g.doorInfo=0; g.notifyTop=0; g.notifyText=0
+        g.notifyDuration=0; g.shellInfoDuration=0; g.mcuUpdateTop=0; g.mainTentShow=0; g.tpmsInfoEnabled=1; g.tripType=1
+        g.drivingInfoIndex=0; g.leftInfoIndex=0; g.rightInfoIndex=0; g.swcKey=0; g.swcState=0; g.swcChanged=0
+        g.turnLeftLight=0; g.turnRightLight=0; g.calls=[]
+    }
+    function loaders() {
+        var out=[]
+        for(var i=0; i<page.children.length; i++) {
+            var c=page.children[i]
+            if(c.active!==undefined)
+                out.push([String(c.source), !!c.active, c.item?c.item.objectName:""])
+        }
+        return out
+    }
+    // Wheel events through Global, as VehicleEvent swcDeliver sets them, across the Global states that change the routes.
+    // Each key starts from each info index 0-6, so the script reaches every wrap and every step of the info pages.
+    // A row keeps the Loader list only when the list changes.
+    function runScript() {
+        var keys=[g.swcBack, g.swcLeft, g.swcRight, g.swcUp, g.swcDown, g.swcEnter, g.swcModes]
+        var sequences=[[1, 0], [1, 2, 3, 0]]
+        var out=[]
+        var last=""
+        for(var dash=0; dash<6; dash++)
+        for(var menu=0; menu<2; menu++)
+        for(var notify=0; notify<2; notify++)
+        for(var door=0; door<2; door++)
+        for(var tpms=0; tpms<2; tpms++)
+        for(var start=0; start<7; start++)
+        for(var k=0; k<keys.length; k++) {
+            g.menuBarIndex=menu; g.dashboard=dash; g.notifyTop=notify; g.doorInfo=door; g.tpmsInfoEnabled=tpms
+            g.drivingInfoIndex=start; g.leftInfoIndex=start%3; g.rightInfoIndex=start%3; g.calls=[]
+            for(var q=0; q<sequences.length; q++)
+            for(var s=0; s<sequences[q].length; s++) {
+                g.swcKey=keys[k]; g.swcState=sequences[q][s]; g.swcChanged=!g.swcChanged
+                var list=JSON.stringify(loaders())
+                out.push([dash, menu, notify, door, tpms, start, keys[k], sequences[q][s], g.menuBarIndex, g.dashboard,
+                          g.drivingInfoIndex, g.leftInfoIndex, g.rightInfoIndex, g.doorInfo, g.calls, list===last?"":list])
+                last=list
+                g.calls=[]
+            }
+        }
+        trace=JSON.stringify(out)
+    }
+    // Loader state and geometry for each layout and vehicle model.
+    function sweep() {
+        var out=[]
+        for(var model=0; model<2; model++)
+        for(var dash=0; dash<6; dash++) {
+            g.vehicleModel=model; g.dashboard=dash
+            out.push([model, dash, describe(page, 2).children])
+        }
+        g.vehicleModel=1; g.dashboard=0
+        trace=JSON.stringify(out)
+    }
+    function overlays(menu) {
+        g.menuBarIndex=menu; g.doorInfo=1; g.notifyTop=1; g.mainTentShow=1; g.shellInfoDuration=1; g.mcuUpdateTop=1
+        g.notifyText=1246; g.notifyDuration=100000; g.turnLeftLight=1; g.turnRightLight=1
+    }
+    function describe(item, depth) {
+        var a=item.anchors
+        var row={type: String(item).replace(/\(0x[0-9a-f]+.*$/, "").replace(/_QMLTYPE_[0-9]+$/, "").replace(/_QML_[0-9]+$/, ""),
+                 name: item.objectName, x: item.x, y: item.y, width: item.width, height: item.height, z: item.z,
+                 visible: item.visible, opacity: item.opacity, scale: item.scale, enabled: item.enabled,
+                 margins: a?[a.leftMargin, a.rightMargin, a.topMargin, a.bottomMargin, a.horizontalCenterOffset]:null,
+                 text: item.text!==undefined?String(item.text):null,
+                 source: item.source!==undefined?String(item.source).replace(/\(0x[0-9a-f]+\)/, ""):null,
+                 active: item.active!==undefined?item.active:null, children: []}
+        if(depth!==1)
+            for(var i=0; i<item.children.length; i++)
+                row.children.push(describe(item.children[i], depth?depth-1:0))
+        return row
+    }
+    function snapshot() { tree=JSON.stringify(describe(page, 0)) }
+}
+""")
+    engine.load(QtCore.QUrl.fromLocalFile(str(harness)))
+    roots = engine.rootObjects()
+    require(roots, result["messages"])
+    window = roots[0]
+    window.show()
+    def settle(ms=100):
+        loop = QtCore.QEventLoop()
+        QtCore.QTimer.singleShot(ms, loop.quit)
+        loop.exec_()
+    def call(name, *arguments, wait=100):
+        QtCore.QMetaObject.invokeMethod(window, name, QtCore.Qt.QueuedConnection,
+                                        *[QtCore.Q_ARG("QVariant", argument) for argument in arguments])
+        settle(wait)
+    shells = {"compiled": "qrc:/Trucks/Dashboard.qml", "owned": "file:///etc/vnD.qml"}
+    runs = {}
+    for label, url in shells.items():
+        call("open", "")
+        call("reset")
+        call("open", url)
+        page = window.property("page")
+        verify(label + " shell instantiated", page is not None and page.property("width") == 1920 and page.property("height") == 932)
+        # SwcEvent drops keys until the SwcEvent start timer sets mCompleted (100 ms on an idle host).
+        swc = [item for item in page.childItems() if item.property("swcChagned") is not None]
+        for _ in range(100):
+            if swc and swc[0].property("mCompleted") == 1:
+                break
+            settle(50)
+        verify(label + " shell SwcEvent takes keys", len(swc) == 1 and swc[0].property("mCompleted") == 1)
+        run = runs[label] = {}
+        call("runScript", wait=200)
+        run["trace"] = json.loads(window.property("trace"))
+        call("reset")
+        call("sweep")
+        run["sweep"] = json.loads(window.property("trace"))
+        for menu in (0, 1):
+            call("reset")
+            call("overlays", menu, wait=1500)
+            call("snapshot")
+            run["tree-menu-" + str(menu)] = json.loads(window.property("tree"))
+            image, method = capture(window)
+            target = fixture / ("preview-shell-" + label + "-menu-" + str(menu) + ".png")
+            verify("shell preview saved: " + target.name, not image.isNull() and image.save(str(target)))
+            run["image-menu-" + str(menu)] = image
+            renders.append(dict(path=str(target), method=method, sha256=hashlib.sha256(target.read_bytes()).hexdigest(),
+                                width=image.width(), height=image.height(),
+                                label=label + " shell with every overlay on; menuBarIndex " + str(menu) + "."))
+    compiled, owned = runs["compiled"], runs["owned"]
+    verify("compiled shell came from the cache", "qrc:/Trucks/Dashboard.qml" in callbacks)
+    verify("owned shell opened by file:///etc/vnD.qml", "file:///etc/vnD.qml" in intercepted)
+    events = len(compiled["trace"])
+    verify("key script ran 28224 events in each shell", events == len(owned["trace"]) == 96 * 7 * 7 * 6)
+    differences = [index for index, (left, right) in enumerate(zip(compiled["trace"], owned["trace"])) if left != right]
+    result["key_trace"] = dict(events=events, identical=not differences, first_differences=[
+        dict(index=index, compiled=compiled["trace"][index], owned=owned["trace"][index]) for index in differences[:5]],
+        menu_calls=sum(1 for row in compiled["trace"] for entry in row[14] if entry[0] == "menu"),
+        notify_calls=sum(1 for row in compiled["trace"] for entry in row[14] if entry[0] == "notify"),
+        door_hides=sum(1 for row in compiled["trace"] for entry in row[14] if entry[0] == "doorInfoHide"),
+        distinct_global_results=len({tuple(row[8:14]) for row in compiled["trace"]}))
+    if differences:
+        print("TRACE DIFFERENCES " + json.dumps(result["key_trace"]["first_differences"]), flush=True)
+    verify("key traces identical", not differences)
+    verify("key script reaches the menu, the notification, and the door popup",
+           result["key_trace"]["menu_calls"] and result["key_trace"]["notify_calls"] and result["key_trace"]["door_hides"])
+    verify("Loader sources, states, and geometry identical for each layout and vehicle model", compiled["sweep"] == owned["sweep"])
+    for menu in (0, 1):
+        left, right = compiled["tree-menu-" + str(menu)], owned["tree-menu-" + str(menu)]
+        # The root type name is the only expected difference (Dashboard and vnD).
+        result["root_types"] = [left["type"], right["type"]]
+        left["type"] = right["type"] = "shell"
+        result["tree_differences_menu_" + str(menu)] = tree_differences(left, right)
+        if result["tree_differences_menu_" + str(menu)]:
+            print("TREE DIFFERENCES " + json.dumps(result["tree_differences_menu_" + str(menu)]), flush=True)
+        verify("item tree identical with overlays, menuBarIndex " + str(menu), left == right)
+        verify("pixels identical with overlays, menuBarIndex " + str(menu),
+               compiled["image-menu-" + str(menu)] == owned["image-menu-" + str(menu)])
+    texts = []
+    def collect(row):
+        if row["text"] and row["visible"]:
+            texts.append(row["text"])
+        for child in row["children"]:
+            collect(child)
+    collect(compiled["tree-menu-0"])
+    result["visible_texts"] = sorted(set(texts))
+    verify("trip texts present", {"TRIP A", "234.5"} <= set(texts))
+    call("open", "")
+    result.update(runtime_checks=checks, renders=renders, cache_callbacks=sorted(set(callbacks)),
+                  intercepted_urls=sorted(set(intercepted)), denied_urls=denied, qml_warnings=warnings,
+                  passed=all(entry["passed"] for entry in checks) and not warnings and not denied,
+                  native_writes=False,
+                  proof_scope="Compiled Dashboard (cache 023) and owned vnD in one harness with a stub Global, the real compiled "
+                              "SwcEvent, Trip, TurnLightIndicator, GlowText, and GlowImage, and stand-ins for the URL children.")
+    window.setProperty("visible", False)
     print(json.dumps(result), flush=True)
     return 0 if result["passed"] else 1
 
@@ -1510,7 +1854,7 @@ def main():
                                 sources=failed.get("settings_compile", []),
                                 evidence="Actual Qt5.14.2 object properties before source lifecycle correction."))
     runs = []
-    phases = ["empty-source-control", "original-vendor-header", "original-adapted", "patched-adapted"]
+    phases = ["empty-source-control", "original-vendor-header", "original-adapted", "patched-adapted", "dashboard-differential"]
     if args.candidate_dir:
         phases.extend(("patched-settings-adapted", "patched-settings-redirects"))
     for phase in phases:

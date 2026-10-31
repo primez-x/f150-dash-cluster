@@ -91,9 +91,11 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - Boot candidates remove automatic formatting after mount failure and stop later init scripts after critical mount failures.
 - Private-data migration restores the original directory after a failed mount. If rollback fails, the data remains in `/private-move`.
 - A failed copy preserves the migration backup. Independent review approved the boot candidates for a local commit.
-- The settings menu, including Factory and General settings, passes 245 host Qt checks.
+- The settings menu, including Factory and General settings, passes 249 host Qt checks.
 - Eight additional Qt checks execute the patched MenuPage cache. The checks verify that MenuPage loads `/etc/vnM.qml` and passes the keys.
 - Native Qt fixture previews cover eight settings menu states, including the layout editor, Factory, and General settings, and the screen grid. Real vehicle rendering remains unverified.
+- The dashboard shell is the owned source file `/etc/vnD.qml`. The candidate changes the one main.qml record that both Ford trucks read (`qrc:/Trucks/Dashboard.qml`). vnD reproduces the compiled shell (cache 023) function by function; the six layouts stay compiled.
+- The `dashboard-differential` Qt phase runs the compiled shell and vnD with the same stub Global. 28224 wheel events give identical traces across layouts 0–5, menu, notification, door popup, and TPMS states. The Loader geometry, the overlay item tree, and the pixels are also identical. The truck has not run vnD.
 - The candidate clears all 13 vendor factory-menu code records and exposes labeled settings and diagnostic entries.
 - All six layouts have detailed specifications, coordinate schematics, and genuine assets under `handoff/claude-dashboard/`.
 
@@ -160,6 +162,7 @@ The Qt probe requires the local Launcher, recovered resources, and decoded metad
 The Qt probe uses fixture components and a mocked native type. The probe never loads the captured ARM program or native plugins.
 The host accepts original and redirected caches for the main and MenuPage routes.
 Global and VehicleEvent wrappers compile in isolated directories. The settings menu, Factory, and General pages run with safe context stubs.
+The compiled shell and vnD run in a 1920 × 932 window with a stub Global and stand-in child pages. The previews (`preview-shell-compiled-menu-0.png` and the other three) are in the `loader-*` fixture folder of the `dashboard-differential` run under `analysis/capture-04/qt-host/`.
 Wrapper startup and vehicle behavior remain unverified.
 
 Decode the installed Launcher metadata:
@@ -216,7 +219,7 @@ Do not put `dashboard.zip`, `Ford.zip`, `factory.zip`, or a `dashboard_backup` f
 
 Source replay verifies selected math and state transitions. Source replay does not verify Qt rendering, CAN interpretation, sensor calibration, or live vehicle behavior.
 
-The UI candidate redirects three compiled loaders and includes four source files.
+The UI candidate redirects four compiled loaders and includes five source files.
 The generator clears 13 code records in the old factory gate. The generator preserves native code, ELF geometry, and the other 195 cache units.
 The menu-v1 and menu-v2 candidates are installed on the truck (2026-10-30). Both install logs show a clean start, and the menu-v2 key trace recorded the wheel bounce. Other vehicle checks remain open.
 

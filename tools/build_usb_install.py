@@ -1,7 +1,7 @@
 """Build the USB drive contents for the cluster UI install, rollback, and log collection (tools/usb-install/encrypt.sh).
 
 Run under WSL: python3 tools/build_usb_install.py [--output DIR]
-Inputs: the UI candidate (analysis/capture-04/ui-candidate-menu-v8) and the captured original Launcher.
+Inputs: the UI candidate (analysis/capture-04/ui-candidate-menu-v9) and the captured original Launcher.
 The vendor USB updater unpacks encrypt.zip with a password. The builder reads that password from the captured updater
 (installed/capture-04/rootfs/etc/mdev/update.sh) at build time; the password never enters Git or the output text.
 Info-ZIP (tools/infozip/usr/bin/zip) writes the encrypted archive, as for the diagnostic packages.
@@ -23,12 +23,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools/usb-install/encrypt.sh"
-CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v8"
+CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v9"
 ORIGINAL = ROOT / "installed/capture-04/rootfs/usr/bin/Launcher"
 UPDATER = ROOT / "installed/capture-04/rootfs/etc/mdev/update.sh"
 ZIP_TOOL = ROOT / "tools/infozip/usr/bin/zip"
-OUTPUT_DEFAULT = ROOT / "analysis/capture-04/usb-install-menu-v8"
-ETC = ["vnG.qml", "vnM.qml", "vnS.qml", "vnV.qml"]
+OUTPUT_DEFAULT = ROOT / "analysis/capture-04/usb-install-menu-v9"
+ETC = ["vnD.qml", "vnG.qml", "vnM.qml", "vnS.qml", "vnV.qml"]
 
 sha = lambda data: hashlib.sha256(data).hexdigest()
 
