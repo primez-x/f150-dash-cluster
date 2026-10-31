@@ -11,8 +11,8 @@
 - Never execute captured ARM64 programs on the host.
 - Keep vehicle measurements separate from display units, animation, validity, and signal age.
 - Preserve independent speed and temperature preferences across changes and restarts.
-- Keep cruise available, active, set, ACC, and LIM states distinct.
-- Use one consistent cruise display region across all six layouts.
+- Keep cruise available, active, and set states distinct. This truck has no adaptive cruise (ACC) or speed limiter (LIM), so the layouts do not show them (user, 2026-10-31).
+- Use one consistent cruise display region across both layouts.
 - Expose supported settings through ordinary menu navigation. Show unsupported controls with a clear reason.
 - Never change CAN calibration, polling rates, GPIO, power controls, or device profiles without verified protocol evidence.
 - Run focused source replay checks after relevant changes.

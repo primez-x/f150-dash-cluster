@@ -3,6 +3,7 @@
 //
 // User picks (2026-10-31): alert panel A (tinted glass) is locked, with the padding fixed; the card jumps stay; "+N" stays.
 // The ACC and LIM labels are not set-speed changes: the adapter reports adaptive cruise (ACC) and a speed limiter (LIM).
+// Picks (2026-10-31): overspeed B, set-speed direction B. The ACC and LIM labels go: this truck has neither.
 // - Alert padding (kit44.css): the bezel mask now draws over the panel, as the truck bezel does. Inside the visible area the
 //   content block sits 20 px below the arch over the text and 20 px above the panel bottom (round 43: about 23 and 12).
 //   The sides match at 36 px.
