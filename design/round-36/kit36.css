@@ -1,0 +1,15 @@
+/* Round 36: one outer alignment line (40 px from the screen edge) for the cards and the bottom corners. Loads after round-35/kit35.css.
+   User direction (2026-10-30): fix the alignment issues of the round 35 B cards.
+   Measured in round 35 B: the left card columns started at x 53, the rpm and boost numbers at x 40, and the gear chips ended at
+   x 1880; the right card arrows sat 17 px from the inner edge and 36 px from the screen edge, so the arrows were off the content
+   center. The fix puts every outer edge on one mirrored line, 40 px from the screen edge, and the card content 40 px
+   from both card edges:
+   - Left card: the five columns spread from x 40 to x 490 (first and last column flush with the padding).
+   - Right card: the content runs from x 1430 to x 1880; both arrows sit 36 px inside the visible card edges.
+   - Bottom corners: the rpm and boost numbers start at x 40; the gear and drive chips end at x 1880 (round 30, unchanged).
+   - The clock stack (x 150) and the warning lights (x 1770) stay: the wheel rim and the bezel arch hide x < 150 at the stack
+     height (the rim plus the 20 px margin reaches y 150 at x 53). */
+body.fit35-b .card.t25 { justify-content: space-between; padding-left: 40px; padding-right: 40px; }
+body.fit35-b .card.sec.sq { padding-left: 40px; padding-right: 40px; }
+body.fit35-b .card.sec.sq .chev.l { left: 36px; }
+body.fit35-b .card.sec.sq .chev.r { right: 36px; }
