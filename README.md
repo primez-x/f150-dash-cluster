@@ -141,7 +141,7 @@ Earlier public commits retain the removed vendor menu-code comment. This source 
 Prepare a new UI candidate directory. First set `CANDIDATE` in `tools/build_usb_install.py` to the new folder name; the replay and the Qt probe check that folder.
 
 ```powershell
-python tools/prepare_ui_candidate.py --output analysis/capture-04/ui-candidate-menu-v8
+python tools/prepare_ui_candidate.py --output analysis/capture-04/ui-candidate-menu-vN
 python tests/ui-loader-replay.py
 ```
 
