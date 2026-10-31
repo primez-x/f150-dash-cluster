@@ -179,6 +179,8 @@ while ! mkdir "$out" 2>/dev/null; do
     out="$out_base-$attempt"
 done
 
+# The result detail of a Launcher start or a rollback, for STATUS.txt line 2.
+started=
 log() {
     printf '%s %s\n' "$(date +%H:%M:%S 2>/dev/null)" "$*" >> "$out/install.log"
 }
@@ -188,8 +190,11 @@ finish() {
     log "STATUS $*"
     sync
 }
+# Line 2 and later, when given, add detail.
 abort() {
-    finish "ABORTED $1"
+    m=$1
+    shift
+    finish "ABORTED $m" "$@"
     exit 0
 }
 hash_of() {
@@ -304,14 +309,18 @@ check_launcher() {
 }
 SETTINGS_NEW=$R/private/.Launcher.restore
 SETTINGS_OLD=$R/private/.Launcher.old
-# Restore /private/Launcher from a tar of the folder. The steps are safe to run again from any state that a power cut leaves:
-# the stale folders go, the tar extracts again, and the extracted data is on disk before any rename.
+# Restore /private/Launcher from a tar of the folder. The steps are safe to run again from any state that a power cut leaves.
+# A cut between the two moves leaves no /private/Launcher: the old folder goes back first, so no step removes the only copy.
 restore_settings() {
+    if [ ! -e "$R/private/Launcher" ] && [ -d "$SETTINGS_OLD" ]; then
+        mv "$SETTINGS_OLD" "$R/private/Launcher" || return 1
+    fi
     rm -rf "$SETTINGS_NEW" "$SETTINGS_OLD" || return 1
     if ! mkdir "$SETTINGS_NEW" || ! tar -xf "$1" -C "$SETTINGS_NEW" 2>>"$out/install.log" || [ ! -d "$SETTINGS_NEW/Launcher" ]; then
         rm -rf "$SETTINGS_NEW"
         return 1
     fi
+    # The extracted data must be on disk before any rename.
     sync
     if [ -e "$R/private/Launcher" ]; then
         mv "$R/private/Launcher" "$SETTINGS_OLD" || { rm -rf "$SETTINGS_NEW"; return 1; }
@@ -324,7 +333,7 @@ restore_settings() {
     rm -rf "$SETTINGS_NEW" "$SETTINGS_OLD"
     log "settings restored from $1"
 }
-# No usable settings backup: keep the current settings. A cut restore can leave the current folder moved aside.
+# No settings backup: keep the current settings. A cut restore can leave the current folder moved aside.
 keep_settings() {
     if [ ! -e "$R/private/Launcher" ] && [ -d "$SETTINGS_OLD" ]; then
         mv "$SETTINGS_OLD" "$R/private/Launcher" || return 1
@@ -332,107 +341,179 @@ keep_settings() {
     [ -d "$R/private/Launcher" ] || return 1
     rm -rf "$SETTINGS_NEW" "$SETTINGS_OLD"
 }
+# 0 when tar $1 is complete: every member reads to the end. A listing alone passes a tar that ends inside file data.
+tar_ok() {
+    tar -xOf "$1" >/dev/null 2>&1
+}
+BACKUP_HELP="Copy private-Launcher.tar from the first install folder to viknav-ui/settings-before-install.tar."
+# Write the stock settings backup on the drive from the settings backup of this run: temp file, full read, hash check,
+# sync, rename, sync. A power cut leaves no file, the old file, or the complete new file, never a torn file.
+stock_backup_write() {
+    backup_tmp=$P/.settings-before-install.tar.new
+    rm -f "$backup_tmp" 2>>"$out/install.log"
+    if cp "$out/private-Launcher.tar" "$backup_tmp" 2>>"$out/install.log" && tar_ok "$backup_tmp" &&
+        [ "$(hash_of "$backup_tmp")" = "$(hash_of "$out/private-Launcher.tar")" ] && sync &&
+        mv -f "$backup_tmp" "$P/settings-before-install.tar" && sync; then
+        return 0
+    fi
+    rm -f "$backup_tmp" 2>>"$out/install.log"
+    return 1
+}
 
-# The rollback journal records a started rollback on the root filesystem, next to the files that the rollback changes.
-# Line 1: the settings tar path under the drive, or none. Line 2: the tar hash.
-# The journal goes in place before any change and goes away only after every file step succeeds,
-# so a power cut or a failed step makes the next drive insert finish the rollback.
+# The rollback journal and the settings copy live on the root filesystem, next to the files that a rollback changes.
+# A rollback restores the settings from the copy, so a replaced or changed drive cannot change the restored settings.
+SETTINGS_COPY_NAME=/etc/.viknav-settings.tar
+SETTINGS_COPY=$R$SETTINGS_COPY_NAME
+# Copy settings tar $1 to the settings copy: temp file, hash check, sync, rename, sync.
+settings_copy() {
+    rm -f "$SETTINGS_COPY.new" 2>>"$out/install.log"
+    if cp "$1" "$SETTINGS_COPY.new" 2>>"$out/install.log" && [ "$(hash_of "$SETTINGS_COPY.new")" = "$(hash_of "$1")" ] &&
+        sync && mv -f "$SETTINGS_COPY.new" "$SETTINGS_COPY" && sync; then
+        return 0
+    fi
+    rm -f "$SETTINGS_COPY.new" 2>>"$out/install.log"
+    log "settings copy failed"
+    return 1
+}
+# The journal records a rollback target: the original Launcher, the stock sounds, no /etc vn files, and the settings.
+# Line 1: the settings copy name, or none (keep the current settings). Line 2: the copy hash.
+# Line 3: the phase. files: the files and the settings still need the restore. start: the files and the settings are stock,
+# and only the start check is open.
+# An install and a requested rollback put the journal in place before the first live change. The journal goes away only
+# after the start check passes, so a power cut or a failed step makes the next drive insert finish the rollback.
 JOURNAL=$R/etc/.viknav-rollback
+# $1: the settings copy name or none. $2: the phase.
 journal_write() {
-    rel=none
     sum=
-    case "$1" in
-        "$usb_root"/*) [ ! -f "$1" ] || { rel=${1#"$usb_root"/}; sum=$(hash_of "$1"); } ;;
-    esac
+    if [ "$1" != none ]; then
+        sum=$(hash_of "$R$1") || { log "rollback journal write failed: no settings copy"; return 1; }
+    fi
     rm -f "$JOURNAL.new" 2>>"$out/install.log"
-    printf '%s\n%s\n' "$rel" "$sum" > "$JOURNAL.new" && sync && mv -f "$JOURNAL.new" "$JOURNAL" && sync && return 0
+    printf '%s\n%s\n%s\n' "$1" "$sum" "$2" > "$JOURNAL.new" && sync && mv -f "$JOURNAL.new" "$JOURNAL" && sync && return 0
     rm -f "$JOURNAL.new" 2>>"$out/install.log"
     log "rollback journal write failed"
     return 1
 }
+# The journal removal is the commit point. A power cut after the removal leaves only the settings copy, a leftover.
 journal_clear() {
-    rm -f "$JOURNAL" "$JOURNAL.new" && sync
+    rm -f "$JOURNAL" || return 1
+    sync
+    rm -f "$JOURNAL.new" "$SETTINGS_COPY" "$SETTINGS_COPY.new" 2>>"$out/install.log"
+    sync
 }
-# Sets settings_tar to the journaled settings tar when the tar is on the drive with the journaled hash, or to none.
-journal_tar() {
-    settings_tar=none
-    rel=$(awk 'NR == 1' "$JOURNAL" 2>/dev/null)
+# Sets journal_name (line 1), journal_phase (line 3), and journal_settings: the settings copy path, none, or bad
+# (the copy is missing or does not have the journaled hash).
+journal_read() {
+    journal_name=$(awk 'NR == 1' "$JOURNAL" 2>/dev/null)
     sum=$(awk 'NR == 2' "$JOURNAL" 2>/dev/null)
-    case "$rel" in
-        none|''|/*|*..*) ;;
-        *) [ -f "$usb_root/$rel" ] && [ "$(hash_of "$usb_root/$rel")" = "$sum" ] && settings_tar=$usb_root/$rel ;;
+    journal_phase=$(awk 'NR == 3' "$JOURNAL" 2>/dev/null)
+    journal_settings=bad
+    case "$journal_name" in
+        none) journal_settings=none ;;
+        "$SETTINGS_COPY_NAME") [ -n "$sum" ] && [ "$(hash_of "$SETTINGS_COPY")" = "$sum" ] && journal_settings=$SETTINGS_COPY ;;
     esac
 }
-# Start the Launcher on disk when no Launcher runs. Adds the start to started.
+# Remove what a stopped run left: stage files and an unpublished journal. Every journal goes in place before the first live
+# change, so a journal that never got the final name means that nothing live changed. Without a journal, the settings copy
+# and a temp stock backup on the drive are leftovers too.
+clean_leftovers() {
+    remove_staged
+    rm -f "$JOURNAL.new" "$P/.settings-before-install.tar.new" 2>>"$out/install.log"
+    [ -e "$JOURNAL" ] || rm -f "$SETTINGS_COPY" "$SETTINGS_COPY.new" 2>>"$out/install.log"
+}
+# When no Launcher runs, start the Launcher on disk and check the start. Adds the result to started.
 launcher_keep() {
     launcher_running && return 0
     launcher_start current
-    started="$started; current Launcher started"
+    if health; then kept="current Launcher started"; else kept="current Launcher start check failed: $reason"; fi
+    started=${started:+$started; }$kept
+}
+# 0 when the live files are the stock files: the original Launcher, the stock sounds, and no /etc vn files.
+files_stock() {
+    [ "$(hash_of "$LAUNCHER")" = "$ORIGINAL_SHA256" ] || return 1
+    for f in $SOUND_FILES; do
+        [ "$(hash_of "$R/etc/sound/$f")" = "$(sound_stock "$f")" ] || return 1
+    done
+    for f in $ETC_FILES $RETIRED_FILES; do
+        [ ! -e "$R/etc/$f" ] || return 1
+    done
 }
 
-# Put back the original Launcher and the stock sounds, remove the new /etc files, restore the settings from tar $1
-# (none: keep the current settings), and start the Launcher. The caller writes the journal first.
+# Put back the original Launcher and the stock sounds, remove the /etc vn files, restore the settings that the journal names,
+# then start the Launcher and check the start. The journal must be in place.
 # Every stock file stages first, while the dashboard still runs, so a failed copy changes nothing. A failed copy clears the
-# journal when $2 is clear (a requested rollback; the cluster is still a known release) and keeps the journal otherwise.
-# After the stop, each step runs where safe and a Launcher always starts again.
+# journal when $1 is clear (a requested rollback; the cluster is still a known release) and keeps the journal otherwise.
+# After the stop, each step runs where safe and a Launcher always starts again. The journal goes only after the start
+# check passes. A journal in the start phase over stock files needs only the start.
 # Sets started to the result detail. Returns 1 when a step or the start check fails.
 restore_original() {
-    remove_staged
-    copied=1
-    stage "$P/original/Launcher" "$LAUNCHER" "$ORIGINAL_SHA256" 777 || copied=0
-    for f in $SOUND_FILES; do
-        [ "$copied" -eq 1 ] || break
-        stage "$P/original/sound/$f" "$R/etc/sound/$f" "$(sound_stock "$f")" "$(sound_mode "$f")" || copied=0
-    done
-    if [ "$copied" -eq 0 ]; then
-        remove_staged
-        started="stock file copy failed; nothing changed"
-        if [ "$2" = clear ]; then
-            journal_clear
-        else
-            started="$started; the next drive insert finishes the rollback"
-        fi
-        launcher_keep
-        log "$started"
-        return 1
-    fi
-    # The root filesystem mounts with noauto_da_alloc, so a rename does not flush the data first. Write the staged data now.
-    sync
-    launcher_stop
+    journal_read
     failed=
-    moved=1
-    mv -f "$R/usr/bin/.Launcher.new" "$LAUNCHER" || { failed="move Launcher"; moved=0; }
-    for f in $SOUND_FILES; do
-        mv -f "$R/etc/sound/.$f.new" "$R/etc/sound/$f" || failed=${failed:-move /etc/sound/$f}
-    done
-    # The original Launcher ignores the /etc files. Without the original Launcher, the /etc files and settings stay.
     note=
-    if [ "$moved" -eq 1 ]; then
-        for f in $ETC_FILES $RETIRED_FILES; do
-            rm -f "$R/etc/$f" || failed=${failed:-remove /etc/$f}
+    settings_note=
+    if [ "$journal_phase" = start ] && files_stock; then
+        note="files already stock; "
+        launcher_stop
+    else
+        remove_staged
+        copied=1
+        stage "$P/original/Launcher" "$LAUNCHER" "$ORIGINAL_SHA256" 777 || copied=0
+        for f in $SOUND_FILES; do
+            [ "$copied" -eq 1 ] || break
+            stage "$P/original/sound/$f" "$R/etc/sound/$f" "$(sound_stock "$f")" "$(sound_mode "$f")" || copied=0
         done
-        if [ "$1" != none ] && [ -f "$1" ]; then
-            restore_settings "$1" || failed=${failed:-restore settings}
-        else
-            log "no settings backup at $1; current settings kept"
-            note="; settings backup missing or changed, current settings kept"
-            keep_settings || failed=${failed:-keep settings}
+        if [ "$copied" -eq 0 ]; then
+            remove_staged
+            started="stock file copy failed; nothing changed"
+            if [ "$1" = clear ]; then
+                journal_clear
+            else
+                started="$started; the next drive insert finishes the rollback"
+            fi
+            launcher_keep
+            log "$started"
+            return 1
         fi
+        # The root filesystem mounts with noauto_da_alloc, so a rename does not flush the data first. Write the staged data now.
+        sync
+        launcher_stop
+        moved=1
+        mv -f "$R/usr/bin/.Launcher.new" "$LAUNCHER" || { failed="move Launcher"; moved=0; }
+        for f in $SOUND_FILES; do
+            mv -f "$R/etc/sound/.$f.new" "$R/etc/sound/$f" || failed=${failed:-move /etc/sound/$f}
+        done
+        # The original Launcher ignores the /etc files. Without the original Launcher, the /etc files and settings stay.
+        if [ "$moved" -eq 1 ]; then
+            for f in $ETC_FILES $RETIRED_FILES; do
+                rm -f "$R/etc/$f" || failed=${failed:-remove /etc/$f}
+            done
+            case "$journal_settings" in
+                bad) failed=${failed:-settings copy check} ;;
+                none)
+                    log "no settings backup; current settings kept"
+                    settings_note="; no settings backup, current settings kept"
+                    keep_settings || failed=${failed:-keep settings} ;;
+                *) restore_settings "$journal_settings" || failed=${failed:-restore settings} ;;
+            esac
+        fi
+        remove_staged
+        sync
+        files_stock || failed=${failed:-verify stock files}
+        # The files and the settings are stock now. Only the start check stays open for a later drive insert.
+        [ -n "$failed" ] || journal_write "$journal_name" start || failed="rollback journal update"
     fi
-    remove_staged
-    sync
     which=original
-    [ "$(hash_of "$LAUNCHER")" = "$ORIGINAL_SHA256" ] || { which=current; failed=${failed:-verify Launcher}; }
-    for f in $SOUND_FILES; do
-        [ "$(hash_of "$R/etc/sound/$f")" = "$(sound_stock "$f")" ] || failed=${failed:-verify /etc/sound/$f}
-    done
-    [ -n "$failed" ] || journal_clear || failed="clear the rollback journal"
+    [ "$(hash_of "$LAUNCHER")" = "$ORIGINAL_SHA256" ] || which=current
     launcher_start "$which"
     healthy=1
     if health; then started="$which Launcher started"; else started="$which Launcher start check failed: $reason"; healthy=0; fi
     cp "$LAUNCHER_LOG" "$out/Launcher-$which.log" 2>/dev/null
-    started="$started$note"
+    started="$note$started$settings_note"
     [ -z "$failed" ] || started="$failed failed; $started"
+    if [ -z "$failed" ] && [ "$healthy" -eq 1 ] && ! journal_clear; then
+        failed="clear the rollback journal"
+        started="$failed failed; $started"
+    fi
     log "$started"
     [ -z "$failed" ] && [ "$healthy" -eq 1 ]
 }
@@ -444,35 +525,27 @@ resume_rollback() {
         payload_ok "original/sound/$f" "$(sound_stock "$f")" || abort "rollback journal: payload missing"
     done
     payload_ok original/Launcher "$ORIGINAL_SHA256" || abort "rollback journal: payload missing"
-    journal_tar
-    if restore_original "$settings_tar" keep; then
+    if restore_original keep; then
         finish "ROLLED_BACK resumed" "$started"
     else
         finish "ROLLBACK_FAILED resumed" "$started"
     fi
     exit 0
 }
-# Failure before the new files are in place: nothing changed. Start the original Launcher again.
+# Failure before the journal: nothing live changed. Start the Launcher on disk again.
 fail_restart() {
     log "failed: $1"
     remove_staged
+    rm -f "$SETTINGS_COPY" "$SETTINGS_COPY.new" 2>>"$out/install.log"
     launcher_start original
     abort "$1"
 }
-# Failure after the new files are in place: restore the original and block a repeat install from this drive.
+# Failure after the journal: block a repeat install from this drive, then restore the original.
 rollback_now() {
     log "rollback: $1"
     cp "$LAUNCHER_LOG" "$out/Launcher-failed.log" 2>/dev/null
-    # The journal goes before INSTALL-BLOCKED.txt, so after any power cut from here the next insert finishes the rollback.
-    if ! journal_write "$out/private-Launcher.tar"; then
-        printf '%s\n' "$1" > "$usb_root/INSTALL-BLOCKED.txt"
-        started="rollback journal write failed; rollback not started"
-        launcher_keep
-        finish "ROLLBACK_FAILED $1" "$started"
-        exit 0
-    fi
     printf '%s\n' "$1" > "$usb_root/INSTALL-BLOCKED.txt"
-    if restore_original "$out/private-Launcher.tar" keep; then
+    if restore_original keep; then
         finish "ROLLED_BACK $1" "$started"
     else
         finish "ROLLBACK_FAILED $1" "$started"
@@ -480,9 +553,17 @@ rollback_now() {
     exit 0
 }
 
+# The install is one transaction. Every check, the settings backups, the stage files, and the journal come before the
+# first live change. From the first rename to a passed start check, the journal makes the next drive insert of any kind
+# finish a rollback to the original.
 do_install() {
+    clean_leftovers
     resume_rollback
-    [ ! -e "$usb_root/INSTALL-BLOCKED.txt" ] || { finish BLOCKED "Remove INSTALL-BLOCKED.txt only after the cause is fixed."; exit 0; }
+    if [ -e "$usb_root/INSTALL-BLOCKED.txt" ]; then
+        launcher_keep
+        finish BLOCKED ${started:+"$started"} "Remove INSTALL-BLOCKED.txt only after the cause is fixed."
+        exit 0
+    fi
     payload_check original/Launcher "$ORIGINAL_SHA256"
     payload_check Launcher "$CANDIDATE_SHA256"
     for f in $ETC_FILES; do
@@ -497,8 +578,19 @@ do_install() {
     check_sound
     if [ "$launcher" = "$CANDIDATE_SHA256" ] && [ "$etc_present" -eq "$etc_total" ] && [ "$etc_old" -eq 0 ] &&
         [ "$sound_new" -eq "$sound_total" ]; then
-        finish ALREADY_INSTALLED
+        launcher_keep
+        finish ALREADY_INSTALLED ${started:+"$started"}
         exit 0
+    fi
+    # Only an install over the original Launcher writes the stock settings backup; an upgrade keeps the first one.
+    # A damaged stock backup is replaced over the original Launcher and stops an upgrade: the stock settings are gone.
+    backup_new=0
+    if [ ! -e "$P/settings-before-install.tar" ]; then
+        [ "$launcher" != "$ORIGINAL_SHA256" ] || backup_new=1
+    elif ! tar_ok "$P/settings-before-install.tar"; then
+        [ "$launcher" = "$ORIGINAL_SHA256" ] || abort "settings-before-install.tar damaged" "$BACKUP_HELP"
+        log "settings-before-install.tar damaged; replaced from this run"
+        backup_new=1
     fi
     # Staged files go to /usr/bin, /etc, and /etc/sound. Each folder must have room for all staged files,
     # so the check also holds when the folders sit on separate filesystems.
@@ -509,15 +601,11 @@ do_install() {
     done
 
     launcher_stop
-    # The settings database is closed now. Keep the first copy from the original Launcher for a later rollback.
-    # An upgrade from an earlier release keeps that copy and never replaces the copy with release settings.
-    if ! tar -cf "$out/private-Launcher.tar" -C "$R/private" Launcher 2>>"$out/install.log" || ! tar -tf "$out/private-Launcher.tar" >/dev/null 2>&1; then
+    # The settings database is closed now. The backup of this run is the rollback target of this install.
+    if ! tar -cf "$out/private-Launcher.tar" -C "$R/private" Launcher 2>>"$out/install.log" || ! tar_ok "$out/private-Launcher.tar"; then
         fail_restart "settings backup"
     fi
-    if [ "$launcher" = "$ORIGINAL_SHA256" ] && [ ! -e "$P/settings-before-install.tar" ]; then
-        cp "$out/private-Launcher.tar" "$P/settings-before-install.tar" \
-            && [ "$(hash_of "$P/settings-before-install.tar")" = "$(hash_of "$out/private-Launcher.tar")" ] || fail_restart "settings backup"
-    fi
+    [ "$backup_new" -eq 0 ] || stock_backup_write || fail_restart "settings backup"
     for f in $ETC_FILES; do
         stage "$P/etc/$f" "$R/etc/$f" "$(etc_sha256 "$f")" 644 || fail_restart "copy /etc/$f"
     done
@@ -527,9 +615,11 @@ do_install() {
     stage "$P/Launcher" "$LAUNCHER" "$CANDIDATE_SHA256" 777 || fail_restart "copy Launcher"
     # The root filesystem mounts with noauto_da_alloc, so a rename does not flush the data first. Write the staged data now.
     sync
+    settings_copy "$out/private-Launcher.tar" || fail_restart "settings copy"
 
     # The original Launcher ignores the /etc files and plays any sound file, so the /etc files and the sounds go first.
-    # The Launcher goes last.
+    # The Launcher goes last. The journal goes in place before the first rename.
+    journal_write "$SETTINGS_COPY_NAME" files || fail_restart "rollback journal"
     for f in $ETC_FILES; do
         mv -f "$R/etc/.$f.new" "$R/etc/$f" || rollback_now "move /etc/$f"
     done
@@ -556,6 +646,8 @@ do_install() {
     launcher_start candidate
     health || rollback_now "$reason"
     cp "$LAUNCHER_LOG" "$out/Launcher-start.log" 2>/dev/null
+    # The start check passed: the journal removal commits the install.
+    journal_clear || rollback_now "clear the rollback journal"
     finish INSTALLED "Keep the drive in for 3 more minutes for Launcher-later.log."
     sleep "$LOG_WAIT"
     cp "$LAUNCHER_LOG" "$out/Launcher-later.log" 2>/dev/null
@@ -563,7 +655,17 @@ do_install() {
     sync
 }
 
+# A requested rollback that stops before the journal: nothing changed. $1 names the failed step.
+rollback_not_started() {
+    rm -f "$SETTINGS_COPY" "$SETTINGS_COPY.new" 2>>"$out/install.log"
+    started="$1 failed; rollback not started"
+    launcher_keep
+    finish ROLLBACK_FAILED "$started"
+    exit 0
+}
+
 do_rollback() {
+    clean_leftovers
     resume_rollback
     payload_check original/Launcher "$ORIGINAL_SHA256"
     for f in $SOUND_FILES; do
@@ -573,16 +675,19 @@ do_rollback() {
     check_etc
     check_sound
     if [ "$launcher" = "$ORIGINAL_SHA256" ] && [ "$etc_present" -eq 0 ] && [ "$etc_old" -eq 0 ] && [ "$sound_new" -eq 0 ]; then
-        finish ALREADY_ORIGINAL
-        exit 0
-    fi
-    if ! journal_write "$P/settings-before-install.tar"; then
-        started="rollback journal write failed; rollback not started"
         launcher_keep
-        finish ROLLBACK_FAILED "$started"
+        finish ALREADY_ORIGINAL ${started:+"$started"}
         exit 0
     fi
-    if restore_original "$P/settings-before-install.tar" clear; then
+    # Without the stock backup, the rollback keeps the current settings. A damaged stock backup stops the rollback.
+    settings=none
+    if [ -e "$P/settings-before-install.tar" ]; then
+        tar_ok "$P/settings-before-install.tar" || abort "settings-before-install.tar damaged" "$BACKUP_HELP"
+        settings_copy "$P/settings-before-install.tar" || rollback_not_started "settings copy"
+        settings=$SETTINGS_COPY_NAME
+    fi
+    journal_write "$settings" files || rollback_not_started "rollback journal write"
+    if restore_original clear; then
         finish "ROLLED_BACK by request" "$started"
     else
         finish ROLLBACK_FAILED "$started"

@@ -1,9 +1,9 @@
 """Replay the USB installer (tools/usb-install/encrypt.sh) against a fake cluster root with the real payload bytes.
 
 Run under WSL: python3 tests/usb-install-replay.py
-The installer runs in dash (an ash-family shell) with BusyBox applets only on PATH. The BusyBox shell itself runs its own
-applets before PATH, so the BusyBox shell only checks the syntax here. Stubs replace killall, ps, sleep, fbinit, df, and /etc/qtenv.sh. The qtenv stub writes a Launcher log for the installed Launcher: the candidate log follows the case, and
-the original log is always healthy. The df stub reports a set free space for a folder only when the case asks for one.
+The installer runs in the BusyBox ash shell, the shell of the cluster. BusyBox ash runs the BusyBox applets before PATH, so the
+case copy of the installer defines shell functions for the stubs. Stubs replace killall, ps, sleep, fbinit, df, mv, and /etc/qtenv.sh. The qtenv stub writes a Launcher log for the installed Launcher: the candidate log follows the case, and
+the original log is always healthy. The df stub reports a set free space for a folder only when the case asks for one, less the staged files present.
 The fake root starts with the stock /etc/sound files; the payload carries chime set A and the stock sounds.
 No device, partition, or captured ARM program is used.
 """
@@ -144,12 +144,14 @@ fi
 exec __BB__ mv "$@"
 """
 STUB_DF = r"""#!/bin/sh
-# Test stub for df: the file __T__/df-<folder> sets the free space of that folder. Other folders report real values.
+# Test stub for df: the file __T__/df-<folder> sets the free space of that folder without staged files. The staged files
+# present (.*.new) take their size off, as on the one root filesystem of the cluster. Other folders report real values.
 for a; do d=$a; done
 case "$d" in */etc/sound) k=sound ;; */etc) k=etc ;; */usr/bin) k=bin ;; *) k=none ;; esac
 if [ -f __T__/df-$k ]; then
+    staged=$(__BB__ find __T__/root -name '.*.new' -type f -exec __BB__ du -k {} \; | __BB__ awk '{s += $1} END {print s + 0}')
     echo 'Filesystem           1K-blocks      Used Available Use% Mounted on'
-    echo "/dev/mmcblk0p4          761776    584948 $(cat __T__/df-$k)  78% /"
+    echo "/dev/mmcblk0p4          761776    584948 $(($(cat __T__/df-$k) - staged))  78% /"
     exit 0
 fi
 exec __BB__ df "$@"
@@ -196,7 +198,6 @@ class Case:
         fakebin.mkdir()
         for applet in APPLETS + ["readlink", "pwd", "tail", "cut", "kill"]:
             (fakebin / applet).symlink_to(BUSYBOX)
-        # The recorder runs in a second shell. dash keeps the sleep stub in use (the BusyBox shell would run its own sleep).
         (fakebin / "sh").symlink_to("/bin/dash")
         stubs = {"ps": STUB_PS, "killall": STUB_KILLALL, "sleep": STUB_SLEEP, "fbinit": STUB_FBINIT, "df": STUB_DF, "mv": STUB_MV}
         for name, text in stubs.items():
@@ -205,7 +206,8 @@ class Case:
         source = SCRIPT.read_text()
         for anchor, value in (("USB_BASE=/mnt/usb\n", f"USB_BASE={self.usb.parent}\n"),
                               ("SYSTEM_ROOT=\n", f"SYSTEM_ROOT={self.root}\n"),
-                              ("PATH=/bin:/usr/bin:/sbin:/usr/sbin\n", f"PATH={fakebin}\n"),
+                              ("PATH=/bin:/usr/bin:/sbin:/usr/sbin\n",
+                               f"PATH={fakebin}\n" + "".join(f'{n}() {{ "{fakebin / n}" "$@"; }}\n' for n in stubs)),
                               ("LOG_WAIT=180\n", "LOG_WAIT=1\n")):
             if source.count(anchor) != 1:
                 raise SystemExit(f"Installer anchor missing: {anchor!r}")
@@ -228,7 +230,7 @@ class Case:
 
     def run(self):
         before = self.outputs()
-        result = subprocess.run(["/bin/dash", str(self.script)], capture_output=True, text=True, timeout=120,
+        result = subprocess.run([str(BUSYBOX), "ash", str(self.script)], capture_output=True, text=True, timeout=120,
                                 env={"PATH": "/usr/bin:/bin"})
         new = sorted(set(self.outputs()) - set(before))
         self.out = self.usb / new[-1] if new else None
@@ -255,10 +257,12 @@ class Case:
     def journal_path(self):
         return self.root / "etc/.viknav-rollback"
 
-    def journal(self, tar):
-        """Write the rollback journal as the installer writes the journal: the tar path on the drive and the tar hash."""
-        text = "none\n\n" if tar is None else f"{tar.relative_to(self.usb)}\n{sha(tar.read_bytes()) if tar.exists() else '0' * 64}\n"
-        self.journal_path().write_text(text)
+    def copy_path(self):
+        """The internal copy of the settings tar that the journal names."""
+        return self.root / "etc/.viknav-settings.tar"
+
+    def journal_text(self, phase):
+        return f"/etc/.viknav-settings.tar\n{sha(self.copy_path().read_bytes())}\n{phase}\n"
 
     def settings_tar(self, path, data):
         """Write a tar of /private/Launcher with one settings file, as the installer makes the settings backup."""
@@ -271,58 +275,107 @@ class Case:
             tar.add(source / "Launcher", arcname="Launcher")
         return path
 
-    def cut(self, step, automatic, tar_present=True):
-        """Leave the cluster as a power cut at one step of a rollback leaves the cluster, with the journal in place.
-        automatic: the rollback of a failed install (the journaled tar sits in the earlier output folder, and
-        INSTALL-BLOCKED.txt is on the drive). Otherwise a requested rollback (the journaled tar is the stock backup).
-        Returns the settings that a finished rollback restores."""
-        root = self.root
-        # The installed release, as a finished install leaves the cluster.
-        (root / "usr/bin/Launcher").write_bytes(CANDIDATE_BYTES)
-        for name, data in ETC_BYTES.items():
-            (root / "etc" / name).write_bytes(data)
-        for name, data in SOUND_BYTES.items():
-            (root / "etc/sound" / name).write_bytes(data)
-        (root / "private/Launcher/settings.db").write_bytes(CANDIDATE_SETTINGS)
+    def put(self, name, data, folder="etc/sound", staged=False):
+        """Write one live or staged file with the stock mode of that file, as the installer writes the file."""
+        path = self.root / folder / (f".{name}.new" if staged else name)
+        path.write_bytes(data)
+        path.chmod(stock_mode(name) if folder == "etc/sound" else 0o644 if folder == "etc" else 0o777)
+
+    def cut(self, step, automatic):
+        """Leave the cluster as a power cut at one step leaves the cluster. Steps: CUT_INSTALL (an install over the original),
+        then CUT_RESTORE (the rollback of that failed install, automatic=True) or CUT_REQUESTED (a requested rollback of a
+        healthy install, automatic=False). Returns the settings that a finished rollback restores."""
+        root, private = self.root, self.root / "private"
         self.settings_tar(self.usb / "viknav-ui/settings-before-install.tar", SETTINGS)
-        if automatic:
-            tar = self.usb / "viknav-ui-install-20261031-120000-99/private-Launcher.tar"
-            self.settings_tar(tar, AUTO_SETTINGS)
-            (self.usb / "INSTALL-BLOCKED.txt").write_text("startup markers missing\n")
-            expected = AUTO_SETTINGS
-        else:
-            tar = self.usb / "viknav-ui/settings-before-install.tar"
-            expected = SETTINGS
-        self.journal(tar)
-        if not tar_present:
-            tar.unlink()
-        steps = ["journal", "staged", "stopped", "launcher", "sounds", "etc", "extracted", "between", "settled"]
-        k = steps.index(step)
-        stage = lambda path, data: (path.parent / f".{path.name}.new").write_bytes(data)
-        if k >= 1:
-            stage(root / "usr/bin/Launcher", ORIGINAL_BYTES)
-            for name in SOUNDS[:5] if k == 1 else SOUNDS:
-                stage(root / "etc/sound" / name, STOCK_SOUND_BYTES[name])
-        if k >= 2:
+        # The settings backup of the install run. A rollback of a failed install restores these settings.
+        run_tar = self.settings_tar(self.usb / "viknav-ui-install-20261031-120000-99/private-Launcher.tar", AUTO_SETTINGS)
+        expected = AUTO_SETTINGS if automatic else SETTINGS
+        if step in CUT_INSTALL:
+            k = CUT_INSTALL.index(step)
+            (private / "Launcher/settings.db").write_bytes(AUTO_SETTINGS)
             (self.t / "running").unlink(missing_ok=True)
-        if k >= 3:
-            (root / "usr/bin/.Launcher.new").replace(root / "usr/bin/Launcher")
-        if k >= 4:
-            for name in SOUNDS[:7] if k == 4 else SOUNDS:
-                (root / "etc/sound" / f".{name}.new").replace(root / "etc/sound" / name)
-        if k >= 5:
-            for name in ETC[:3] if k == 5 else ETC:
+            if k <= 3:
+                for name, data in ETC_BYTES.items():
+                    self.put(name, data, "etc", staged=True)
+                for name, data in SOUND_BYTES.items():
+                    self.put(name, data, staged=True)
+                self.put("Launcher", CANDIDATE_BYTES, "usr/bin", staged=True)
+            if k >= 1:
+                self.copy_path().write_bytes(run_tar.read_bytes())
+                (root / "etc/.viknav-rollback.new").write_text(self.journal_text("files"))
+            if k >= 2:
+                (root / "etc/.viknav-rollback.new").replace(self.journal_path())
+            if k == 3:
+                for name in ETC:
+                    (root / "etc" / f".{name}.new").replace(root / "etc" / name)
+                for name in SOUNDS[:7]:
+                    (root / "etc/sound" / f".{name}.new").replace(root / "etc/sound" / name)
+            if k >= 4:
+                (root / "usr/bin/.Launcher.new").unlink(missing_ok=True)
+                for name, data in ETC_BYTES.items():
+                    self.put(name, data, "etc")
+                for name, data in SOUND_BYTES.items():
+                    self.put(name, data)
+                self.put("Launcher", CANDIDATE_BYTES, "usr/bin")
+            if k >= 5:
+                (self.t / "running").write_text("")
+                (private / "Launcher/settings.db").write_bytes(CANDIDATE_SETTINGS)
+            if k >= 6:
+                (self.usb / "INSTALL-BLOCKED.txt").write_text("startup markers missing\n")
+            return expected
+        # A healthy install of the release is in place and running.
+        for name, data in ETC_BYTES.items():
+            self.put(name, data, "etc")
+        for name, data in SOUND_BYTES.items():
+            self.put(name, data)
+        self.put("Launcher", CANDIDATE_BYTES, "usr/bin")
+        (private / "Launcher/settings.db").write_bytes(CANDIDATE_SETTINGS)
+        source = run_tar if automatic else self.usb / "viknav-ui/settings-before-install.tar"
+        self.copy_path().write_bytes(source.read_bytes())
+        if automatic:
+            (self.usb / "INSTALL-BLOCKED.txt").write_text("startup markers missing\n")
+        if step == "journal-new":
+            (root / "etc/.viknav-rollback.new").write_text(self.journal_text("files"))
+            return expected
+        if step == "cleared":
+            # The rollback finished and removed the journal. The cut came before the removal of the settings copy.
+            for name in ETC:
                 (root / "etc" / name).unlink()
-        private = root / "private"
-        if k >= 6:
+            for name, data in STOCK_SOUND_BYTES.items():
+                self.put(name, data)
+            self.put("Launcher", ORIGINAL_BYTES, "usr/bin")
+            (private / "Launcher/settings.db").write_bytes(SETTINGS)
+            return expected
+        self.journal_path().write_text(self.journal_text("files"))
+        k = CUT_RESTORE.index(step) if step in CUT_RESTORE else -1
+        if k >= 0:
+            self.put("Launcher", ORIGINAL_BYTES, "usr/bin", staged=True)
+            for name in SOUNDS[:5] if k == 0 else SOUNDS:
+                self.put(name, STOCK_SOUND_BYTES[name], staged=True)
+        if k >= 1:
+            (self.t / "running").unlink(missing_ok=True)
+        if k >= 2:
+            (root / "usr/bin/.Launcher.new").replace(root / "usr/bin/Launcher")
+        if k >= 3:
+            for name in SOUNDS[:7] if k == 3 else SOUNDS:
+                (root / "etc/sound" / f".{name}.new").replace(root / "etc/sound" / name)
+        if k >= 4:
+            for name in ETC[:3] if k == 4 else ETC:
+                (root / "etc" / name).unlink()
+        if k >= 5:
             (private / ".Launcher.restore/Launcher").mkdir(parents=True)
             (private / ".Launcher.restore/Launcher/settings.db").write_bytes(expected)
-        if k >= 7:
+        if k >= 6:
             (private / "Launcher").replace(private / ".Launcher.old")
-        if k >= 8:
+        if k >= 7:
             (private / ".Launcher.restore/Launcher").replace(private / "Launcher")
             shutil.rmtree(private / ".Launcher.restore")
             shutil.rmtree(private / ".Launcher.old")
+        if k >= 8:
+            self.journal_path().write_text(self.journal_text("start"))
+        if k >= 9:
+            # The stock Launcher started and passed the start check. The cut came before the journal removal.
+            (self.t / "running").write_text("")
         return expected
 
     def calls(self):
@@ -360,7 +413,8 @@ class Case:
 
     def state(self):
         """Hash and link flag of every file that an install or a rollback can change."""
-        paths = [self.root / "usr/bin/Launcher", self.root / "private/Launcher/settings.db", self.root / "etc/.viknav-rollback"]
+        paths = [self.root / "usr/bin/Launcher", self.root / "private/Launcher/settings.db", self.root / "etc/.viknav-rollback",
+                 self.root / "etc/.viknav-settings.tar"]
         paths += [self.root / "etc" / name for name in ETC + RETIRED] + [self.root / "etc/sound" / name for name in SOUNDS]
         return {str(p.relative_to(self.root)): [sha(p.read_bytes()) if p.is_file() else None, p.is_symlink()] for p in paths}
 
@@ -447,6 +501,46 @@ def unsafe_redirection_lines(text):
         if compound and not code.rstrip().endswith("&"):
             found.append(number)
     return sorted(set(found))
+
+
+# Power cut points. CUT_INSTALL: an install over the original, from the staged files to INSTALL-BLOCKED.txt of the rollback.
+# CUT_RESTORE: the rollback of that failed install. CUT_REQUESTED: a requested rollback of a healthy install.
+CUT_INSTALL = ["install-staged", "install-journal-new", "install-journal", "install-moving", "install-moved", "install-started",
+               "blocked"]
+CUT_RESTORE = ["staged", "stopped", "launcher", "sounds", "etc", "extracted", "between", "settled", "phase-start",
+               "journal-removal"]
+CUT_REQUESTED = ["journal-new", "journal"] + CUT_RESTORE + ["cleared"]
+cut_table = []
+
+
+def cut_expected(step, automatic, action):
+    """(status, device, settings, detail or None) after the next drive insert at cut point step."""
+    install_next = action == "install"
+    if step in ("install-staged", "install-journal-new"):
+        # Nothing live changed: the next install runs in full, and a rollback finds the original.
+        return ("INSTALLED", "candidate", CANDIDATE_SETTINGS, None) if install_next else ("ALREADY_ORIGINAL", "original", AUTO_SETTINGS, None)
+    if step == "journal-new":
+        return ("ALREADY_INSTALLED", "candidate", CANDIDATE_SETTINGS, None) if install_next else \
+            ("ROLLED_BACK by request", "original", SETTINGS, None)
+    if step == "cleared":
+        return ("INSTALLED", "candidate", CANDIDATE_SETTINGS, None) if install_next else ("ALREADY_ORIGINAL", "original", SETTINGS, None)
+    detail = "files already stock; original Launcher started" if step in ("phase-start", "journal-removal") else "original Launcher started"
+    return "ROLLED_BACK resumed", "original", AUTO_SETTINGS if automatic else SETTINGS, detail
+
+
+def tarfile_bytes(data):
+    """A settings tar of one settings file, as bytes."""
+    import io
+    buffer = io.BytesIO()
+    with tarfile.open(fileobj=buffer, mode="w", format=tarfile.USTAR_FORMAT) as tar:
+        folder = tarfile.TarInfo("Launcher")
+        folder.type = tarfile.DIRTYPE
+        folder.mode = 0o755
+        tar.addfile(folder)
+        member = tarfile.TarInfo("Launcher/settings.db")
+        member.size = len(data)
+        tar.addfile(member, io.BytesIO(data))
+    return buffer.getvalue()
 
 
 def install(case, mode="healthy"):
@@ -891,43 +985,206 @@ def main():
         check("automatic-rollback-copy-failure-resumes-next-insert", 18, ["ROLLED_BACK resumed", "original", True, True, False],
               automatic_copy_fails_then_resume)
 
-        # A power cut at each step of a rollback. The next drive insert, install or rollback, finishes the rollback first.
-        for automatic in (False, True):
-            for step in ("journal", "staged", "stopped", "launcher", "sounds", "etc", "extracted", "between", "settled"):
+        # A power cut at each step of an install, an automatic rollback, and a requested rollback. The next drive insert of
+        # either kind ends healthy and installed, stock with the matching settings, or as an honest failure.
+        for automatic, steps in ((True, CUT_INSTALL + CUT_RESTORE), (False, CUT_REQUESTED)):
+            for step in steps:
                 for action in ("install", "rollback"):
-                    def resume(step=step, automatic=automatic, action=action):
+                    status, device, settings, detail = cut_expected(step, automatic, action)
+                    path = "automatic" if automatic else "requested"
+                    cut_table.append({"cut": step, "path": path, "next": action, "status": status, "device": device,
+                                      "detail": detail})
+
+                    def resume(step=step, automatic=automatic, action=action, settings=settings, detail=detail):
                         c = new()
-                        expected = c.cut(step, automatic)
+                        c.cut(step, automatic)
                         c.marker(action)
                         c.run()
-                        return [c.status(), c.detail(), c.device(), c.settings() == expected, c.running(), c.journal_path().exists(),
-                                c.leftovers(), c.private(), c.sound_modes()]
-                    path = "automatic" if automatic else "requested"
+                        shown = c.detail() if detail is not None else None
+                        return [c.status(), shown, c.device(), c.settings() == settings, c.running(), c.journal_path().exists(),
+                                c.copy_path().exists(), c.leftovers(), c.private(), c.sound_modes()]
                     check(f"cut-{path}-{step}-then-{action}", 19,
-                          ["ROLLED_BACK resumed", "original Launcher started", "original", True, True, False, [],
-                           ["Launcher", "Launcher/settings.db"], True], resume)
+                          [status, detail, device, True, True, False, False, [], ["Launcher", "Launcher/settings.db"], True], resume)
 
-        for step in ("etc", "between"):
-            def tar_missing(step=step):
+        for name, spoil in (("missing", lambda p: p.unlink()), ("changed", lambda p: p.write_bytes(b"changed\n"))):
+            def copy_bad(spoil=spoil):
                 c = new()
-                c.cut(step, True, tar_present=False)
-                c.marker("rollback")
+                c.cut("etc", True)
+                spoil(c.copy_path())
+                c.marker("install")
                 c.run()
-                return [c.status(), c.detail(), c.device(), c.settings() == CANDIDATE_SETTINGS, c.private(), c.journal_path().exists()]
-            check(f"cut-{step}-journaled-tar-missing-keeps-settings", 19,
-                  ["ROLLED_BACK resumed", "original Launcher started; settings backup missing or changed, current settings kept",
-                   "original", True, ["Launcher", "Launcher/settings.db"], False], tar_missing)
+                return [c.status(), c.detail(), c.device(), c.settings() == CANDIDATE_SETTINGS, c.journal_path().exists(), c.running()]
+            check(f"cut-settings-copy-{name}-fails-and-keeps-journal", 19,
+                  ["ROLLBACK_FAILED resumed", "settings copy check failed; original Launcher started", "original", True, True, True],
+                  copy_bad)
 
-        def tar_changed():
+        for action in ("install", "rollback"):
+            def run_tar_missing(action=action):
+                c = new()
+                expected = c.cut("between", True)
+                (c.usb / "viknav-ui-install-20261031-120000-99/private-Launcher.tar").unlink()
+                c.marker(action)
+                c.run()
+                return [c.status(), c.settings() == expected, c.journal_path().exists()]
+            check(f"cut-run-backup-missing-on-drive-then-{action}", 19, ["ROLLED_BACK resumed", True, False], run_tar_missing)
+
+        for action, status in (("install", "INSTALLED"), ("rollback", "ALREADY_ORIGINAL")):
+            def stages_at_min_free(action=action):
+                c = new()
+                c.cut("install-staged", True)
+                # The df stub takes the abandoned stages off this free space, as the real filesystem does.
+                for folder in ("bin", "etc", "sound"):
+                    c.free(folder, script_min_free_kb())
+                c.marker(action)
+                c.run()
+                return [c.status(), c.leftovers(), c.running(), c.copy_path().exists()]
+            check(f"abandoned-stages-at-min-free-then-{action}", 13, [status, [], True, False], stages_at_min_free)
+
+        def temp_files_cut():
+            # A power cut inside settings_copy and inside stock_backup_write: each temp file exists, the rename did not run.
             c = new()
-            c.cut("etc", False)
-            c.settings_tar(c.usb / "viknav-ui/settings-before-install.tar", b"other settings\n")
+            (c.root / "etc/.viknav-settings.tar.new").write_bytes(b"torn")
+            (c.usb / "viknav-ui/.settings-before-install.tar.new").write_bytes(tarfile_bytes(SETTINGS)[:700])
+            install(c)
+            with tarfile.open(c.usb / "viknav-ui/settings-before-install.tar") as tar:
+                saved = tar.extractfile("Launcher/settings.db").read()
+            return [c.status(), c.leftovers(), c.copy_path().exists(), [p.name for p in (c.usb / "viknav-ui").glob(".*")],
+                    saved == SETTINGS, c.journal_path().exists()]
+        check("cut-temp-files-then-install", 13, ["INSTALLED", [], False, [], True, False], temp_files_cut)
+
+        def phase_write_cut():
+            # A power cut inside the start-phase journal write of a rollback: the start journal is written, not renamed.
+            c = new()
+            c.cut("settled", True)
+            (c.root / "etc/.viknav-rollback.new").write_text(c.journal_text("start"))
+            c.marker("install")
+            c.run()
+            return [c.status(), c.detail(), c.device(), c.settings() == AUTO_SETTINGS, c.leftovers(), c.journal_path().exists(),
+                    c.copy_path().exists(), c.running()]
+        check("cut-phase-journal-write-then-install", 19,
+              ["ROLLED_BACK resumed", "original Launcher started", "original", True, [], False, False, True], phase_write_cut)
+
+        def torn(data, size=700):
+            return tarfile_bytes(data)[:size]
+
+        def torn_backup_original():
+            c = new()
+            (c.usb / "viknav-ui/settings-before-install.tar").write_bytes(torn(SETTINGS))
+            install(c)
+            with tarfile.open(c.usb / "viknav-ui/settings-before-install.tar") as tar:
+                saved = tar.extractfile("Launcher/settings.db").read()
+            return [c.status(), saved == SETTINGS, [p.name for p in (c.usb / "viknav-ui").glob(".*")]]
+        check("torn-stock-backup-replaced-on-original", 19, ["INSTALLED", True, []], torn_backup_original)
+
+        def torn_backup_mid_data():
+            c = new()
+            (c.usb / "viknav-ui/settings-before-install.tar").write_bytes(torn(b"x" * 60000, 30000))
+            install(c)
+            with tarfile.open(c.usb / "viknav-ui/settings-before-install.tar") as tar:
+                saved = tar.extractfile("Launcher/settings.db").read()
+            return [c.status(), saved == SETTINGS]
+        check("torn-stock-backup-mid-data-replaced-on-original", 19, ["INSTALLED", True], torn_backup_mid_data)
+
+        def torn_backup_release():
+            c = new().install_v1(V12_ETC)
+            (c.usb / "viknav-ui/settings-before-install.tar").write_bytes(torn(SETTINGS))
+            before = c.state()
+            install(c)
+            return [c.status(), c.detail(), c.state() == before, c.starts(), c.running()]
+        check("torn-stock-backup-refused-on-release", 19,
+              ["ABORTED settings-before-install.tar damaged",
+               "Copy private-Launcher.tar from the first install folder to viknav-ui/settings-before-install.tar.", True, 0, True],
+              torn_backup_release)
+
+        def torn_backup_rollback():
+            c = install(new())
+            c.unmark()
+            (c.usb / "viknav-ui/settings-before-install.tar").write_bytes(torn(SETTINGS))
+            before = c.state()
             c.marker("rollback")
             c.run()
-            return [c.status(), c.detail(), c.settings() == CANDIDATE_SETTINGS]
-        check("cut-journaled-tar-changed-keeps-settings", 19,
-              ["ROLLED_BACK resumed", "original Launcher started; settings backup missing or changed, current settings kept", True],
-              tar_changed)
+            return [c.status(), c.detail(), c.state() == before, c.running(), c.journal_path().exists()]
+        check("torn-stock-backup-refused-on-rollback", 19,
+              ["ABORTED settings-before-install.tar damaged",
+               "Copy private-Launcher.tar from the first install folder to viknav-ui/settings-before-install.tar.", True, True, False],
+              torn_backup_rollback)
+
+        for action in ("install", "rollback"):
+            def stock_start_fails(action=action):
+                c = install(new())
+                c.unmark()
+                c.marker("rollback")
+                (c.t / "original-mode").write_text("dies")
+                c.run()
+                first = [c.status(), c.detail(), c.journal_path().exists()]
+                (c.t / "original-mode").unlink()
+                starts = c.starts()
+                c.unmark()
+                c.marker(action)
+                c.run()
+                return first + [c.status(), c.detail(), c.running(), c.starts() - starts, c.journal_path().exists(), c.device(),
+                                c.settings() == SETTINGS]
+            check(f"stock-start-failure-keeps-journal-then-{action}", 21,
+                  ["ROLLBACK_FAILED", "original Launcher start check failed: Launcher stopped", True,
+                   "ROLLED_BACK resumed", "files already stock; original Launcher started", True, 1, False, "original", True],
+                  stock_start_fails)
+
+        def already_original_starts():
+            c = new()
+            (c.t / "running").unlink()
+            c.marker("rollback")
+            c.run()
+            return [c.status(), c.detail(), c.running(), c.starts()]
+        check("already-original-starts-a-stopped-launcher", 20, ["ALREADY_ORIGINAL", "current Launcher started", True, 1],
+              already_original_starts)
+
+        def already_installed_starts():
+            c = install(new())
+            (c.t / "running").unlink()
+            c.run()
+            return [c.status(), c.detail(), c.running(), c.starts()]
+        check("already-installed-starts-a-stopped-launcher", 20, ["ALREADY_INSTALLED", "current Launcher started", True, 2],
+              already_installed_starts)
+
+        def blocked_starts():
+            c = install(new(), "dies")
+            (c.t / "running").unlink(missing_ok=True)
+            c.run()
+            return [c.status(), c.detail(), c.running()]
+        check("blocked-starts-a-stopped-launcher", 20, ["BLOCKED", "current Launcher started", True], blocked_starts)
+
+        def journal_blocked():
+            c = install(new())
+            c.unmark()
+            c.marker("rollback")
+            (c.root / "etc/.viknav-rollback.new").mkdir()
+            before = c.state()
+            c.run()
+            return [c.status(), c.detail(), c.state() == before, c.running()]
+        check("rollback-journal-write-failure-reported", 18,
+              ["ROLLBACK_FAILED", "rollback journal write failed; rollback not started", True, True], journal_blocked)
+
+        for blocker, reason in ((".viknav-rollback.new", "rollback journal"), (".viknav-settings.tar.new", "settings copy")):
+            def install_write_fails(blocker=blocker):
+                c = new()
+                (c.root / "etc" / blocker).mkdir()
+                before = c.state()
+                install(c)
+                return [c.status(), c.state() == before, c.running(), c.leftovers(), c.copy_path().exists()]
+            check(f"install-{reason.replace(' ', '-')}-write-failure-changes-nothing", 18,
+                  [f"ABORTED {reason}", True, True, [f"etc/{blocker}"] if blocker.endswith(".new") else [], False], install_write_fails)
+
+        def unsafe_redirections():
+            return unsafe_redirection_lines(SCRIPT.read_text())
+        check("no-special-builtin-or-compound-redirection", 18, [], unsafe_redirections)
+
+        def log_journal():
+            c = new()
+            c.cut("journal", False)
+            c.marker("log")
+            c.run()
+            return [c.status(), "rollback journal: present" in (c.out / "installed-sha256.txt").read_text()]
+        check("log-reports-rollback-journal", 17, ["LOGGED", True], log_journal)
 
         def journal_payload_missing():
             c = new()
@@ -948,40 +1205,8 @@ def main():
             c.run()
             return [c.status(), c.detail(), c.device(), c.journal_path().exists()]
         check("cut-resume-start-check-failure-reported", 21,
-              ["ROLLBACK_FAILED resumed", "original Launcher start check failed: startup markers missing", "original", False],
+              ["ROLLBACK_FAILED resumed", "original Launcher start check failed: startup markers missing", "original", True],
               resume_start_fails)
-
-        def journal_blocked():
-            c = install(new())
-            c.unmark()
-            c.marker("rollback")
-            (c.root / "etc/.viknav-rollback.new").mkdir()
-            before = c.state()
-            c.run()
-            return [c.status(), c.detail(), c.state() == before, c.running()]
-        check("rollback-journal-write-failure-reported", 18,
-              ["ROLLBACK_FAILED", "rollback journal write failed; rollback not started", True, True], journal_blocked)
-
-        def automatic_journal_blocked():
-            c = new()
-            (c.root / "etc/.viknav-rollback.new").mkdir()
-            install(c, "nomarker")
-            return [c.status(), c.detail(), c.device(), c.running(), (c.usb / "INSTALL-BLOCKED.txt").exists()]
-        check("automatic-rollback-journal-write-failure-reported", 18,
-              ["ROLLBACK_FAILED startup markers missing", "rollback journal write failed; rollback not started", "candidate", True, True],
-              automatic_journal_blocked)
-
-        def unsafe_redirections():
-            return unsafe_redirection_lines(SCRIPT.read_text())
-        check("no-special-builtin-or-compound-redirection", 18, [], unsafe_redirections)
-
-        def log_journal():
-            c = new()
-            c.cut("journal", False)
-            c.marker("log")
-            c.run()
-            return [c.status(), "rollback journal: present" in (c.out / "installed-sha256.txt").read_text()]
-        check("log-reports-rollback-journal", 17, ["LOGGED", True], log_journal)
 
         for target, detail, device in (
                 ("etc/sound/door.wav", "move /etc/sound/door.wav failed; original Launcher started", "mixed launcher=original etc=[] sound=mixed"),
@@ -1008,7 +1233,7 @@ def main():
             c.run()
             return [c.status(), c.detail(), c.device(), c.journal_path().exists()]
         check("rollback-start-check-failure-reported", 21,
-              ["ROLLBACK_FAILED", "original Launcher start check failed: startup markers missing", "original", False], rollback_start_fails)
+              ["ROLLBACK_FAILED", "original Launcher start check failed: startup markers missing", "original", True], rollback_start_fails)
 
         def unhealthy_start_fails():
             c = new()
@@ -1017,7 +1242,7 @@ def main():
             return [c.status(), c.detail(), c.device(), c.journal_path().exists()]
         check("unhealthy-start-check-failure-reported", 21,
               ["ROLLBACK_FAILED startup markers missing", "original Launcher start check failed: startup markers missing", "original",
-               False], unhealthy_start_fails)
+               True], unhealthy_start_fails)
 
         def log_sounds():
             c = install(new())
@@ -1054,8 +1279,8 @@ def main():
     payload = {"script": str(SCRIPT.relative_to(ROOT)), "script_sha256": sha(SCRIPT.read_bytes()),
                "shell": subprocess.run([str(BUSYBOX)], capture_output=True, text=True).stdout.split("\n")[0],
                "failureModes": FAILURE_MODES, "count": len(rows), "passed": sum(r["pass"] for r in rows),
-               "failed": sum(not r["pass"] for r in rows), "rows": rows,
-               "scope": "BusyBox ash syntax check; dash with BusyBox applets for the cases; real Launcher, QML, and sound payload bytes, stubbed Launcher start, process list, and free space. "
+               "failed": sum(not r["pass"] for r in rows), "rows": rows, "cutTable": cut_table,
+               "scope": "BusyBox ash syntax check; BusyBox ash with stub functions for the cases; real Launcher, QML, and sound payload bytes, stubbed Launcher start, process list, and free space. "
                         "No cluster, vendor updater, Qt runtime, or vehicle proof."}
     RESULT.write_text(json.dumps(payload, indent=2) + "\n")
     print(json.dumps({k: payload[k] for k in ("count", "passed", "failed")} | {"result": str(RESULT)}))
