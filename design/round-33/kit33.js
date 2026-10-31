@@ -5,7 +5,7 @@
 // the JLY adapter, so the full 0x3B branch runs. Units and scales need the menu-v7 truck log.
 // - Boost band: vacuumBoost (15-bit magnitude) with vacuumBoostDir (sign), so the band shows vacuum and boost from one
 //   reading. The band keeps the psi scale from round 4 until the log gives the raw unit.
-// - Head temperature (cylinderHeadTemp, raw - 60 °C). ?cht=a|b. A: a fifth column in the temperature card, between coolant
+// - Head temperature (cylinderHeadTemp, raw - 60 °C). Locked A (2026-10-30); ?cht=b keeps option B for reference. A: a fifth column in the temperature card, between coolant
 //   and oil. B: no column; a warm or hot head temperature raises an alert with the value. Both: a hot head temperature
 //   raises the red alert and glow, as a hot transmission does.
 // - CHT limits (warm 121 °C, hot 132 °C) are design values until checked against the truck.

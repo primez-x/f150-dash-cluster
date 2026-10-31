@@ -25,7 +25,13 @@ Every shot passes the margin check (<code>capture.js</code>: 16 shots).</p>
   <li>Head temperature limits (warm 250 °F, hot 270 °F) are design values until checked against the truck.</li>
   <li>Both options: a hot head temperature raises the red alert and the red glow, as a hot transmission does.</li>
 </ul>
-<h2>Pick: where the head temperature goes</h2>
+<p><strong>Pick: A, locked (2026-10-30).</strong> The head temperature takes a fifth column in the temperature card, between coolant and oil. A is the default; <code>?cht=b</code> keeps option B for reference.</p>
+<h2>Locked: A</h2>
+<div class="grid">
+  <div><h3>head temperature warm</h3><a href="tow-a.html?scene=warmcht"><img src="shots/tow-a-a-warmcht.png" alt=""></a></div>
+  <div><h3>head temperature hot</h3><a href="tow-a.html?scene=hotcht"><img src="shots/tow-a-a-hotcht.png" alt=""></a></div>
+</div>
+<h2>The A and B options</h2>
 <ul>
   <li>A · A fifth column in the temperature card, between coolant and oil. The values drop from 32 px to 26 px so five columns fit.</li>
   <li>B · No column. The card keeps four columns. A warm head temperature raises an amber alert with the value; hot raises the red alert.</li>
