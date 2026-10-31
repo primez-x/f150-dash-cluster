@@ -11,6 +11,9 @@ import "qrc:/common"
 // Phase 3 loads the two owned layouts of /etc/vnL.qml (Global dashboard 0 Daily A, 1 Towing A) at 0,0 over the full
 // screen. vnL draws the trip and odometer, the turn arrows, the notification banner, and the trailer brake gain, so the
 // file drops the compiled Trip, TurnLightIndicator, Notify, Dragging, and ShellInfoNotify items.
+// Layout contract (each member optional; the vnL header describes each one): pages, tow, tripHold, flashTrip(),
+// bannerShown, acknowledge(), and shownPage. shownPage is the card that the layout shows; the Trip A hold follows
+// shownPage, not the saved drivingInfoIndex (review 2026-10-31).
 // The other compiled children stay compiled and load by the same qrc URLs. The compiled import "../common" is the
 // qrc:/common directory (SwcEvent).
 // Compiled children resolve names through this context: ShellCmdList and FactoryShellCmd write mCompleted.
@@ -111,7 +114,9 @@ Item {
     // Wheel key map on the dashboard. States: 1 press, 2 and 3 hold, 0 release.
     // - Left and Right page the card on the press through the "pages" array of the layout.
     // - OK released within mOkShortMs opens the menu, as the compiled Left release does.
-    // - OK held on the trip page fills tripHold from mOkShortMs to mOkResetMs, then resets Trip A.
+    // - OK held on the trip page fills tripHold from mOkShortMs to mOkResetMs, then resets Trip A. The trip page is the
+    //   card that the layout shows (layout shownPage): a card jump (a climb, a low tire) can hide the saved trip page,
+    //   and a change of the shown card ends the hold (review 2026-10-31).
     // - While the layout shows an alert banner (bannerShown), OK goes to the banner first: a short OK release calls
     //   acknowledge() in place of the menu, and an OK hold does nothing. A banner that shows during a Trip A hold ends
     //   the hold. A banner that is gone at the release leaves the short OK to the menu.
@@ -134,7 +139,11 @@ Item {
         var index=mGlobalId.item.drivingInfoIndex
         return index>=0 && index<pages.length?index:0
     }
+    // True while the layout shows the trip card: the layout shownPage, else the saved index for a layout without one.
     function isTripPage() {
+        var item=mDashboardId.item
+        if(item && typeof item.shownPage==="string")
+            return item.shownPage==="trip"
         var pages=layoutPages()
         return pages!==null && pages[pageIndex(pages)]==="trip"
     }
@@ -236,7 +245,8 @@ Item {
         when: mTripHoldTarget!==null
         restoreMode: Binding.RestoreBindingOrValue
     }
-    // A banner that shows during a Trip A hold ends the hold. A layout without bannerShown has no change signal.
+    // A banner that shows during a Trip A hold ends the hold, and so does a change of the shown card. A layout without
+    // bannerShown or shownPage has no change signal.
     Connections {
         target: mDashboardId.item
         ignoreUnknownSignals: true
@@ -244,6 +254,7 @@ Item {
             if(bannerShown())
                 holdCancel()
         }
+        onShownPageChanged: holdCancel()
     }
 
     // fn 10 (enabled) and fn 11 (onStateChanged). SwcEvent sets key and then state for each wheel event.

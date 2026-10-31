@@ -723,6 +723,24 @@ def child(layout):
     check("set-speed direction: the first engage is no adjustment (green number) in either signal order",
           all(e[0] == 0 and e[1] == "#3ee07a" for e in engaged), engaged)
 
+    # The first adjustment while the engage number still shows starts the trail at the engaged speed, not at a stale
+    # adjFrom (review 2026-10-31): engage at 100 km/h, then 102 km/h 500 ms later, in either signal order.
+    def engage_adjust(states_first):
+        apply("normal")
+        settle(400)
+        states = [("cruiseState", 1), ("cruiseSpeedSet", 1), ("cruiseSetSpeedState", 1)]
+        speed = [("cruiseSpeed", 100)]
+        for name, value in (states + speed if states_first else speed + states):
+            set_value(name, value)
+        settle(500)
+        engaged_opacity = round(prop("csetOpacity"), 2)
+        set_value("cruiseSpeed", 102)
+        settle(400)
+        return [prop("adjDir"), round(prop("adjFrom"), 2), round(100 * MPH, 2), engaged_opacity]
+    adjusted = [engage_adjust(True), engage_adjust(False)]
+    check("set-speed direction: the first adjustment 500 ms after the engage starts at the engaged speed, in either order",
+          all(a[0] == 1 and abs(a[1] - a[2]) < 0.01 for a in adjusted), adjusted)
+
     def press(start, steps):
         apply("cruise", {"cruiseSpeed": round(start / MPH)})
         settle(400)

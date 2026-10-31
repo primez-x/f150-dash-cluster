@@ -8,7 +8,10 @@ import QtQuick.Shapes 1.12
 // Parent contract (vnD):
 // - Root item 1920 x 932 at 0,0 with no margins. tow follows Global dashboard (1 = Towing A, else Daily A).
 // - pages: the card pages. The card shows pages[drivingInfoIndex], or pages[0] for an index outside the pages (as vnD
-//   pages and tests the Trip A card); a change slides (round 41 A).
+//   pages); a change slides (round 41 A).
+// - shownPage: the card page that the layout shows. A card jump (round 17 SEC_FOCUS: a low tire, trailer braking, a
+//   climb, or a descent) overrides the saved index. vnD allows the Trip A hold only while shownPage is "trip" and
+//   ends a hold when shownPage changes (review 2026-10-31).
 // - tripHold (0 to 1) draws the hold ring on the Trip A cell; flashTrip() flashes the Trip A value after a reset.
 // - bannerShown: true while the alert panel shows or enters (false during the out motion). acknowledge(): the parent
 //   calls this on a short OK release while bannerShown; the panel plays the out motion and the next alert can show.
@@ -339,9 +342,10 @@ Item {
     property real csetOpacity: 0
     // Set-speed direction (round 44 B): a change of the set speed while the mark already shows is an adjustment. The
     // number, the arrow, and a trail from adjFrom tint up lime or down sky blue; a held set speed stays green. adjFrom
-    // is the set speed before the first press of a sequence (number hidden); later presses keep adjFrom. markSettled
-    // turns true 300 ms after the mark shows, so the engage (and the 200 ms Global cruiseSpeed animation) is not an
-    // adjustment in either signal order.
+    // is the set speed before the first press of a sequence: the number is hidden, or the number still shows an engage
+    // (adjDir 0, review 2026-10-31); later presses of the sequence keep adjFrom. markSettled turns true 300 ms after
+    // the mark shows, so the engage (and the 200 ms Global cruiseSpeed animation) is not an adjustment in either
+    // signal order.
     readonly property color cUp: "#b8f060"
     readonly property color cDown: "#4fb3ff"
     property real adjFrom: 0
@@ -367,7 +371,7 @@ Item {
     onMarkUChanged: {
         var raw=g.cruiseSpeed
         if(markOn && markSettled && raw!==markRawLast) {
-            if(!mCsetId.running)
+            if(!mCsetId.running || adjDir===0)
                 adjFrom=markLast
             adjDir=markU>markLast?1:-1
         } else {
@@ -392,7 +396,7 @@ Item {
     readonly property string glow: anyHot || fuelLight || oilpLow?"hot":anyWarm || fuelLow?"warm":""
 
     // ===== Card =====
-    // vnD treats an index outside the pages as card 0 for paging and the Trip A hold test, so this layout does too.
+    // vnD treats an index outside the pages as card 0 for paging, so this layout does too.
     readonly property int pageIndex: {
         var i=g.drivingInfoIndex
         return typeof i==="number" && i>=0 && i<pages.length?Math.floor(i):0

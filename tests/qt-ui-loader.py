@@ -1751,6 +1751,7 @@ Window {
                               layout: item?(item.objectName || "vnL"):"", layoutTow: item && item.tow!==undefined?item.tow:null,
                               layoutPages: item && item.pages!==undefined?item.pages:null,
                               layoutHold: item && item.tripHold!==undefined?item.tripHold:null,
+                              layoutShown: item && item.shownPage!==undefined?item.shownPage:null,
                               banner: item && item.bannerShown!==undefined?item.bannerShown:null})
     }
     // Single wheel events across the Global states that change the routes. Each event starts from fixed Global values.
@@ -1860,8 +1861,9 @@ property var holds: []
 function holdTrace(name, value) { holds=holds.concat([[name, Date.now()-pressAt, value]]) }
 property int layoutLoads: 0
 """
-# The layout stand-in with the vnL parent contract: root 1920 x 932, tow, pages, tripHold, flashTrip(), and ownsNotify.
-# The pages are the vnL pages. flashTrip() emits tripFlash, as vnL does.
+# The layout stand-in with the vnL parent contract: root 1920 x 932, tow, pages, shownPage, tripHold, flashTrip(), and
+# ownsNotify. The pages are the vnL pages; shownPage is the saved page (the stand-in has no card jumps). flashTrip()
+# emits tripFlash, as vnL does.
 LAYOUT_STAND_IN = """import QtQuick 2.12
 Item {
     objectName: "vnL-stand-in"
@@ -1869,6 +1871,10 @@ Item {
     Rectangle { anchors.fill: parent; color: "#3080c0"; opacity: 0.35; border.color: "#ffffff" }
     readonly property bool tow: mGlobalId.item.dashboard===1
     readonly property var pages: tow?["trailer", "tires", "engine", "level", "trip"]:["trip", "economy", "tires", "engine", "level"]
+    readonly property string shownPage: {
+        var i=mGlobalId.item.drivingInfoIndex
+        return pages[i>=0 && i<pages.length?i:0]
+    }
     property real tripHold: 0
     readonly property bool ownsNotify: true
     signal tripFlash()
@@ -2167,6 +2173,8 @@ def dashboard_keys(fixture, result, engine, callbacks, intercepted, denied, ui_u
     # F12 With an alert banner shown (layout bannerShown), a short OK opens the menu or does not acknowledge once, an OK
     #     hold starts or keeps a Trip A hold, the release after a hold acknowledges, or Left and Right stop paging; a
     #     banner that shows during a hold does not end the hold; a banner gone at a short release blocks the menu.
+    # F13 A card jump (layout shownPage) hides the saved trip page and an OK hold still resets Trip A; a jump during a
+    #     Trip A hold does not end the hold (review 2026-10-31).
     harness = shell_harness(fixture, result, engine, ui_units, real_layout)
     window, verify, call, settle = harness["window"], harness["verify"], harness["call"], harness["settle"]
     harness["open_shell"]("owned", "file:///etc/vnD.qml")
@@ -2345,6 +2353,26 @@ def dashboard_keys(fixture, result, engine, callbacks, intercepted, denied, ui_u
          dict(dashboard=0, notifyTop=1, notifyText=1409), [("set", "notifyDuration", 300, 0), ("sample", "a"), ("wait", 500)],
          lambda s: s["a"]["notifyDuration"] == 300 and s["end"]["notifyDuration"] == 0),
     ]
+    if real_layout:
+        # Card jumps of the real vnL: a 5 % climb (mPitch 3) shows the engine card over the saved trip page. Daily A has
+        # trip as page 1, Towing A as page 5. mPitch returns to the Global sentinel 0xFFFF after each case.
+        for dash, index, label in ((0, 0, "daily"), (1, 4, "tow")):
+            cases += [
+                ("climb jump over the saved %s trip page: OK held 1300 ms" % label, "F13",
+                 "the engine card shows; no hold, no reset, no flash, no menu",
+                 dict(dashboard=dash, drivingInfoIndex=index, mPitch=3), [("wait", 600), ("sample", "a")]
+                 + press(ENTER, 1300) + [("set", "mPitch", 0xFFFF, 0)],
+                 lambda s: s["a"]["layoutShown"] == "engine" and quiet(s["end"]) and s["end"]["layoutHold"] == 0),
+                ("climb jump 600 ms into a %s trip hold" % label, "F13",
+                 "the hold ends at the jump: no reset, no flash, no menu; both holds 0",
+                 dict(dashboard=dash, drivingInfoIndex=index), [("wait", 300), ("key", ENTER, 1, 600), ("sample", "mid"),
+                                                               ("set", "mPitch", 3, 900), ("sample", "jump"), ("key", ENTER, 0, 60),
+                                                               ("set", "mPitch", 0xFFFF, 0)],
+                 lambda s: s["mid"]["layoutShown"] == "trip" and s["mid"]["tripHold"] > 0
+                 and s["jump"]["layoutShown"] == "engine" and s["jump"]["tripHold"] == 0
+                 and not calls(s["end"], "resetTrip") and not calls(s["end"], "flashTrip") and s["end"]["menuBarIndex"] == 0
+                 and s["end"]["tripHold"] == 0 and s["end"]["layoutHold"] == 0),
+            ]
     banner = dict(dashboard=0, notifyText=1409, notifyDuration=100000)
     if not real_layout:
         # A layout without bannerShown keeps the key map while a notification shows (the stand-in has no banner API).
