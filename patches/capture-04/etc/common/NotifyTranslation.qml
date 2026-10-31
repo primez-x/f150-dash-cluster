@@ -825,12 +825,12 @@ Item {
     property var mNotify48:
     [
         "Brake Hold不可用 驾驶员未系好座椅安全带",
-        "Brake Hold UnavailableThe driver was not wearing his seat belt",
+        "Brake Hold unavailable: driver seat belt not fastened",
         "Brake Holdは使用できません運転手はシートベルトを締めていません",
         "Brake Hold不可用,駕駛員未系好座椅安全帶",
         "Удержание тормоза недоступно Водитель не был пристегнут ремнем безопасности",
         "تعليق الفرامل غير متاح لم يقم السائق بربط حزام الأمان ",
-        "Brake Hold UnavailableThe driver was not wearing his seat belt",
+        "Brake Hold unavailable: driver seat belt not fastened",
         "Bremsgriff nicht verfügbar, der Sicherheitsgurt des Fahrers nicht richtig befestigt",
         "Brake Hold kullanılamıyor, sürücü koltuğu emniyet kemeri bağlı değil.",
         "Brake Hold를 사용할 수 없습니다. 운전자가 좌석 안전벨트를 매지 않았습니다.",
@@ -842,12 +842,12 @@ Item {
     property var mNotify49:
     [
         "Brake Hold不可用 未关闭发动机盖或行李箱盖",
-        "Brake Hold UnavailableThe bonnet or trunk lid is not closed",
+        "Brake Hold unavailable: hood or trunk lid open",
         "Brake Holdはエンジンカバーまたはトランクカバーを閉じていないことはできません",
         "Brake Hold不可用,未關閉發動機蓋或行李箱蓋",
         "Удержание тормоза недоступно Крышка капота или багажника не закрыта",
         "تعليق الفرامل غير متاح غطاء المحرك أو غطاء صندوق الأمتعة غير مغلق ",
-        "Brake Hold UnavailableThe bonnet or trunk lid is not closed",
+        "Brake Hold unavailable: hood or trunk lid open",
         "Bremsgriff nicht verfügbar, Motorhaube oder Gepäckraumdeckel nicht geschlossen",
         "Brake Hold kullanılamıyor, motor kaputu veya bagaj kapağı kapalı değil.",
         "Brake Hold 사용 불가 닫히지 않은 보닛 또는 트렁크 덮개",
@@ -6890,12 +6890,12 @@ Item {
     property var mNotify406:
     [
         "手动挡不可用",
-        "Manual method unavaillable",
+        "Manual method unavailable",
         "マニュアルギアは使用できません",
         "手動擋不可用",
-        "Manual method unavaillable",
-        "Manual method unavaillable",
-        "Manual method unavaillable",
+        "Manual method unavailable",
+        "Manual method unavailable",
+        "Manual method unavailable",
         "Schaltgetriebe nicht verfügbar",
         "Manuel şanzıman kullanılamaz.",
         "수동 기어 사용 불가",
@@ -8091,12 +8091,12 @@ Item {
     property var mNotify478:
     [
         "左日间行驶灯",
-        "eft daytime driving lamp",
+        "Left daytime driving lamp",
         "ひだりにちじつランニングランプ",
         "左日間行駛燈",
         "Свет дневной левый",
         "ترك ضوء النهار",
-        "eft daytime driving lamp",
+        "Left daytime driving lamp",
         "Linkes Tagfahrlicht",
         "Sol gündüz farı.",
         "좌주간 주행등 ",
@@ -11275,12 +11275,12 @@ Item {
     property var mNotify666:
     [
         "DISTRONIC PLUS自动停用，参见用户手册",
-        "DISCONIC PLUS automatic deactivation, see user manual",
+        "DISTRONIC PLUS automatic deactivation, see user manual",
         "DISTRONIC PLUS自动停用,参见用户手册",
         "DISTRONIC PLUS自動停用，參見用戶手冊",
         "Автоматическая деактивация DISCONIC PLUS, см. инструкцию пользователя",
         "إلغاء التنشيط التلقائي ل DISCONIC PLUS، راجع دليل المستخدم",
-        "DISCONIC PLUS automatic deactivation, see user manual",
+        "DISTRONIC PLUS automatic deactivation, see user manual",
         "DISTRONIC PLUS PLUS PLUS PLUS, bis ins benutzerhandbuch",
         "DISTRONIC PLUS otomatik olarak devre dışı bırakıldı, kullanıcı kılavuzuna bakınız.",
         "distronic plus는 자동으로 정지됩니다. 사용자 설명서 참조",
@@ -17445,7 +17445,7 @@ Item {
     property var mNotify1235:
     [
         "越野时减速至",
-        "5MPH FOR OFF ROAD SLOW TO 5 MPH",
+        "FOR OFF ROAD SLOW TO 5 MPH",
         "オフロード時に減速",
         "越野時减速至",
         "Замедление на бездорожье до",
@@ -17589,74 +17589,74 @@ Item {
     property var mNotify1243:
     [
         "可调踏板不可用，巡航参与",
-        "Adiustable Pedals Unavail. Cruise Engaged",
-        "Adiustable Pedals Unavail. Cruise Engaged",
-        "Adiustable Pedals Unavail. Cruise Engaged",
-        "Adiustable Pedals Unavail. Cruise Engaged",
-        "Adiustable Pedals Unavail. Cruise Engaged",
-        "Adiustable Pedals Unavail. Cruise Engaged",
-        "Adiustable Pedals Unavail. Cruise Engaged",
-        "Adiustable Pedals Unavail. Cruise Engaged",
-        "Adiustable Pedals Unavail. Cruise Engaged",
-        "Adiustable Pedals Unavail. Cruise Engaged",
-        "Adiustable Pedals Unavail. Cruise Engaged",
-        "Adiustable Pedals Unavail. Cruise Engaged",
-        "Adiustable Pedals Unavail. Cruise Engaged",
-        "Adiustable Pedals Unavail. Cruise Engaged",
+        "Adjustable Pedals Unavailable: Cruise Engaged",
+        "Adjustable Pedals Unavailable: Cruise Engaged",
+        "Adjustable Pedals Unavailable: Cruise Engaged",
+        "Adjustable Pedals Unavailable: Cruise Engaged",
+        "Adjustable Pedals Unavailable: Cruise Engaged",
+        "Adjustable Pedals Unavailable: Cruise Engaged",
+        "Adjustable Pedals Unavailable: Cruise Engaged",
+        "Adjustable Pedals Unavailable: Cruise Engaged",
+        "Adjustable Pedals Unavailable: Cruise Engaged",
+        "Adjustable Pedals Unavailable: Cruise Engaged",
+        "Adjustable Pedals Unavailable: Cruise Engaged",
+        "Adjustable Pedals Unavailable: Cruise Engaged",
+        "Adjustable Pedals Unavailable: Cruise Engaged",
+        "Adjustable Pedals Unavailable: Cruise Engaged",
     ]
     property var mNotify1244:
     [
         "可调踏板不可用，反向",
-        "Adjustable Pedals Unavail. Veh.in Reverse",
-        "Adjustable Pedals Unavail. Veh.in Reverse",
-        "Adjustable Pedals Unavail. Veh.in Reverse",
-        "Adjustable Pedals Unavail. Veh.in Reverse",
-        "Adjustable Pedals Unavail. Veh.in Reverse",
-        "Adjustable Pedals Unavail. Veh.in Reverse",
-        "Adjustable Pedals Unavail. Veh.in Reverse",
-        "Adjustable Pedals Unavail. Veh.in Reverse",
-        "Adjustable Pedals Unavail. Veh.in Reverse",
-        "Adjustable Pedals Unavail. Veh.in Reverse",
-        "Adjustable Pedals Unavail. Veh.in Reverse",
-        "Adjustable Pedals Unavail. Veh.in Reverse",
-        "Adjustable Pedals Unavail. Veh.in Reverse",
-        "Adjustable Pedals Unavail. Veh.in Reverse",
+        "Adjustable Pedals Unavailable: Vehicle in Reverse",
+        "Adjustable Pedals Unavailable: Vehicle in Reverse",
+        "Adjustable Pedals Unavailable: Vehicle in Reverse",
+        "Adjustable Pedals Unavailable: Vehicle in Reverse",
+        "Adjustable Pedals Unavailable: Vehicle in Reverse",
+        "Adjustable Pedals Unavailable: Vehicle in Reverse",
+        "Adjustable Pedals Unavailable: Vehicle in Reverse",
+        "Adjustable Pedals Unavailable: Vehicle in Reverse",
+        "Adjustable Pedals Unavailable: Vehicle in Reverse",
+        "Adjustable Pedals Unavailable: Vehicle in Reverse",
+        "Adjustable Pedals Unavailable: Vehicle in Reverse",
+        "Adjustable Pedals Unavailable: Vehicle in Reverse",
+        "Adjustable Pedals Unavailable: Vehicle in Reverse",
+        "Adjustable Pedals Unavailable: Vehicle in Reverse",
     ]
     property var mNotify1245:
     [
         "延长怠速停机完成",
-        "Extended ldle Shutdown Complete",
-        "Extended ldle Shutdown Complete",
-        "Extended ldle Shutdown Complete",
-        "Extended ldle Shutdown Complete",
-        "Extended ldle Shutdown Complete",
-        "Extended ldle Shutdown Complete",
-        "Extended ldle Shutdown Complete",
-        "Extended ldle Shutdown Complete",
-        "Extended ldle Shutdown Complete",
-        "Extended ldle Shutdown Complete",
-        "Extended ldle Shutdown Complete",
-        "Extended ldle Shutdown Complete",
-        "Extended ldle Shutdown Complete",
-        "Extended ldle Shutdown Complete",
+        "Extended Idle Shutdown Complete",
+        "Extended Idle Shutdown Complete",
+        "Extended Idle Shutdown Complete",
+        "Extended Idle Shutdown Complete",
+        "Extended Idle Shutdown Complete",
+        "Extended Idle Shutdown Complete",
+        "Extended Idle Shutdown Complete",
+        "Extended Idle Shutdown Complete",
+        "Extended Idle Shutdown Complete",
+        "Extended Idle Shutdown Complete",
+        "Extended Idle Shutdown Complete",
+        "Extended Idle Shutdown Complete",
+        "Extended Idle Shutdown Complete",
+        "Extended Idle Shutdown Complete",
     ]
     property var mNotify1246:
     [
         "轻型拖车制动器"+t8+"",
-        "Light Electric Traller Brake"+t8+"",
-        "Light Electric Traller Brake"+t8+"",
+        "Light Electric Trailer Brake "+t8+"",
+        "Light Electric Trailer Brake "+t8+"",
         "轻型拖车制动器"+t8+"",
-        "Light Electric Traller Brake"+t8+"",
-        "Light Electric Traller Brake"+t8+"",
-        "Light Electric Traller Brake"+t8+"",
-        "Light Electric Traller Brake"+t8+"",
-        "Light Electric Traller Brake"+t8+"",
-        "Light Electric Traller Brake"+t8+"",
-        "Light Electric Traller Brake"+t8+"",
-        "Light Electric Traller Brake"+t8+"",
-        "Light Electric Traller Brake"+t8+"",
-        "Light Electric Traller Brake"+t8+"",
-        "Light Electric Traller Brake"+t8+"",
+        "Light Electric Trailer Brake "+t8+"",
+        "Light Electric Trailer Brake "+t8+"",
+        "Light Electric Trailer Brake "+t8+"",
+        "Light Electric Trailer Brake "+t8+"",
+        "Light Electric Trailer Brake "+t8+"",
+        "Light Electric Trailer Brake "+t8+"",
+        "Light Electric Trailer Brake "+t8+"",
+        "Light Electric Trailer Brake "+t8+"",
+        "Light Electric Trailer Brake "+t8+"",
+        "Light Electric Trailer Brake "+t8+"",
+        "Light Electric Trailer Brake "+t8+"",
     ]
     property var mNotify1247:
     [
@@ -18151,19 +18151,19 @@ Item {
     property var mNotify1274:
     [
         "减速到5km/h以进入低速四驱模式",
-        "Slow down to 5km/h to for 4WD-LOW ",
-        "Slow down to 5km/h to for 4WD-LOW ",
+        "Slow to 5 km/h for 4WD Low",
+        "Slow to 5 km/h for 4WD Low",
         "减速到5km/h以进入低速四驱模式 ",
-        "Slow down to 5km/h to for 4WD-LOW ",
-        "Slow down to 5km/h to for 4WD-LOW ",
-        "Slow down to 5km/h to for 4WD-LOW ",
-        "Slow down to 5km/h to for 4WD-LOW ",
-        "Slow down to 5km/h to for 4WD-LOW ",
-        "Slow down to 5km/h to for 4WD-LOW ",
-        "Slow down to 5km/h to for 4WD-LOW ",
-        "Slow down to 5km/h to for 4WD-LOW ",
-        "Slow down to 5km/h to for 4WD-LOW ",
-        "Slow down to 5km/h to for 4WD-LOW ",
+        "Slow to 5 km/h for 4WD Low",
+        "Slow to 5 km/h for 4WD Low",
+        "Slow to 5 km/h for 4WD Low",
+        "Slow to 5 km/h for 4WD Low",
+        "Slow to 5 km/h for 4WD Low",
+        "Slow to 5 km/h for 4WD Low",
+        "Slow to 5 km/h for 4WD Low",
+        "Slow to 5 km/h for 4WD Low",
+        "Slow to 5 km/h for 4WD Low",
+        "Slow to 5 km/h for 4WD Low",
     ]
     property var mNotify1275:
     [
@@ -18185,19 +18185,19 @@ Item {
     property var mNotify1276:
     [
         "已进入4WD-LOW模式",
-        "Vehilce in 4WD Low ",
-        "Vehilce in 4WD Low ",
+        "Vehicle in 4WD Low",
+        "Vehicle in 4WD Low",
         "已进入4WD-LOW模式 ",
-        "Vehilce in 4WD Low ",
-        "Vehilce in 4WD Low ",
-        "Vehilce in 4WD Low ",
-        "Vehilce in 4WD Low ",
-        "Vehilce in 4WD Low ",
-        "Vehilce in 4WD Low ",
-        "Vehilce in 4WD Low ",
-        "Vehilce in 4WD Low ",
-        "Vehilce in 4WD Low ",
-        "Vehilce in 4WD Low ",
+        "Vehicle in 4WD Low",
+        "Vehicle in 4WD Low",
+        "Vehicle in 4WD Low",
+        "Vehicle in 4WD Low",
+        "Vehicle in 4WD Low",
+        "Vehicle in 4WD Low",
+        "Vehicle in 4WD Low",
+        "Vehicle in 4WD Low",
+        "Vehicle in 4WD Low",
+        "Vehicle in 4WD Low",
     ]
     property var mNotify1277:
     [
@@ -18219,19 +18219,19 @@ Item {
     property var mNotify1278:
     [
         "拖车已连接",
-        "TRAILER DISCONNECTED ",
-        "TRAILER DISCONNECTED ",
+        "TRAILER DISCONNECTED",
+        "TRAILER DISCONNECTED",
         "拖车已连接 ",
-        "TRAILER DISCONNECTED ",
-        "TRAILER DISCONNECTED ",
-        "TRAILER DISCONNECTED ",
-        "TRAILER DISCONNECTED ",
-        "TRAILER DISCONNECTED ",
-        "TRAILER DISCONNECTED ",
-        "TRAILER DISCONNECTED ",
-        "TRAILER DISCONNECTED ",
-        "TRAILER DISCONNECTED ",
-        "TRAILER DISCONNECTED ",
+        "TRAILER DISCONNECTED",
+        "TRAILER DISCONNECTED",
+        "TRAILER DISCONNECTED",
+        "TRAILER DISCONNECTED",
+        "TRAILER DISCONNECTED",
+        "TRAILER DISCONNECTED",
+        "TRAILER DISCONNECTED",
+        "TRAILER DISCONNECTED",
+        "TRAILER DISCONNECTED",
+        "TRAILER DISCONNECTED",
     ]
     property var mNotify1279:
         [
@@ -18937,7 +18937,7 @@ Item {
     property var mNotify1308:
         [
             "请校准左后胎", // 简体中文
-            "Train Left RearTire", // 英文
+            "Train Left Rear Tire", // 英文
             "左後タイヤをキャリブレーションしてください", // 日文（意译：请校准左后胎）
             "請校準左後胎", // 繁體中文
             "Калибруйте левую заднюю шину", // 俄文（意译：请校准左后胎）
@@ -20041,7 +20041,7 @@ Item {
 
     property var mNotify1352: [
         "锁止式差速器 已停用", // 简体中文
-        "Locking Differential Discontinued", // 英文（但“Discontinued”通常表示“已停产”或“已停止供应”，对于设备状态更常用“Deactivated”或“Disabled”）
+        "Locking Differential Disabled", // 英文（但“Discontinued”通常表示“已停产”或“已停止供应”，对于设备状态更常用“Deactivated”或“Disabled”）
         "ロック式ディファレンシャル停止", // 日文（更准确地表达了“锁止式差速器已停用”的意思）
         "鎖止式差速器 已停用", // 繁体中文
         "Блокирующий дифференциал отключен", // 俄文
@@ -23552,7 +23552,7 @@ Item {
         mNotifyId.item.mNotify1402, mNotifyId.item.mNotify1403,
         mNotifyId.item.mNotify1404, mNotifyId.item.mNotify1405,
         mNotifyId.item.mNotify1406, mNotifyId.item.mNotify1407,
-        mNotifyId.item.mNotify1408, mNotifyId.item.mNotify1408,
+        mNotifyId.item.mNotify1408, mNotifyId.item.mNotify1409,
 
         mNotifyId.item.mNotify1410, mNotifyId.item.mNotify1411,
         mNotifyId.item.mNotify1412, mNotifyId.item.mNotify1413,
