@@ -9,7 +9,9 @@ behaviour checks. Checks:
 - geometry: every design text node and the objectName-keyed boxes against the JSON node boxes (4 px);
 - pixels: mean absolute difference on a 1/4 scale and the worst 64 x 64 tiles (report only);
 - behaviour: card pages 0 to 4 and an index outside the pages, the tripHold ring, flashTrip, the dashboard switch,
-  the sentinels, the banner sources, the trailer gain notify, the overspeed badge, and the warning light blink.
+  the sentinels, the alert sources, the alert panel (round 43 A: geometry, bezel margin, slide), the trailer gain
+  notify, the overspeed warning (round 44 B), the set-speed direction (round 44 B), and the warning light blink;
+- the round 43 and 44 alert panel replaces the round 42 banner, so the geometry skips the design banner texts;
 - showcase (report only, not a pass gate): open review items as showcase-<layout>-<item>.png; warnings still fail.
 Output: analysis/capture-04/qt-host/layout-preview/<layout>-<scene>.png and report.json there. Exit 1 on a failure.
 
@@ -58,8 +60,7 @@ STUB_OVERRIDES = {
     "gpsAltitude": "0",
     "fuelPercentageValid": "fuelPercentageRaw>=0 && fuelPercentageRaw<=100",
 }
-STUB_FUNCTIONS = ("rtcTrusted", "getRtcTime", "getAmPm", "getOverSpeedWaningSpeed", "notifyInfoHide", "dialogInfoHide",
-                  "shellCmdHide")
+STUB_FUNCTIONS = ("rtcTrusted", "getRtcTime", "getAmPm", "notifyInfoHide", "dialogInfoHide", "shellCmdHide")
 
 
 def require(condition, message):
@@ -101,8 +102,7 @@ def stub_global():
     missing = [n for n in names if n not in props and n not in funcs]
     lines = ["import QtQuick 2.12", "QtObject {", "    objectName: \"stub-global\""]
     extra = {"fuelPercentageRaw": ("int", "0"), "shellCmdShow": ("int", "0"), "dialogDuration": ("int", "0")}
-    for name in sorted(set(names) | set(extra) | {"rtcTime", "rtc24h", "gpsClockRtcSet", "gpsClockMinYear",
-                                                  "overSpeedWarningSpeed", "language"}):
+    for name in sorted(set(names) | set(extra) | {"rtcTime", "rtc24h", "gpsClockRtcSet", "gpsClockMinYear", "language"}):
         if name in funcs and name not in props:
             continue
         kind, value = props.get(name, extra.get(name, ("var", "undefined")))
@@ -112,8 +112,6 @@ def stub_global():
             value = {"int": "0", "real": "0", "double": "0", "bool": "false", "string": '""', "var": "[]"}.get(kind, "0")
             if name in ("tripFactor",):
                 value = "metricSystem?1:0.62137"
-            if name in ("vehicleSpeedUnit",):
-                value = 'metricSystem?"km/h":"MPH"'
             if name in ("lpkValid",):
                 value = "lpk!==0x7FFF && lpk!==0x7FFE"
         lines.append("    property %s %s: %s" % (kind, name, value))
@@ -211,7 +209,6 @@ def raw_state(layout, scene, state):
         "trucksTrailerGain": float(state.get("gain", 5.5)), "trucksTrailerBrakeState": 0, "trucksTrailerOutput": -1,
         "cruiseState": 0 if cruise == "off" else 1, "cruiseSpeedSet": int(cruise == "set"),
         "cruiseSetSpeedState": int(cruise == "set"), "cruiseSpeed": round(state.get("cruiseSet", 65) / MPH),
-        "cruiseLimState": 0, "cruiseAccInterfaceState": 0, "cruiseLimSpeed": 0,
         "turnLeftLight": 0, "turnRightLight": 0,
         "overSpeedWarningEnabled": 0, "overSpeedWarningState": 0, "overSpeedWarningSpeed": 0,
         "notifyText": 0, "notifyDuration": 0, "nofifyDpf": 0,
@@ -311,6 +308,29 @@ def child(layout):
             walk(c, o, out)
         return out
 
+    def bezel(x):
+        """The bezel arch: the cluster bezel hides y < 3 + (x - 960)^2 / 9000 (round 43)."""
+        return 3 + (x - 960) ** 2 / 9000.0
+
+    def panel_geometry():
+        """The alert panel box and the bezel margin of each panel text (worst end of the text box)."""
+        box, texts = None, []
+        for c, o in walk(window.contentItem()):
+            if c.objectName() != "alert":
+                continue
+            r = c.mapRectToScene(QtCore.QRectF(0, 0, c.width(), c.height()))
+            box = [round(r.x(), 1), round(r.y(), 1), round(r.width(), 1), round(r.height(), 1)]
+            for t, unused in walk(c):
+                if t.metaObject().className().startswith("QQuickText") and t.property("text"):
+                    r = t.mapRectToScene(QtCore.QRectF(0, 0, t.width(), t.height()))
+                    texts.append({"name": t.objectName(), "text": t.property("text"), "box": [r.x(), r.y(), r.width(), r.height()]})
+        margins = {str(e["name"] or e["text"])[:24]: round(e["box"][1] - max(bezel(e["box"][0]), bezel(e["box"][0] + e["box"][2])), 1)
+                   for e in texts}
+        kicker = next((e for e in texts if e["name"] == "alert.kicker"), None)
+        return {"box": box, "margins": margins, "kicker": kicker and [kicker["text"], kicker["box"]],
+                "title_lines": next((c.property("lineCount") for c, o in walk(window.contentItem())
+                                     if c.objectName() == "alert.title"), None)}
+
     def scene_items():
         found = []
         for c, o in walk(window.contentItem()):
@@ -319,8 +339,6 @@ def child(layout):
                      "box": [round(r.x(), 1), round(r.y(), 1), round(r.width(), 1), round(r.height(), 1)]}
             if entry["cls"].startswith("QQuickText"):
                 entry["text"] = c.property("text")
-            if entry["name"] == "alert":
-                entry["chipSlot"] = c.property("chipSlot")
             found.append(entry)
         return found
 
@@ -386,7 +404,21 @@ def child(layout):
         result["scenes"][scene] = {"png": str(path.relative_to(ROOT)), "geometry": geo, "pixels": px,
                                    "warnings_so_far": len(messages)}
 
-    # ----- Behaviour checks -----
+    # ----- Behaviour checks; showcase captures are report only -----
+    showcase = result["showcase"] = {}
+
+    def show(name, note):
+        path = OUT / ("showcase-%s-%s.png" % (layout, name))
+        capture(path)
+        showcase[path.name] = note
+
+    def poll(read, test, limit_ms=4000):
+        waited = 0
+        while not test(read()) and waited < limit_ms:
+            settle(5)
+            waited += 5
+        return test(read())
+
     apply("normal")
     pages = prop("pages")
     shown = []
@@ -467,10 +499,18 @@ def child(layout):
     lines = title[0].property("lineCount") if title else 0
     check("banner: a long adapter text wraps on words to two lines", lines == 2, lines)
     capture(OUT / (layout + "-ack-long.png"))
+    panel_long = panel_geometry()
 
     def banner_state():
         boxes = [c for c, o in walk(window.contentItem()) if c.objectName() == "alert"]
         return bool(prop("bannerShown")), bool(boxes) and boxes[0].isVisible()
+
+    def panel_box():
+        boxes = [c for c, o in walk(window.contentItem()) if c.objectName() == "alert"]
+        if not boxes:
+            return None
+        r = boxes[0].mapRectToScene(QtCore.QRectF(0, 0, boxes[0].width(), boxes[0].height()))
+        return [round(r.x(), 1), round(r.y(), 1), round(r.width(), 1), round(r.height(), 1)]
 
     def acknowledge():
         QtCore.QMetaObject.invokeMethod(item, "acknowledge", QtCore.Qt.DirectConnection)
@@ -483,14 +523,34 @@ def child(layout):
     shown = banner_state()
     chip = [e for e in scene_items() if e["name"] == "alert.ok" and e["opacity"] > 0.01]
     capture(OUT / (layout + "-ack-caution.png"))
+    panel_msg = panel_geometry()
     acknowledge()
     leaving = banner_state()
-    settle(400)
+    settle(100)
+    out_mid = panel_box()
+    settle(300)
     gone = banner_state()
     check("acknowledge: an adapter banner ends the notification and leaves; bannerShown follows the banner",
           shown == (True, True) and bool(chip) and leaving == (False, True) and gone == (False, False)
           and g.property("notifyDuration") == 0,
           [shown, bool(chip), leaving, gone, g.property("notifyDuration")])
+    # Slide (round 43): in from y -136 over 280 ms (OutCubic), out to y -136 over 200 ms (InCubic).
+    set_value("gearBoxTemp", 124)
+    ys = []
+    for unused in range(80):
+        b = panel_box()
+        ys.append(b[1] if b else None)
+        if b and b[1] == 0:
+            break
+        settle(5)
+    settle(400)
+    rest = panel_box()
+    ys = [y for y in ys if y is not None]
+    check("alert panel: slides in from y -136 to 0 and up again on the out motion",
+          ys and min(ys) <= -100 and all(b >= a for a, b in zip(ys, ys[1:])) and ys[-1] == 0 and rest[1] == 0
+          and out_mid and -136 < out_mid[1] < 0, [ys[:3], ys[-3:], len(ys), rest, out_mid])
+    set_value("gearBoxTemp", 93)
+    settle(400)
     # Derived warn: OK holds the alert down while the condition holds and until the condition stays clear for ackHold
     # (30 s on the cluster; 1.5 s here). The glow stays.
     hold_default = prop("ackHold")
@@ -499,6 +559,17 @@ def child(layout):
     settle(400)
     warn = (prop("alertShown") or [""] * 3)[2]
     capture(OUT / (layout + "-ack-warn.png"))
+    panel_warn = panel_geometry()
+    # Alert panel A (round 43, round 44 padding): 960 x 136 at x 480, y 0, flush with the top edge; every panel text
+    # (the kicker first) keeps 20 px under the bezel arch; the kicker reads WARNING, CAUTION, or VEHICLE MESSAGE.
+    panels = {"warn": panel_warn, "message": panel_msg, "long message": panel_long}
+    check("alert panel: 960 x 136 at x 480, y 0; the bottom at y 136 or above",
+          all(v["box"] == [480, 0, 960, 136] for v in panels.values()), {k: v["box"] for k, v in panels.items()})
+    check("alert panel: every text, the kicker first, clears the bezel arch by 20 px",
+          all(v["margins"] and min(v["margins"].values()) >= 20 and v["kicker"] for v in panels.values())
+          and [v["kicker"][0] for v in panels.values()] == ["WARNING", "VEHICLE MESSAGE", "VEHICLE MESSAGE"]
+          and panel_long["title_lines"] == 2,
+          {k: [v["kicker"], v["margins"], v["title_lines"]] for k, v in panels.items()})
     acknowledge()
     settle(400)
     set_value("gearBoxTemp", 126)
@@ -512,7 +583,7 @@ def child(layout):
     settle(500)
     set_value("gearBoxTemp", 124)
     settle(400)
-    inside = banner_state()
+    within = banner_state()
     set_value("gearBoxTemp", 93)
     settle(1000)
     set_value("gearBoxTemp", 124)
@@ -522,8 +593,8 @@ def child(layout):
     set_value("gearBoxTemp", 124)
     settle(400)
     flicker = banner_state()
-    check("acknowledge: a return inside the hold stays hidden, and each return restarts the hold", inside == (False, False)
-          and flicker == (False, False), [inside, flicker])
+    check("acknowledge: a return inside the hold stays hidden, and each return restarts the hold", within == (False, False)
+          and flicker == (False, False), [within, flicker])
     set_value("gearBoxTemp", 93)
     settle(1900)
     set_value("gearBoxTemp", 124)
@@ -591,18 +662,35 @@ def child(layout):
               (prop("alertShown") or [""] * 3)[2] == "Light Electric Trailer Brake 6.5", prop("alertShown"))
     set_value("notifyDuration", 0)
     settle(400)
-    # Overspeed badge (unit 173): one inquiry 50 ms after the load; the badge shows and blinks while enabled and active.
+    # Overspeed (round 44 B, unit 173): the red tick, the threshold number, and the red overrun show only while the
+    # warning state is on; enabled but not over shows none of them, even above the threshold. The round 42 badge is gone.
+    over_names = ("over.tick", "over.num", "over.run")
+
+    def over_parts():
+        return sorted({e["name"] for e in scene_items() if e["name"] in over_names and e["opacity"] > 0.01})
     set_value("overSpeedWarningSpeed", 113)
     set_value("overSpeedWarningEnabled", 1)
+    set_value("overSpeedWarningState", 0)
+    set_value("vehicleSpeed", round(76 / MPH))
+    settle(400)
+    idle = over_parts()
     set_value("overSpeedWarningState", 1)
-    settle(300)
-    badge = [c for c, o in walk(window.contentItem()) if c.objectName() == "overspeed"]
+    settle(400)
+    active = over_parts()
+    num = [c for c, o in walk(window.contentItem()) if c.objectName() == "over.num"]
+    num_state = [num[0].property("text"), QtGui.QColor(num[0].property("color")).name()] if num else None
+    digits = sorted({QtGui.QColor(c.property("color")).name() for c, o in walk(window.contentItem())
+                     if c.parentItem() is not None and c.parentItem().objectName() == "speed"
+                     and c.metaObject().className().startswith("QQuickText")})
     capture(OUT / (layout + "-overspeed.png"))
-    texts = [e.get("text") for e in scene_items() if e.get("text")]
-    check("overspeed: badge with the threshold and the unit", bool(badge) and "70" in texts and "MPH" in texts,
-          [bool(badge), [t for t in texts if t in ("70", "MPH")]])
     set_value("overSpeedWarningState", 0)
     settle(200)
+    cleared = over_parts()
+    check("overspeed: the tick, the threshold 70, and the overrun show only while over (not while enabled and not over)",
+          idle == [] and active == sorted(over_names) and cleared == [] and num_state == ["70", "#ff3b30"]
+          and digits == ["#f4f7fa"], [idle, active, cleared, num_state, digits])
+    check("overspeed: the round 42 badge is gone", window.findChild(QtCore.QObject, "overspeed") is None)
+    set_value("overSpeedWarningEnabled", 0)
     res = QtCore.QMetaObject.invokeMethod(window, "inquiries", QtCore.Qt.DirectConnection, QtCore.Q_RETURN_ARG("QVariant"))
     check("overspeed: one overspeedInquire after the load", res == 1, res)
     # Cruise cancel (round 32 cancel32): red for 1 s, then a 0.8 s fade back to the cruise color (amber when not set).
@@ -616,6 +704,46 @@ def child(layout):
     capture(OUT / (layout + "-cancel.png"))
     check("cruise cancel: the cue holds red, fades, and ends amber", greens[0] <= 70 and 70 < greens[1] < 170 and greens[2] >= 170,
           greens)
+    # Set-speed direction (round 44 B): the first engage is no adjustment in either signal order; presses inside the
+    # 3 s window tint the number, the arrow, and the trail by direction from the set speed before the first press.
+
+    def color(name):
+        return QtGui.QColor(prop(name)).name()
+
+    def engage(states_first):
+        apply("normal")
+        settle(400)
+        states = [("cruiseState", 1), ("cruiseSpeedSet", 1), ("cruiseSetSpeedState", 1)]
+        speed = [("cruiseSpeed", round(60 / MPH))]
+        for name, value in (states + speed if states_first else speed + states):
+            set_value(name, value)
+        settle(400)
+        return [prop("adjDir"), color("csetColor"), round(prop("csetOpacity"), 2)]
+    engaged = [engage(True), engage(False)]
+    check("set-speed direction: the first engage is no adjustment (green number) in either signal order",
+          all(e[0] == 0 and e[1] == "#3ee07a" for e in engaged), engaged)
+
+    def press(start, steps):
+        apply("cruise", {"cruiseSpeed": round(start / MPH)})
+        settle(400)
+        for mph in steps:
+            set_value("cruiseSpeed", round(mph / MPH))
+            settle(250)
+        settle(400)
+        trails = [round(o, 2) for c, o in walk(window.contentItem()) if c.objectName() == "cset.trail"]
+        return {"adjDir": prop("adjDir"), "adjFrom": round(prop("adjFrom"), 1), "cset": color("csetColor"),
+                "arrow": color("arrowTint"), "trail": trails, "opacity": round(prop("csetOpacity"), 2)}
+    up = press(58, (60, 62, 64, 66))
+    show("setspeed-up", "set speed 58 to 66 mph in four presses, mid-hold: lime number, arrow, and trail (%s)" % up)
+    settle(3800)
+    up_after = [round(prop("csetOpacity"), 2), color("arrowTint")]
+    down = press(70, (68, 66, 64, 62))
+    show("setspeed-down", "set speed 70 to 62 mph in four presses, mid-hold: sky blue number, arrow, and trail (%s)" % down)
+    check("set-speed direction: up tints lime and down sky blue from the first value, with the trail; the arrow returns to green",
+          up["adjDir"] == 1 and abs(up["adjFrom"] - 58) < 0.5 and up["cset"] == up["arrow"] == "#b8f060"
+          and up["trail"] == [0.6] and up_after == [0, "#3ee07a"]
+          and down["adjDir"] == -1 and abs(down["adjFrom"] - 70) < 0.5 and down["cset"] == down["arrow"] == "#4fb3ff"
+          and down["trail"] == [0.6], [up, up_after, down])
     # Warning light blink: state 2 blinks at 300 ms.
     alarms = [0] * 300
     alarms[24] = 2
@@ -635,47 +763,38 @@ def child(layout):
     check("warning light: state 2 blinks (opacity reaches 0 and 1, and the lamp pixels change)",
           lamps and {0.0, 1.0} <= seen and swing > 0.1, [sorted(seen), round(swing, 3)])
     # ----- Showcase captures (report only) -----
-    showcase = result["showcase"] = {}
     trip_page = pages.index("trip")
-
-    def show(name, note):
-        path = OUT / ("showcase-%s-%s.png" % (layout, name))
-        capture(path)
-        showcase[path.name] = note
-
-    def poll(read, test, limit_ms=4000):
-        waited = 0
-        while not test(read()) and waited < limit_ms:
-            settle(5)
-            waited += 5
-        return test(read())
 
     # 1. Card jumps: a low right-rear tire and a 5 % climb, each with the trip page selected.
     apply("normal", {"drivingInfoIndex": trip_page, "tpmsRRState": 1})
     show("tire-jump", "right-rear tire low with the trip page selected: card %s" % prop("cardShown"))
     apply("normal", {"drivingInfoIndex": trip_page, "mPitch": 3})
     show("climb-jump", "grade %s %% with the trip page selected: card %s" % (prop("grade"), prop("cardShown")))
-    # 2. Overspeed badge at full opacity: the blink writes opacity 1 at the end of the fade in, then pauses 100 ms.
-    apply("normal")
-    set_value("overSpeedWarningSpeed", 113)
-    set_value("overSpeedWarningEnabled", 1)
-    set_value("overSpeedWarningState", 1)
-    settle(50)
-    badge = [c for c, o in walk(window.contentItem()) if c.objectName() == "overspeed"]
-    body = badge[0].childItems()[0] if badge else None
-    full = bool(body) and poll(lambda: body.opacity(), lambda v: v < 0.01) and poll(lambda: body.opacity(), lambda v: v > 0.99)
-    show("overspeed", "overspeed badge active, 70 MPH threshold, captured at full opacity (%s)" % full)
+    # 2. Overspeed B: 76 mph over a 70 mph threshold; the red overrun, tick, and number.
+    apply("normal", {"vehicleSpeed": round(76 / MPH), "overSpeedWarningSpeed": 113, "overSpeedWarningEnabled": 1,
+                     "overSpeedWarningState": 1})
+    show("overspeed", "76 mph over a 70 mph threshold: red overrun, tick, and number (%s)" % over_parts())
     set_value("overSpeedWarningState", 0)
     set_value("overSpeedWarningEnabled", 0)
-    # 3. Cruise: set, ACC set (adaptive), and LIM (limiter).
+    # 3. Cruise set (the set-speed direction captures come with the behaviour checks).
     apply("cruise")
-    show("cruise-set", "cruise set at 65 mph: green cue, no mode label")
-    apply("cruise", {"cruiseAccInterfaceState": 1})
-    show("cruise-acc", "adaptive cruise set at 65 mph: label %r" % prop("modeLabel"))
-    apply("cruise", {"cruiseState": 0, "cruiseSpeedSet": 0, "cruiseSetSpeedState": 0, "cruiseLimState": 1,
-                     "cruiseLimSpeed": round(65 / MPH)})
-    show("cruise-lim", "speed limiter at 65 mph, cruise off: label %r" % prop("modeLabel"))
-    # 4. Trip A hold ring at 0.3, 0.6, and 0.95.
+    show("cruise-set", "cruise set at 65 mph: green cue")
+    # 4. Alert panel A: a caution, a warning after the pulse, and a long two-line adapter message.
+    apply("normal", {"tpmsRRState": 1})
+    settle(400)
+    show("alert-caution", "caution: %s" % (prop("alertShown") or [""] * 3)[2])
+    apply("normal", {"gearBoxTemp": 124})
+    settle(1800)
+    show("alert-warning", "warning after the pulse: %s" % (prop("alertShown") or [""] * 3)[2])
+    apply("normal")
+    call("setTranslation", long_text)
+    set_value("notifyText", 1247)
+    set_value("notifyDuration", 7000)
+    settle(500)
+    show("alert-message-long", "adapter message on two lines: %s" % panel_geometry()["title_lines"])
+    set_value("notifyDuration", 0)
+    settle(400)
+    # 5. Trip A hold ring at 0.3, 0.6, and 0.95.
     apply("normal", {"drivingInfoIndex": trip_page})
     for hold in (0.3, 0.6, 0.95):
         item.setProperty("tripHold", hold)
@@ -683,14 +802,14 @@ def child(layout):
         show("triphold-%02d" % round(hold * 100), "Trip A hold ring at %s" % hold)
     item.setProperty("tripHold", 0)
     settle(100)
-    # 5. Trip A flash at the dimmest frame (opacity 0.25 at the end of the first fade out).
+    # 6. Trip A flash at the dimmest frame (opacity 0.25 at the end of the first fade out).
     trip_values = [c for c, o in walk(window.contentItem()) if c.objectName() == "cell.value" and c.property("text") == prop("tripText")]
     QtCore.QMetaObject.invokeMethod(item, "flashTrip", QtCore.Qt.DirectConnection)
     dim = bool(trip_values) and poll(lambda: trip_values[0].opacity(), lambda v: v <= 0.27, 1000)
     show("tripflash", "Trip A value at the dimmest flash frame (opacity %.2f, reached %s)"
          % (trip_values[0].opacity() if trip_values else -1, dim))
     settle(900)
-    # 6. Warning light overflow: the first 14 lamps of the layout order (alarm 31 skipped while the cue shows cruise).
+    # 7. Warning light overflow: the first 14 lamps of the layout order (alarm 31 skipped while the cue shows cruise).
     apply("normal")
     order = [i for i in prop("ttOrder") if i != 31]
     for count in (14, 18, 24):
@@ -807,6 +926,9 @@ def design_texts(data):
     groups = tape_groups(data)
     skip = {i for grp in groups[1:] for i in grp}
     nodes = data["nodes"]
+    # Round 43 replaces the round 42 banner (alert4) with the alert panel; the panel checks cover the panel.
+    banners = [n["box"] for n in nodes if "alert4" in (n.get("cls") or "")]
+    skip |= {i for i, n in enumerate(nodes) if any(inside(n["box"], b) for b in banners)}
     texts = [n for n in nodes if (n.get("text") or "").strip()]
     out = []
     for i, n in enumerate(nodes):
@@ -854,7 +976,6 @@ BOX_KEYS = {
     "dots": lambda n: n.get("cls") == "dots",
     "drv30": lambda n: (n.get("cls") or "").startswith("abs drv30"),
     "dchip": lambda n: (n.get("cls") or "").startswith("dchip"),
-    "alert": lambda n: "alert4" in (n.get("cls") or ""),
     "sunit": lambda n: "sunit" in (n.get("cls") or ""),
     "zcol": lambda n: n.get("cls") == "zcol",
     "tread": lambda n: (n.get("cls") or "").startswith("abs tread"),
@@ -868,19 +989,8 @@ def on_screen(box):
     return [x0, y0, round(max(0, x1 - x0), 1), round(max(0, y1 - y0), 1)]
 
 
-def design_part(box, slot):
-    """The banner without the OK chip slot (a design addition): the design box, centered at the same x."""
-    if not slot:
-        return box
-    return [round(box[0] + slot / 2, 1), box[1], round(box[2] - slot, 1), box[3]]
-
-
 def geometry(data, items):
     texts = [e for e in items if "text" in e and e["opacity"] > 0.01 and e["text"]]
-    # Banner texts sit half the OK chip slot left of the design place, as the banner centers with the chip.
-    for banner in [e for e in items if e["name"] == "alert" and e.get("chipSlot") and e["opacity"] > 0.01]:
-        texts = [dict(e, box=[round(e["box"][0] + banner["chipSlot"] / 2, 1)] + e["box"][1:])
-                 if inside(e["box"], banner["box"]) and e["text"] != "OK" else e for e in texts]
     misses, matched = [], 0
     for node in design_texts(data):
         if node["text"] in EXPECTED_TEXT_DEVIATIONS:
@@ -897,8 +1007,7 @@ def geometry(data, items):
             matched += 1
     for key, pred in BOX_KEYS.items():
         nodes = [n for n in data["nodes"] if pred(n) and n.get("style", {}).get("opacity") != "0"]
-        boxes = [dict(e, box=design_part(on_screen(e["box"]), e.get("chipSlot"))) for e in items
-                 if e["name"] == key and e["opacity"] > 0.01]
+        boxes = [dict(e, box=on_screen(e["box"])) for e in items if e["name"] == key and e["opacity"] > 0.01]
         for node in nodes:
             if not boxes:
                 misses.append({"key": key, "design": node["box"], "reason": "no item"})

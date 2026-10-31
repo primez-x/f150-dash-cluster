@@ -2,19 +2,20 @@ import QtQuick 2.12
 import QtQuick.Shapes 1.12
 
 // Daily A (option A, crescents) and Towing A: the two locked dashboard layouts in one file. Design: design/round-42
-// (kit42.js, the layout geometry in design/round-42/geometry/<layout>-<scene>.json) on the round 41 motion system.
+// (kit42.js, the layout geometry in design/round-42/geometry/<layout>-<scene>.json) on the round 41 motion system,
+// with the round 43 and 44 picks: alert panel A, overspeed B, and set-speed direction B (design/round-43, round-44).
 // tests/qt-layout-preview.py renders every geometry scene on the host and compares this file with the design.
 // Parent contract (vnD):
 // - Root item 1920 x 932 at 0,0 with no margins. tow follows Global dashboard (1 = Towing A, else Daily A).
 // - pages: the card pages. The card shows pages[drivingInfoIndex], or pages[0] for an index outside the pages (as vnD
 //   pages and tests the Trip A card); a change slides (round 41 A).
 // - tripHold (0 to 1) draws the hold ring on the Trip A cell; flashTrip() flashes the Trip A value after a reset.
-// - bannerShown: true while the alert banner shows or enters (false during the out motion). acknowledge(): the parent
-//   calls this on a short OK release while bannerShown; the banner plays the out motion and the next alert can show.
-// - ownsNotify: this layout draws the adapter notification banner and the trailer brake gain (notify 1246), so the
-//   parent stops drawing the stock Notify and Dragging popups for this layout.
-// - The layout draws the turn edges, the cruise region, the warning lights, and the overspeed badge. The stock
-//   AlarmPage units 161 (UI1), 140 (UI2), and 123 (UI3 to UI6) drew the lights and the badge before.
+// - bannerShown: true while the alert panel shows or enters (false during the out motion). acknowledge(): the parent
+//   calls this on a short OK release while bannerShown; the panel plays the out motion and the next alert can show.
+// - ownsNotify: this layout draws the adapter notification in the alert panel and the trailer brake gain (notify
+//   1246), so the parent stops drawing the stock Notify and Dragging popups for this layout.
+// - The layout draws the turn edges, the cruise region, the warning lights, and the overspeed warning. The stock
+//   AlarmPage units 161 (UI1), 140 (UI2), and 123 (UI3 to UI6) drew the lights and the overspeed badge before.
 // Data: Global names, units, and sentinels. Every invalid reading shows "--" from the first evaluation.
 // "Inferred" marks a field mapping without a firmware or truck log reference.
 // Rules: no QtGraphicalEffects, no Canvas, no script loops per frame. Guard every index, getter, and undefined value:
@@ -122,6 +123,8 @@ Item {
         tire: {"s": "M23 5H31A8 8 0 0 1 39 13V41A8 8 0 0 1 31 49H23A8 8 0 0 1 15 41V13A8 8 0 0 1 23 5ZM15 17h7M15 27h7M15 37h7M39 17h-7M39 27h-7M39 37h-7", "f": "", "fo": 1, "w": 54, "h": 54},
         thermo: {"s": "M22 31V11a5 5 0 0 1 10 0v20a10 10 0 1 1-10 0ZM27 18v18M23 39A4 4 0 1 0 31 39A4 4 0 1 0 23 39ZM38 14h6M38 22h6", "f": "M23 39A4 4 0 1 0 31 39A4 4 0 1 0 23 39Z", "fo": 1, "w": 54, "h": 54},
         padlock: {"s": "M17 24H37A4 4 0 0 1 41 28V42A4 4 0 0 1 37 46H17A4 4 0 0 1 13 42V28A4 4 0 0 1 17 24ZM19 24v-6a8 8 0 0 1 16 0v6", "f": "M17 24H37A4 4 0 0 1 41 28V42A4 4 0 0 1 37 46H17A4 4 0 0 1 13 42V28A4 4 0 0 1 17 24Z", "fo": 1, "w": 54, "h": 54},
+        // Round 43 info mark: the alert panel badge of an adapter message.
+        info: {"s": "M6 27A21 21 0 1 0 48 27A21 21 0 1 0 6 27ZM27 24v14M25.5 16.5A1.5 1.5 0 1 0 28.5 16.5A1.5 1.5 0 1 0 25.5 16.5Z", "f": "M25.5 16.5A1.5 1.5 0 1 0 28.5 16.5A1.5 1.5 0 1 0 25.5 16.5Z", "fo": 1, "w": 54, "h": 54},
         roll: {"s": "M17 19l3-7h14l3 7M11 19H43A3 3 0 0 1 46 22V29A3 3 0 0 1 43 32H11A3 3 0 0 1 8 29V22A3 3 0 0 1 11 19ZM13 32v7M41 32v7M3 44h48", "f": "", "rot": 14, "ox": 27, "oy": 30, "fo": 1, "w": 54, "h": 54},
         cht: {"s": "M6 21h7l4-5h16l4 5h5v7h5v11h-5v6H17l-4-5H6ZM27 23v10M24 35A3 3 0 1 0 30 35A3 3 0 1 0 24 35Z", "f": "M24 35A3 3 0 1 0 30 35A3 3 0 1 0 24 35Z", "fo": 1, "w": 54, "h": 54},
         water: {"s": "", "f": "M25.5 8.07 L24.51 8.5 L23.5 9.04 L23 9.5 L22.5 10.25 L22.3 10.5 L21.97 11.5 L21.84 12.5 L21.83 13.5 L21.84 14.5 L21.84 15.5 L21.83 16.5 L21.84 17.5 L21.83 18.5 L21.84 19.5 L21.84 20.5 L21.84 21.5 L21.83 22.5 L21.83 23.5 L21.83 24.5 L21.83 25.5 L21.5 25.9 L21.04 26.5 L20.5 27.5 L20.07 28.5 L19.83 29.5 L19.78 30.5 L19.78 31.5 L19.97 32.5 L20.17 33.5 L20.5 34 L20.84 34.5 L21.5 35.39 L22.5 36.3 L22.75 36.5 L23.5 36.93 L24.5 37.23 L25.49 37.5 L26.5 37.7 L27.5 37.61 L28.5 37.17 L29.5 36.93 L30.1 36.5 L30.5 36.17 L31.3 35.5 L31.5 35.3 L32.07 34.5 L32.5 33.83 L32.77 33.5 L33.03 32.5 L33.17 31.5 L33.17 30.5 L33.12 29.5 L32.97 28.5 L32.5 27.5 L31.92 26.5 L31.5 25.87 L31.23 25.5 L31.17 24.5 L31.17 23.5 L31.17 22.5 L31.17 21.5 L31.17 20.5 L31.17 19.5 L31.17 18.5 L31.17 17.5 L31.17 16.5 L31.17 15.5 L31.17 14.5 L31.17 13.5 L31.12 12.5 L31.03 11.5 L30.7 10.5 L30.5 10.28 L29.96 9.5 L29.5 9.04 L28.62 8.5 L27.5 8.07 L26.5 8ZM33.5 12.39 L33.17 13.5 L33.5 14 L34.5 14.3 L35.5 14.3 L36.5 14.3 L37.5 14.3 L38.5 14.3 L39.5 13.83 L39.7 13.5 L39.5 12.5 L38.5 12.17 L37.5 12.17 L36.5 12.17 L35.5 12.17 L34.5 12.17ZM25.5 17.5 L26 17.5 L26.5 17.5 L27.5 17.5 L28 18.5 L28 19.5 L28 20.5 L28 21.5 L28 22.5 L28 23.5 L28 24.5 L28 25.5 L28 26.5 L28.3 27.5 L28.5 27.7 L29.39 28.5 L29.97 29.5 L30.07 30.5 L30.04 31.5 L29.7 32.5 L29.5 32.75 L28.9 33.5 L28.5 33.83 L27.5 34.17 L26.5 34.3 L25.5 34.17 L24.5 33.93 L24 33.5 L23.5 32.9 L23.17 32.5 L22.93 31.5 L22.93 30.5 L23.07 29.5 L23.5 28.5 L24.5 27.5 L24.93 26.5 L24.93 25.5 L24.93 24.5 L24.93 23.5 L24.93 22.5 L24.93 21.5 L24.93 20.5 L24.93 19.5 L24.93 18.5ZM35.5 17.5 L35 17.5 L34.5 17.5 L33.5 17.83 L33.17 18.5 L33.5 19.3 L33.82 19.5 L34.5 19.7 L35.5 19.7 L36.5 19.7 L37.5 19.7 L38.5 19.7 L39.01 19.5 L39.5 19 L39.7 18.5 L39.5 18.1 L38.51 17.5 L38 17.5 L37.5 17.5 L37 17.5 L36.5 17.5ZM33.5 23.06 L33.17 23.5 L33.3 24.5 L33.5 24.7 L34.5 24.93 L35.5 24.93 L36.5 24.93 L37.5 24.93 L38.5 24.93 L39.5 24.61 L39.7 23.5 L39.5 23.22 L38.5 22.83 L37.5 22.84 L36.5 22.83 L35.5 22.84 L34.5 22.83ZM14.5 32.39 L14.17 32.5 L13.5 32.7 L12.5 33 L11.73 33.5 L11.5 33.7 L10.5 34.07 L9.5 34.07 L8.5 33.83 L8.1 33.5 L7.5 33.07 L6.5 32.93 L5.5 33.39 L5 34.5 L5.5 35.5 L6.5 36.3 L6.75 36.5 L7.5 36.93 L8.5 37.17 L9.5 37.3 L10.5 37.3 L11.5 37.11 L12.5 36.88 L13.06 36.5 L13.5 36.17 L14.5 35.83 L15.5 35.78 L16.5 35.96 L17.38 36.5 L17.83 35.5 L17.5 35 L17.17 34.5 L16.97 33.5 L16.5 32.73 L15.99 32.5 L15.5 32.3ZM37.5 32.31 L37.01 32.5 L36.5 32.72 L36.03 33.5 L35.77 34.5 L35.5 34.88 L35.12 35.5 L34.69 36.5 L35.5 36.84 L35.95 36.5 L36.5 36.12 L37.5 35.78 L38.5 35.61 L39.5 35.93 L40.5 36.5 L41.5 37.07 L42.5 37.3 L43.17 37.5 L43.5 37.61 L44.5 37.7 L45.16 37.5 L45.5 37.39 L46.5 37 L47.38 36.5 L48.5 35.61 L49 34.5 L48.5 33.5 L47.5 33 L46.5 33.17 L46.1 33.5 L45.5 33.96 L44.5 34.23 L43.5 34.23 L42.5 33.93 L42 33.5 L41.5 33.07 L40.5 32.84 L39.7 32.5 L38.5 32.3ZM12.5 40.23 L12.17 40.5 L11.5 41.16 L11.22 41.5 L11.5 42.5 L12.5 43.5 L13.5 44.07 L14.35 44.5 L15.5 44.84 L16.5 44.83 L17.5 44.7 L18 44.5 L18.5 44.3 L19.5 43.88 L20.06 43.5 L20.5 43.17 L21.5 43 L22.5 43.17 L22.9 43.5 L23.5 43.93 L24.5 44.17 L25.29 44.5 L26.5 44.7 L27.5 44.7 L28.17 44.5 L28.5 44.39 L29.5 44 L30.38 43.5 L31.5 43 L32.5 43 L33.5 43.39 L34.5 44.04 L35.25 44.5 L35.5 44.7 L36.5 44.93 L37.5 45 L38.5 44.96 L39.5 44.83 L40 44.5 L40.5 44.17 L41.5 43.77 L41.8 43.5 L42.5 42.72 L42.7 42.5 L42.7 41.5 L42.5 41.25 L41.65 40.5 L40.53 40.5 L39.5 41.04 L38.75 41.5 L38.5 41.7 L37.5 41.84 L36.69 41.5 L35.5 40.93 L34.9 40.5 L34.5 40.17 L33.5 39.93 L32.5 39.84 L31.5 39.84 L30.5 39.97 L29.5 40.17 L29 40.5 L28.5 40.84 L27.5 41.23 L26.5 41.39 L25.5 41.07 L24.5 40.7 L24.24 40.5 L23.5 40.07 L22.5 39.93 L21.5 39.89 L20.5 39.93 L19.5 40.07 L18.64 40.5 L17.5 41.17 L16.7 41.5 L16.02 41.5 L15.5 41.39 L14.5 41 L13.75 40.5 L13.5 40.3Z", "fo": 1, "w": 54, "h": 54},
@@ -164,6 +167,11 @@ Item {
     readonly property real speedMph: Math.max(0, g.vehicleSpeed)*0.62137
     property real speedShown: speedU
     Behavior on speedShown { SmoothedAnimation { duration: mSmooth; velocity: -1 } }
+    // Overspeed (round 44 B, stock OverSpeedWarning unit 173): while the warning is on and a threshold is set, the speed
+    // scale shows a red tick and the threshold number (Global getOverSpeedWaningSpeed) and fills red from the threshold
+    // to the speed. The digits stay white; nothing blinks.
+    readonly property bool overOn: g.overSpeedWarningEnabled!==0 && g.overSpeedWarningState!==0 && g.overSpeedWarningSpeed>0
+    readonly property int overU: Math.round(g.overSpeedWarningSpeed*g.tripFactor)
     readonly property int rpm: Math.max(0, g.tachoSpeed)
     readonly property int tachMax: g.tachoSpeedMax>=6000 && g.tachoSpeedMax<=8000?g.tachoSpeedMax:7000
     readonly property int redline: tachMax-1000
@@ -299,18 +307,15 @@ Item {
     readonly property real output: braking && g.trucksTrailerOutput>=0?Math.min(10, g.trucksTrailerOutput/10):0
     readonly property string trailerText: g.trucksTrailerDistance>=0?fmtInt(Math.floor(g.trucksTrailerDistance*g.tripFactor/1000)):"--"
     // Cruise (inferred from analysis/capture-04/settings-cruise-audit.json): cruiseState = cruise on (available),
-    // cruiseSpeedSet = set and active, cruiseSetSpeedState = a set speed is known, cruiseLimState = speed limiter,
-    // cruiseAccInterfaceState = adaptive cruise. Speeds in km/h.
+    // cruiseSpeedSet = set and active, cruiseSetSpeedState = a set speed is known. Speeds in km/h. This truck has no
+    // adaptive cruise and no speed limiter, so the layout reads neither (round 44).
     readonly property bool cruiseOn: g.cruiseState!==0
     readonly property bool cruiseSet: cruiseOn && g.cruiseSpeedSet!==0
-    readonly property bool limOn: g.cruiseLimState!==0
-    readonly property bool accOn: g.cruiseAccInterfaceState!==0
-    readonly property bool markOn: limOn || cruiseSet || (cruiseOn && g.cruiseSetSpeedState!==0)
-    readonly property real markU: (limOn?g.cruiseLimSpeed:g.cruiseSpeed)*g.tripFactor
-    readonly property color markColor: limOn?"#e8ecf1":cruiseSet?cOk:cCaution
+    readonly property bool markOn: cruiseSet || (cruiseOn && g.cruiseSetSpeedState!==0)
+    readonly property real markU: g.cruiseSpeed*g.tripFactor
+    readonly property color markColor: cruiseSet?cOk:cCaution
     property real markShown: markU
     Behavior on markShown { SmoothedAnimation { duration: mSmooth; velocity: -1 } }
-    readonly property string modeLabel: accOn?"ACC":limOn?"LIM":""
     property color cueColor: cruiseSet?cOk:cCaution
     // Round 32 cancel (cancel32, 1.8 s linear): the set-speed arrow, the cruise cue, and the unit hold red for 1 s, then
     // fade back to the cruise colors over 0.8 s. cancelMix is the red share (1 to 0).
@@ -332,7 +337,44 @@ Item {
     readonly property color markTint: cancelled(markColor)
     // The set-speed number shows for 3 s after a change, then fades over 0.6 s (round 32).
     property real csetOpacity: 0
+    // Set-speed direction (round 44 B): a change of the set speed while the mark already shows is an adjustment. The
+    // number, the arrow, and a trail from adjFrom tint up lime or down sky blue; a held set speed stays green. adjFrom
+    // is the set speed before the first press of a sequence (number hidden); later presses keep adjFrom. markSettled
+    // turns true 300 ms after the mark shows, so the engage (and the 200 ms Global cruiseSpeed animation) is not an
+    // adjustment in either signal order.
+    readonly property color cUp: "#b8f060"
+    readonly property color cDown: "#4fb3ff"
+    property real adjFrom: 0
+    property int adjDir: 0
+    property real markLast: 0
+    property int markRawLast: 0
+    property bool markSettled: false
+    readonly property color adjColor: adjDir>0?cUp:cDown
+    readonly property color csetColor: adjDir!==0?cancelled(adjColor):markTint
+    readonly property color arrowTint: adjDir!==0?cancelled(Qt.tint(markColor, Qt.rgba(adjColor.r, adjColor.g, adjColor.b, csetOpacity))):markTint
+    onMarkOnChanged: {
+        markSettled=false
+        if(markOn)
+            mSettleId.restart()
+        else
+            mSettleId.stop()
+    }
+    Timer {
+        id: mSettleId
+        interval: 300
+        onTriggered: mLayoutId.markSettled=true
+    }
     onMarkUChanged: {
+        var raw=g.cruiseSpeed
+        if(markOn && markSettled && raw!==markRawLast) {
+            if(!mCsetId.running)
+                adjFrom=markLast
+            adjDir=markU>markLast?1:-1
+        } else {
+            adjDir=0
+        }
+        markLast=markU
+        markRawLast=raw
         if(markOn)
             mCsetId.restart()
     }
@@ -395,7 +437,7 @@ Item {
         if(fuelLight)
             a.push(["warn", "fuel", "FUEL RESERVE", (rangeOk?rangeText+" "+distUnit+" to empty · ":"")+"refuel now", true, "fuel"])
         if(tireLow>=0)
-            a.push(["caution", "alarm:24", ["LEFT FRONT", "RIGHT FRONT", "LEFT REAR", "RIGHT REAR"][tireLow]+" TIRE LOW",
+            a.push(["caution", "tire", ["LEFT FRONT", "RIGHT FRONT", "LEFT REAR", "RIGHT REAR"][tireLow]+" TIRE LOW",
                     tires[tireLow]+" "+pressUnit, false, "tire"+tireLow])
         // Round 33 option B: Daily A has no head temperature column, so a warm head temperature comes as a caution.
         if(!tow && chtSt==="warm")
@@ -476,7 +518,7 @@ Item {
             return d[0]==="warn" || derivedAt>=notifyAt?d:n
         return d || n
     }
-    // The banner keeps the last alert while the banner fades out.
+    // The panel keeps the last alert while the panel slides out.
     property var alertShown: ["caution", "", "", "", false, ""]
     readonly property bool bannerShown: alertBox.visible && !mAlertOutId.running
     property bool ackSwap: false
@@ -532,9 +574,12 @@ Item {
     Component.onCompleted: {
         if(alertNow) {
             alertShown=alertNow
-            alertBox.opacity=1
             alertBox.visible=true
         }
+        markLast=markU
+        markRawLast=g.cruiseSpeed
+        if(markOn)
+            mSettleId.restart()
         hdgTarget=Number(g.gpsBearing) || 0
         hdgReady=true
         cardA.page=shownPage
@@ -1237,16 +1282,15 @@ Item {
             }
         }
     }
-    // Unit row (round 32): the cruise cue, the unit, and the ACC or LIM label, centered under the digits.
+    // Unit row (round 32): the cruise cue and the unit, centered under the digits.
     Item {
         id: unitRow
         objectName: "sunit"
         readonly property bool cue: mLayoutId.cruiseOn
         readonly property real cueW: cue?34:0
-        readonly property real labelW: modeText.visible?12+modeText.width:0
         x: 960-width/2
         y: 458
-        width: cueW+unitText.width+labelW
+        width: cueW+unitText.width
         height: 24
         Loader {
             property string sym: "cruise"
@@ -1267,66 +1311,6 @@ Item {
             font.family: mLayoutId.fBmw
             font.pixelSize: 20
             font.letterSpacing: 8
-        }
-        Text {
-            id: modeText
-            x: unitRow.cueW+unitText.width+12
-            height: 24
-            verticalAlignment: Text.AlignVCenter
-            visible: text!==""
-            text: mLayoutId.modeLabel
-            color: mLayoutId.limOn && !mLayoutId.accOn?"#e8ecf1":mLayoutId.cueShown
-            font.family: mLayoutId.fBmw
-            font.pixelSize: 20
-            font.weight: Font.DemiBold
-            font.letterSpacing: 2
-        }
-    }
-    // Overspeed badge (stock OverSpeedWarning, unit 173): shows while overSpeedWarningEnabled and overSpeedWarningState,
-    // blinks every 500 ms, with the threshold (getOverSpeedWaningSpeed, "---" when unset) and the unit. Design addition:
-    // the stock 70 px badge in the design palette beside the digits; to review in a design round.
-    Item {
-        id: overspeed
-        objectName: "overspeed"
-        x: 1170
-        y: 336
-        width: 70
-        height: 70
-        visible: mLayoutId.g.overSpeedWarningEnabled!==0 && mLayoutId.g.overSpeedWarningState!==0
-        Rectangle {
-            id: overspeedBody
-            anchors.fill: parent
-            radius: width/2
-            color: "#ffffff"
-            border.color: mLayoutId.cWarn
-            border.width: width/9
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: 15
-                text: String(mLayoutId.g.getOverSpeedWaningSpeed(0))
-                color: "#05070a"
-                font.family: mLayoutId.fBmw
-                font.pixelSize: overspeed.width/2.6
-                font.bold: true
-            }
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: 41
-                text: mLayoutId.g.vehicleSpeedUnit
-                color: "#05070a"
-                font.family: mLayoutId.fBmw
-                font.pixelSize: 13
-                font.bold: true
-            }
-        }
-        SequentialAnimation {
-            running: overspeed.visible
-            loops: Animation.Infinite
-            onStopped: overspeedBody.opacity=1
-            OpacityAnimator { target: overspeedBody; from: 1; to: 0; duration: 500 }
-            PauseAnimation { duration: 100 }
-            OpacityAnimator { target: overspeedBody; from: 0; to: 1; duration: 500 }
-            PauseAnimation { duration: 100 }
         }
     }
     // Reverse: the large R under the unit row (round 31). Daily A hides the card in reverse.
@@ -1368,6 +1352,8 @@ Item {
                 readonly property real sgn: a1>a0?1:-1
                 readonly property real av: aOf(value)
                 readonly property int lit: Math.max(1, Math.floor(Math.abs(av-a0)/1.8))
+                readonly property bool over: !isRpm && mLayoutId.overOn
+                readonly property real oa: aOf(Math.min(mLayoutId.overU, max))
                 function aOf(v) { return a0+(a1-a0)*v/max }
                 width: 1920
                 height: 932
@@ -1437,12 +1423,64 @@ Item {
                         y: mLayoutId.polY(470, 614, a)+9-25.6
                         height: 31.2
                         verticalAlignment: Text.AlignVCenter
+                        // The overspeed number takes the place of a scale label within 3 degrees (round 44 B).
+                        visible: !cres.over || Math.abs(a-cres.oa)>=3
                         text: String(v)
                         color: cres.redFrom>0 && v>=cres.redFrom?mLayoutId.cWarn:"#e8ecf1"
                         opacity: 0.4+0.6*fo
                         font.family: mLayoutId.fBmw
                         font.pixelSize: 26
                     }
+                }
+                // Overspeed (round 44 B): the fill turns red from the threshold to the speed. The red arc is static
+                // from the threshold to the scale end; a clip at the head follows the speed, so only the clip moves per
+                // frame. No glow: without a blur shader a glow band shows hard edges. Then the red tick across the
+                // fill and the red threshold number.
+                Item {
+                    objectName: "over.run"
+                    readonly property real yHead: mLayoutId.polY(470, 544, cres.aOf(cres.shown))
+                    visible: cres.over && cres.shown>Math.min(mLayoutId.overU, cres.max)
+                    y: yHead
+                    width: 1920
+                    height: Math.max(0, 932-yHead)
+                    clip: true
+                    Shape {
+                        y: -parent.y
+                        width: 1920
+                        height: 932
+                        ShapePath {
+                            strokeColor: mLayoutId.cWarn
+                            strokeWidth: 12
+                            fillColor: "transparent"
+                            PathAngleArc { centerX: cres.cx; centerY: 470; radiusX: 544; radiusY: 544
+                                           startAngle: cres.oa-90; sweepAngle: Math.max(0, cres.a1-cres.oa) }
+                        }
+                    }
+                }
+                Rectangle {
+                    objectName: "over.tick"
+                    visible: cres.over
+                    x: mLayoutId.polX(cres.cx, 572, cres.oa)-2
+                    y: mLayoutId.polY(470, 572, cres.oa)
+                    width: 4
+                    height: 42
+                    radius: 2
+                    color: mLayoutId.cWarn
+                    antialiasing: true
+                    transform: Rotation { origin.x: 2; origin.y: 0; angle: cres.oa }
+                }
+                Text {
+                    objectName: "over.num"
+                    visible: cres.over
+                    x: mLayoutId.polX(cres.cx, 614, cres.oa)-width/2
+                    y: mLayoutId.polY(470, 614, cres.oa)+9-25.6
+                    height: 31.2
+                    verticalAlignment: Text.AlignVCenter
+                    text: String(mLayoutId.overU)
+                    color: mLayoutId.cWarn
+                    font.family: mLayoutId.fBmw
+                    font.pixelSize: 26
+                    font.weight: Font.DemiBold
                 }
                 // Head: bloom and white dot at the shown value; pointer outside the scale.
                 Rectangle {
@@ -1475,7 +1513,28 @@ Item {
                     antialiasing: true
                     transform: Rotation { origin.x: 1.5; origin.y: 0; angle: cptr.a }
                 }
-                // Cruise mark on the speed crescent: green when set, amber for a known resume speed, white for LIM.
+                // Set-speed trail (round 44 B): along the arrow track (r 598) from the old set speed to the arrow. The
+                // arc follows markShown only during the 240 ms smoothing after a press.
+                Shape {
+                    id: ctrail
+                    objectName: "cset.trail"
+                    readonly property real af: cres.aOf(Math.min(mLayoutId.adjFrom, cres.max))
+                    readonly property real at: cres.aOf(Math.min(mLayoutId.markShown, cres.max))
+                    visible: !cres.isRpm && mLayoutId.markOn && mLayoutId.adjDir!==0 && mLayoutId.csetOpacity>0
+                    opacity: 0.6*mLayoutId.csetOpacity
+                    width: 1920
+                    height: 932
+                    ShapePath {
+                        strokeColor: mLayoutId.adjColor
+                        strokeWidth: 4
+                        fillColor: "transparent"
+                        capStyle: ShapePath.RoundCap
+                        PathAngleArc { centerX: cres.cx; centerY: 470; radiusX: 598; radiusY: 598
+                                       startAngle: ctrail.af-90; sweepAngle: ctrail.at-ctrail.af }
+                    }
+                }
+                // Cruise mark on the speed crescent: green when set, amber for a known resume speed; the set-speed
+                // direction tint fades back to the cruise colour with the number (round 44 B).
                 Shape {
                     readonly property real a: cres.aOf(Math.min(mLayoutId.markShown, cres.max))
                     visible: !cres.isRpm && mLayoutId.markOn
@@ -1486,7 +1545,7 @@ Item {
                     ShapePath {
                         strokeColor: "transparent"
                         strokeWidth: -1
-                        fillColor: mLayoutId.markTint
+                        fillColor: mLayoutId.arrowTint
                         startX: 0; startY: 0
                         PathLine { x: -14.8; y: -16 }
                         PathLine { x: 14.8; y: -16 }
@@ -1494,6 +1553,7 @@ Item {
                     }
                 }
                 Text {
+                    objectName: "cset"
                     readonly property real a: cres.aOf(Math.min(mLayoutId.markShown, cres.max))
                     visible: !cres.isRpm && mLayoutId.markOn
                     opacity: mLayoutId.csetOpacity
@@ -1502,7 +1562,7 @@ Item {
                     height: 28
                     verticalAlignment: Text.AlignVCenter
                     text: mLayoutId.markU.toFixed(0)
-                    color: mLayoutId.markTint
+                    color: mLayoutId.csetColor
                     font.family: mLayoutId.fBmw
                     font.pixelSize: 28
                     font.weight: Font.DemiBold
@@ -1760,6 +1820,11 @@ Item {
                 }
                 return "M"+a.join(" L")+" L"+b.join(" L")+" A4 4 0 0 1 "+a[0]+" Z"
             }
+            // Overspeed (round 44 B): the threshold on the gauge and the red overrun from the threshold to the head.
+            readonly property bool over: mLayoutId.overOn
+            readonly property real ou: Math.min(mLayoutId.overU, max)
+            readonly property var op: at(ou, 70)
+            readonly property bool overrun: over && vs>ou
             Item {
                 x: rail.x0[0]-4
                 width: Math.max(0, rail.head[0]-rail.x0[0])+4
@@ -1782,6 +1847,26 @@ Item {
                     }
                 }
             }
+            // Overrun: the static red bar outline clipped from the threshold to the head.
+            Item {
+                objectName: "over.run"
+                visible: rail.overrun
+                x: rail.op[0]
+                width: Math.max(0, rail.head[0]-rail.op[0])
+                height: 932
+                clip: true
+                Shape {
+                    x: -parent.x
+                    width: 1920
+                    height: 932
+                    ShapePath {
+                        strokeColor: "transparent"
+                        strokeWidth: -1
+                        fillColor: mLayoutId.cWarn
+                        PathSvg { path: rail.outline }
+                    }
+                }
+            }
             Rectangle {
                 visible: rail.vs>0.5
                 x: rail.head[0]-4
@@ -1789,7 +1874,7 @@ Item {
                 width: 8
                 height: 8
                 radius: 4
-                color: mLayoutId.cAcc
+                color: rail.overrun?mLayoutId.cWarn:mLayoutId.cAcc
             }
             Repeater {
                 model: Math.round(rail.max/rail.step)+1
@@ -1810,6 +1895,8 @@ Item {
                 model: Math.round(rail.max/(rail.step*4))+1
                 Text {
                     readonly property var p: rail.at(index*rail.step*4, 24)
+                    // The overspeed number takes the place of a gauge number within 30 px (round 44 B).
+                    visible: !rail.over || Math.abs(p[0]-rail.op[0])>=30
                     x: p[0]-width/2
                     y: p[1]-17.6
                     height: 21.6
@@ -1818,6 +1905,57 @@ Item {
                     color: mLayoutId.cDim
                     font.family: mLayoutId.fBmw
                     font.pixelSize: 18
+                }
+            }
+            // Overspeed tick in the tick row (kit44 over44: 14 to 26 px under the bar) and the number in the number row.
+            Rectangle {
+                objectName: "over.tick"
+                readonly property var p: rail.at(rail.ou, 56)
+                visible: rail.over
+                x: p[0]-2
+                y: p[1]
+                width: 4
+                height: 12
+                radius: 2
+                antialiasing: true
+                color: mLayoutId.cWarn
+                transform: Rotation { origin.x: 2; origin.y: 0; angle: Math.atan2(rail.op[3], rail.op[2])*180/Math.PI+90 }
+            }
+            Text {
+                objectName: "over.num"
+                readonly property var p: rail.at(rail.ou, 24)
+                visible: rail.over
+                x: p[0]-width/2
+                y: p[1]-17.6
+                height: 21.6
+                verticalAlignment: Text.AlignVCenter
+                text: String(mLayoutId.overU)
+                color: mLayoutId.cWarn
+                font.family: mLayoutId.fBmw
+                font.pixelSize: 18
+                font.weight: Font.DemiBold
+            }
+            // Set-speed trail (round 44 B): just above the bar, under the arrow tip (r 86), from the old set speed to the
+            // arrow. Three points on the cover edge make one quadratic curve, so the path needs no loop per frame.
+            Shape {
+                id: rtrail
+                objectName: "cset.trail"
+                readonly property var p0: rail.at(mLayoutId.adjFrom, 86)
+                readonly property var p1: rail.at((mLayoutId.adjFrom+mLayoutId.markShown)/2, 86)
+                readonly property var p2: rail.at(mLayoutId.markShown, 86)
+                visible: mLayoutId.markOn && mLayoutId.adjDir!==0 && mLayoutId.csetOpacity>0
+                opacity: 0.6*mLayoutId.csetOpacity
+                width: 1920
+                height: 932
+                ShapePath {
+                    strokeColor: mLayoutId.adjColor
+                    strokeWidth: 4
+                    fillColor: "transparent"
+                    capStyle: ShapePath.RoundCap
+                    startX: rtrail.p0[0]; startY: rtrail.p0[1]
+                    PathQuad { x: rtrail.p2[0]; y: rtrail.p2[1]
+                               controlX: 2*rtrail.p1[0]-(rtrail.p0[0]+rtrail.p2[0])/2
+                               controlY: 2*rtrail.p1[1]-(rtrail.p0[1]+rtrail.p2[1])/2 }
                 }
             }
             // Cruise arrow over the gauge (round 38 railArrow): tip at 78 px, base 15 px out, 18 px wide.
@@ -1831,7 +1969,7 @@ Item {
                 ShapePath {
                     strokeColor: "#05070a"
                     strokeWidth: 2
-                    fillColor: mLayoutId.markTint
+                    fillColor: mLayoutId.arrowTint
                     joinStyle: ShapePath.RoundJoin
                     startX: 0; startY: 0
                     PathLine { x: -9; y: -15 }
@@ -1849,7 +1987,7 @@ Item {
                 height: 28
                 verticalAlignment: Text.AlignVCenter
                 text: mLayoutId.markU.toFixed(0)
-                color: mLayoutId.markTint
+                color: mLayoutId.csetColor
                 font.family: mLayoutId.fBmw
                 font.pixelSize: 28
                 font.weight: Font.DemiBold
@@ -2373,147 +2511,202 @@ Item {
         }
     }
 
-    // ===== View: alert banner =====
-    // Banner (round 4 alert4, round 41 motion): top center under the compass, caution amber or warn red; a warn pulses
-    // once. In within --m-fast from 12 px above; out over --m-base. Adapter text wraps on words to two lines.
+    // ===== View: alert panel =====
+    // Alert panel A (round 43 tinted glass, round 44 padding): 960 x 136 at the top center, flush with the top edge, over
+    // the heading tape and under the bezel mask. The badge, the kicker, the title (two lines at most), the detail, and the
+    // OK chip; caution amber or warn red. The content block (y 40 to 116) keeps 20 px under the bezel arch and 20 px above
+    // the panel bottom. The panel slides down from y -136 over --m-slow and back up over --m-base; a warn pulses once.
     Item {
         id: alertBox
         objectName: "alert"
         readonly property var a: mLayoutId.alertShown
         readonly property bool warn: a[0]==="warn"
+        readonly property bool msg: a[5]==="notify"
         readonly property color col: warn?mLayoutId.cWarn:mLayoutId.cCaution
-        readonly property bool hasIcon: a[1]!==""
         readonly property bool hasSub: a[3]!==""
-        readonly property real iconW: hasIcon?56:0
-        // OK chip slot (design addition): 20 px gap, the chip, and 16 px to the edge in place of the 28 px padding.
-        readonly property real chipSlot: 20+okChip.width+16-28
-        x: 960-width/2
-        y: 92
-        width: 2+28+iconW+alertTitle.width+(hasSub?22+alertSub.width:0)+28+2+chipSlot
-        height: Math.max(64, alertTitle.height+20)
+        // Fill (kit43 .alert43.a): the severity tint over #0c0e12, from the top edge to the bottom.
+        readonly property color fillTop: Qt.tint("#0c0e12", Qt.rgba(col.r, col.g, col.b, warn?0.38:0.32))
+        readonly property color fillBottom: Qt.tint("#0c0e12", Qt.rgba(col.r, col.g, col.b, warn?0.14:0.12))
+        x: 480
+        y: 0
+        width: 960
+        height: 136
         visible: false
-        opacity: 0
+        transform: Translate { id: alertShift; y: 0 }
+        // Outer glow below (kit43 box-shadow 0 12px 40px): one static radial gradient; only the colour changes.
+        Shape {
+            width: 960
+            height: 136
+            transform: Scale { origin.x: 480; origin.y: 110; yScale: 110/600 }
+            ShapePath {
+                strokeColor: "transparent"
+                strokeWidth: -1
+                fillGradient: RadialGradient {
+                    centerX: 480; centerY: 110; centerRadius: 600; focalX: 480; focalY: 110
+                    GradientStop { position: 0; color: Qt.rgba(alertBox.col.r, alertBox.col.g, alertBox.col.b, alertBox.warn?0.26:0.18) }
+                    GradientStop { position: 1; color: Qt.rgba(alertBox.col.r, alertBox.col.g, alertBox.col.b, 0) }
+                }
+                startX: -120; startY: -490
+                PathLine { x: 1080; y: -490 }
+                PathLine { x: 1080; y: 710 }
+                PathLine { x: -120; y: 710 }
+                PathLine { x: -120; y: -490 }
+            }
+        }
+        // Warn pulse (kit43 pulse43): the panel shape in red grows 28 px and fades from 0.7 under the panel; no shader.
         Rectangle {
             id: alertPulse
             property real spread: 0
             x: -spread
-            y: -spread
+            y: -22
             width: parent.width+2*spread
-            height: parent.height+2*spread
-            radius: 18+spread
-            color: "transparent"
-            border.color: mLayoutId.cWarn
-            border.width: 3
+            height: 158+spread
+            radius: 22+spread
+            color: mLayoutId.cWarn
             opacity: 0
         }
+        // The panel rectangles start 22 px above the screen, so only the bottom corners round and the top border stays
+        // out of view. Bottom to top: the 3 px severity line (inset), the tinted fill 3 px shorter, and the 1.5 px border.
         Rectangle {
-            anchors.fill: parent
-            anchors.margins: -10
-            radius: 28
-            color: Qt.rgba(alertBox.col.r, alertBox.col.g, alertBox.col.b, 0.06)
+            y: -22
+            width: 960
+            height: 158
+            radius: 22
+            color: Qt.tint(alertBox.fillBottom, Qt.rgba(alertBox.col.r, alertBox.col.g, alertBox.col.b, alertBox.warn?0.95:0.9))
         }
         Rectangle {
-            anchors.fill: parent
-            radius: 18
-            color: Qt.rgba(alertBox.col.r, alertBox.col.g, alertBox.col.b, alertBox.warn?0.12:0.1)
-            border.color: alertBox.col
-            border.width: 2
+            y: -22
+            width: 960
+            height: 155
+            radius: 22
+            gradient: Gradient {
+                GradientStop { position: 22/155; color: alertBox.fillTop }
+                GradientStop { position: 1; color: alertBox.fillBottom }
+            }
         }
-        Loader {
-            property string sym: alertBox.a[1].indexOf("alarm:")===0?"":alertBox.a[1]
-            property color tint: alertBox.col
-            property bool flip: alertBox.a[4]===true
-            visible: alertBox.hasIcon && sym!==""
-            x: 30
-            y: (alertBox.height-40)/2
-            width: 40
-            height: 40
-            sourceComponent: mSymComp
+        Rectangle {
+            y: -22
+            width: 960
+            height: 158
+            radius: 22
+            color: "transparent"
+            border.width: 1.5
+            border.color: Qt.rgba(alertBox.col.r, alertBox.col.g, alertBox.col.b, alertBox.warn?0.7:0.6)
         }
-        Image {
-            visible: alertBox.a[1].indexOf("alarm:")===0
-            x: 30
-            y: (alertBox.height-40)/2
-            width: 40
-            height: 40
-            fillMode: Image.PreserveAspectFit
-            source: visible?mLayoutId.g.mRccPrefix+"images/alarm/"+alertBox.a[1].slice(6)+".png":""
-        }
-        Text {
-            id: alertTitle
-            x: 30+alertBox.iconW
-            y: (alertBox.height-height)/2
-            width: Math.min(implicitWidth, 678-alertBox.iconW)
-            verticalAlignment: Text.AlignVCenter
-            wrapMode: Text.WordWrap
-            maximumLineCount: 2
-            elide: Text.ElideRight
-            text: alertBox.a[2]
+        // Badge: a 64 px severity disc with the dark symbol at 38 px; an adapter message shows the info mark.
+        Rectangle {
+            objectName: "alert.badge"
+            x: 36
+            y: 46
+            width: 64
+            height: 64
+            radius: 32
             color: alertBox.col
-            font.family: mLayoutId.fBmw
-            font.pixelSize: alertBox.hasIcon?30:26
-            font.weight: Font.DemiBold
+            Loader {
+                property string sym: alertBox.a[1]!==""?alertBox.a[1]:"info"
+                property color tint: "#0b0d10"
+                property bool flip: alertBox.a[4]===true
+                x: 13
+                y: 13
+                width: 38
+                height: 38
+                sourceComponent: mSymComp
+            }
         }
-        Text {
-            id: alertSub
-            visible: alertBox.hasSub
-            x: alertTitle.x+alertTitle.width+22
-            anchors.baseline: alertTitle.lineCount>1?undefined:alertTitle.baseline
-            y: alertTitle.lineCount>1?(alertBox.height-height)/2:0
-            height: 26.4
-            verticalAlignment: Text.AlignVCenter
-            text: alertBox.a[3]
-            color: mLayoutId.cText
-            font.family: mLayoutId.fBmw
-            font.pixelSize: 22
+        // Text column, centered on the content block (never above y 40): kicker, title, and detail.
+        Item {
+            readonly property real h: 18+alertTitle.height+(alertBox.hasSub?26:0)
+            x: 122
+            y: Math.max(40, 40+(76-h)/2)
+            width: okChip.x-22-x
+            height: h
+            Text {
+                objectName: "alert.kicker"
+                width: parent.width
+                height: 16
+                verticalAlignment: Text.AlignVCenter
+                text: alertBox.msg?"VEHICLE MESSAGE":alertBox.warn?"WARNING":"CAUTION"
+                color: alertBox.col
+                font.family: mLayoutId.fBmw
+                font.pixelSize: 14
+                font.weight: Font.DemiBold
+                font.letterSpacing: 4
+            }
+            Text {
+                id: alertTitle
+                objectName: "alert.title"
+                y: 18
+                width: parent.width
+                wrapMode: Text.WordWrap
+                maximumLineCount: 2
+                elide: Text.ElideRight
+                lineHeightMode: Text.FixedHeight
+                lineHeight: alertBox.msg?30:32
+                text: alertBox.a[2]
+                color: "#ffffff"
+                font.family: mLayoutId.fBmw
+                font.pixelSize: alertBox.msg?26:30
+                font.weight: Font.DemiBold
+            }
+            Text {
+                objectName: "alert.detail"
+                visible: alertBox.hasSub
+                y: alertTitle.y+alertTitle.height+2
+                width: parent.width
+                height: 24
+                verticalAlignment: Text.AlignVCenter
+                elide: Text.ElideRight
+                text: alertBox.a[3]
+                color: "#d7dde4"
+                font.family: mLayoutId.fBmw
+                font.pixelSize: 22
+            }
         }
-        // OK key chip: the menu footer "OK" key label (20 px DemiBold) on an outline chip in the severity color.
+        // OK chip: the menu footer "OK" key label (20 px DemiBold) on a pill with the severity border.
         Rectangle {
             id: okChip
             objectName: "alert.ok"
-            x: alertBox.width-2-16-width
-            y: (alertBox.height-height)/2
-            width: okText.width+28
-            height: 34
-            radius: 17
-            color: Qt.rgba(alertBox.col.r, alertBox.col.g, alertBox.col.b, 0.1)
-            border.color: Qt.rgba(alertBox.col.r, alertBox.col.g, alertBox.col.b, 0.45)
-            border.width: 2
+            x: alertBox.width-36-width
+            y: 78-height/2
+            width: okText.width+35
+            height: 36
+            radius: 18
+            color: Qt.rgba(0, 0, 0, 0.25)
+            border.color: alertBox.col
+            border.width: 1.5
             Text {
                 id: okText
-                x: 14
-                height: 34
+                x: 17.5
+                height: 36
                 verticalAlignment: Text.AlignVCenter
                 text: "OK"
-                color: Qt.rgba(alertBox.col.r, alertBox.col.g, alertBox.col.b, 0.85)
+                color: alertBox.col
                 font.family: mLayoutId.fBmw
                 font.pixelSize: 20
                 font.weight: Font.DemiBold
-                font.letterSpacing: 1
             }
         }
-        transform: Translate { id: alertShift; y: 0 }
     }
-    ParallelAnimation {
+    SequentialAnimation {
         id: mAlertInId
         PropertyAction { target: alertBox; property: "visible"; value: true }
-        NumberAnimation { target: alertBox; property: "opacity"; from: 0; to: 1; duration: mFast; easing.type: Easing.OutCubic }
-        NumberAnimation { target: alertShift; property: "y"; from: -12; to: 0; duration: mFast; easing.type: Easing.OutCubic }
+        NumberAnimation { target: alertShift; property: "y"; from: -136; to: 0; duration: mSlow; easing.type: Easing.OutCubic }
     }
     SequentialAnimation {
         id: mAlertOutId
-        ParallelAnimation {
-            NumberAnimation { target: alertBox; property: "opacity"; to: 0; duration: mBase; easing.type: Easing.InCubic }
-            NumberAnimation { target: alertShift; property: "y"; to: -8; duration: mBase; easing.type: Easing.InCubic }
-        }
+        NumberAnimation { target: alertShift; property: "y"; to: -136; duration: mBase; easing.type: Easing.InCubic }
         PropertyAction { target: alertBox; property: "visible"; value: false }
         ScriptAction { script: mLayoutId.alertOutDone() }
     }
-    // Warn pulse (round 4): one ring that grows 28 px and fades over 1.4 s.
-    ParallelAnimation {
+    // Warn pulse on arrival (round 43): after the slide, the red spread grows 28 px and fades over 1.4 s.
+    SequentialAnimation {
         id: mPulseId
-        NumberAnimation { target: alertPulse; property: "spread"; from: 0; to: 28; duration: 1400; easing.type: Easing.OutCubic }
-        NumberAnimation { target: alertPulse; property: "opacity"; from: 0.7; to: 0; duration: 1400; easing.type: Easing.OutCubic }
+        PropertyAction { target: alertPulse; property: "opacity"; value: 0 }
+        PauseAnimation { duration: mSlow }
+        ParallelAnimation {
+            NumberAnimation { target: alertPulse; property: "spread"; from: 0; to: 28; duration: 1400; easing.type: Easing.OutCubic }
+            NumberAnimation { target: alertPulse; property: "opacity"; from: 0.7; to: 0; duration: 1400; easing.type: Easing.OutCubic }
+        }
     }
 
     // ===== View: turn edges and bezel =====
