@@ -154,7 +154,8 @@ ItemInfo {
             if(mHeldKey===code)
                 return 1
             mHeldKey=code
-            if(code===g.swcBack)
+            // The truck wheel has no Back key, so a Left hold also closes the menu.
+            if(code===g.swcBack || code===g.swcLeft)
                 closeMenu()
             else if(code===g.swcModes)
                 hosted?forward(g.swcEnter, 0):release(g.swcEnter)
@@ -902,7 +903,7 @@ ItemInfo {
                 return [["▲ ▼", "Change"], ["OK", "Save"], ["◀", "Cancel"]]
             if(mArmedRow>=0)
                 return [["OK", "Reset"], ["◀", "Cancel"]]
-            return [["▲ ▼", "Select"], ["OK", "Open or change"], ["◀", "Back"], ["Hold BACK", "Close menu"]]
+            return [["▲ ▼", "Select"], ["OK", "Open or change"], ["◀", "Back"], ["Hold ◀", "Close menu"]]
         }
 
         // The panel covers the vendor menu art behind this page.

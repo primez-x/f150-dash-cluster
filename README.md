@@ -91,7 +91,7 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - Boot candidates remove automatic formatting after mount failure and stop later init scripts after critical mount failures.
 - Private-data migration restores the original directory after a failed mount. If rollback fails, the data remains in `/private-move`.
 - A failed copy preserves the migration backup. Independent review approved the boot candidates for a local commit.
-- The settings menu, including Factory and General settings, passes 249 host Qt checks.
+- The settings menu, including Factory and General settings, passes 251 host Qt checks.
 - Eight additional Qt checks execute the patched MenuPage cache. The checks verify that MenuPage loads `/etc/vnM.qml` and passes the keys.
 - Native Qt fixture previews cover eight settings menu states, including the layout segments, Factory, and General settings, and the screen grid. Real vehicle rendering remains unverified.
 - The dashboard shell is the owned source file `/etc/vnD.qml`. The candidate changes the one main.qml record that both Ford trucks read (`qrc:/Trucks/Dashboard.qml`). vnD started as a function-by-function copy of the compiled shell (cache 023).

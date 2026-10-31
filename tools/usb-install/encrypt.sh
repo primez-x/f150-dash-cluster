@@ -30,7 +30,7 @@ etc_sha256() {
         vnD.qml) echo 53a1070a5e35ec0af8af1d5698e67a024f5cd4f4af136570382432889587b99c ;;
         vnG.qml) echo 2db5953fe0ddda609fab05f25fdda2449a71b7f63fde2a03e63024155bb9cb84 ;;
         vnL.qml) echo 21f8317dec0db254af949fb71e5e28bac530cb651e1620a8bc18771c6b5d1419 ;;
-        vnM.qml) echo a4e24bb2b5b54bba6c59d0190f87fe066de2db26a58b010d6f18aaaf330ce8bf ;;
+        vnM.qml) echo b7d449482ee2d7d952060ededcfbcc544e23f155855eb1bf556625eb43840af4 ;;
         vnN.qml) echo 976b5fb15f96b1a2c894ac8d23a993fd03890c8d58bdec952560990e48274595 ;;
         vnS.qml) echo 4d285e170e0de495842a247faf83c2d62834ceea8c1e25be7c56de45ee8bfa45 ;;
         vnV.qml) echo 0cf0ff8d8122a7e2f296098bfc012a85d3d168edb895079adde0747d0ec4c01a ;;
