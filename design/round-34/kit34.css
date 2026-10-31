@@ -1,0 +1,10 @@
+/* Round 34: rpm and boost numbers by the bottom-left bands. Loads after round-33/kit33.css. */
+.num34 { display: flex; color: #e9edf1; }
+.num34.a { flex-direction: column; gap: 4px; }
+.num34.b { gap: 36px; }
+.n34 { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+.n34 b { font: 400 40px/1 "BMW Type Global"; font-variant-numeric: tabular-nums; }
+.n34 i { font: 18px "BMW Type Global"; font-style: normal; color: #8a929c; }
+.n34.vac b { color: #8a929c; }
+.n34.hot b { color: var(--hot); }
+.n34.nodata b { color: #5d6670; }
