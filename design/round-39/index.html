@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 39</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 39 · Towing A · Speed gauge design</h1>
+<p>Your direction: the bottom gauge is a speed gauge now, so the gauge needs a design of its own. Round 38 kept the coarse fuel segments.
+Every shot passes the margin check (<code>capture.js</code>: 16 shots).</p>
+<ul>
+  <li>Both options follow the column cover from x 660 to x 1260, 0 mph left, 100 mph right, and read like a speedometer:
+      numbers at 0, 20, 40, 60, 80, and 100 along the cover, ticks above the numbers.</li>
+  <li>The cruise arrow sits on top of the gauge and points down at the set speed; the set-speed number shows above the arrow (round 32 timing).</li>
+  <li><b>A · continuous bar:</b> one bar; the fill brightens from the left to the current speed. Ticks every 5 mph hang from the bar toward the numbers; ticks up to the current speed light grey.</li>
+  <li><b>B · tick comb:</b> a fine tick every 2 mph, taller every 10 mph. Ticks up to the current speed light in the accent colour, brighter toward the current speed; the tick at the current speed glows.</li>
+  <li>The trailer brake shows round 38 option C (the trailer page of the right card only); that pick stays open.</li>
+</ul>
+<p>Recommendation: <b>A</b>. The bar reads as one shape at a glance, the set-speed arrow sits on a clear edge, and the bar matches the
+round 19 to 37 speed bar. B echoes the segmented corner bands, but 51 fine ticks add texture under the large digits.</p>
+<h2>A and B</h2>
+<div class="grid">
+  <div><h3>A · cruise off</h3><a href="tow-a.html?gauge=a&"><img src="shots/tow-a-a-off.png" alt=""></a></div>
+  <div><h3>B · cruise off</h3><a href="tow-a.html?gauge=b&"><img src="shots/tow-a-b-off.png" alt=""></a></div>
+  <div><h3>A · cruise set</h3><a href="tow-a.html?gauge=a&scene=cruise"><img src="shots/tow-a-a-set.png" alt=""></a></div>
+  <div><h3>B · cruise set</h3><a href="tow-a.html?gauge=b&scene=cruise"><img src="shots/tow-a-b-set.png" alt=""></a></div>
+  <div><h3>A · set speed changes</h3><a href="tow-a.html?gauge=a&scene=cruiseadj"><img src="shots/tow-a-a-adjust.png" alt=""></a></div>
+  <div><h3>B · set speed changes</h3><a href="tow-a.html?gauge=b&scene=cruiseadj"><img src="shots/tow-a-b-adjust.png" alt=""></a></div>
+  <div><h3>A · cruise on after a cancel</h3><a href="tow-a.html?gauge=a&scene=cruiseon"><img src="shots/tow-a-a-resume.png" alt=""></a></div>
+  <div><h3>B · cruise on after a cancel</h3><a href="tow-a.html?gauge=b&scene=cruiseon"><img src="shots/tow-a-b-resume.png" alt=""></a></div>
+  <div><h3>A · crawl</h3><a href="tow-a.html?gauge=a&scene=crawl"><img src="shots/tow-a-a-crawl.png" alt=""></a></div>
+  <div><h3>B · crawl</h3><a href="tow-a.html?gauge=b&scene=crawl"><img src="shots/tow-a-b-crawl.png" alt=""></a></div>
+  <div><h3>A · reversing</h3><a href="tow-a.html?gauge=a&scene=backing"><img src="shots/tow-a-a-backing.png" alt=""></a></div>
+  <div><h3>B · reversing</h3><a href="tow-a.html?gauge=b&scene=backing"><img src="shots/tow-a-b-backing.png" alt=""></a></div>
+  <div><h3>A · trailer braking (card shows the output)</h3><a href="tow-a.html?gauge=a&scene=braking"><img src="shots/tow-a-a-braking.png" alt=""></a></div>
+  <div><h3>B · trailer braking (card shows the output)</h3><a href="tow-a.html?gauge=b&scene=braking"><img src="shots/tow-a-b-braking.png" alt=""></a></div>
+  <div><h3>A · 104 mph, past the end of the scale</h3><a href="tow-a.html?gauge=a&scene=fast"><img src="shots/tow-a-a-fast.png" alt=""></a></div>
+  <div><h3>B · 104 mph, past the end of the scale</h3><a href="tow-a.html?gauge=b&scene=fast"><img src="shots/tow-a-b-fast.png" alt=""></a></div>
+</div>
+</body>
+</html>

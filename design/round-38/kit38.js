@@ -27,8 +27,8 @@ const railPts = d => {
 const MPH_RAIL = { n: FUEL_C.n * 2, len: FUEL_C.len, w: FUEL_C.w, pts: railPts(FUEL_C.d) };
 // Option A brake line: a 6 px line 14 px above the speed segments, the same width as the rail.
 const BRK_LINE = { w: 6, pts: railPts(FUEL_C.d + FUEL_C.len + 14) };
-// Distances from the rail base along the outward normal: ticks, then the cruise arrow tip.
-const TICK0 = MPH_RAIL.len + (BRK === "a" ? 26 : 8), ARROW0 = TICK0 + 14 + 6;
+// Distances from the rail base along the outward normal: ticks, then the cruise arrow tip (SET_AT.r from SET_AT.pts).
+const TICK0 = MPH_RAIL.len + (BRK === "a" ? 26 : 8), SET_AT = { pts: MPH_RAIL.pts, r: TICK0 + 14 + 6 };
 
 // Point and outward normal at fraction f of a rail scale; the ends extrapolate to the outer edge of the end segments.
 function railAt(pts, f) {
@@ -38,11 +38,11 @@ function railAt(pts, f) {
 }
 const at = (p, r) => [p.x + p.nx * r, p.y + p.ny * r];
 const railArrow = v => {
-  const p = railAt(MPH_RAIL.pts, Math.min(1, v / SPEED_MAX)), [tx, ty] = at(p, ARROW0), [bx, by] = at(p, ARROW0 + 15);
+  const p = railAt(SET_AT.pts, Math.min(1, v / SPEED_MAX)), [tx, ty] = at(p, SET_AT.r), [bx, by] = at(p, SET_AT.r + 15);
   return `M${tx.toFixed(1)} ${ty.toFixed(1)} L${(bx - p.ny * 9).toFixed(1)} ${(by + p.nx * 9).toFixed(1)} L${(bx + p.ny * 9).toFixed(1)} ${(by - p.nx * 9).toFixed(1)} Z`;
 };
 // Top-centre of the set-speed number (28 px type), 8 px above the arrow base.
-const setNumAt = v => { const [x, y] = at(railAt(MPH_RAIL.pts, Math.min(1, v / SPEED_MAX)), ARROW0 + 23); return [x, y - 28]; };
+const setNumAt = v => { const [x, y] = at(railAt(SET_AT.pts, Math.min(1, v / SPEED_MAX)), SET_AT.r + 23); return [x, y - 28]; };
 
 function brakeLine(s) {
   const on = !!s.braking;
@@ -84,6 +84,11 @@ function speedRail(s) {
   layer(g);
   if (BRK === "a") brakeLine(s);
   if (BRK === "b") brakeFill(s);
+  railCruise(s);
+}
+
+// Cruise arrow over the rail at the set speed, and the set-speed number above the arrow (SET_AT sets the distance).
+function railCruise(s) {
   const m = cruiseMark(s) || (s.cruise === "available" && s.cruiseSet ? [s.cruiseSet, "var(--caution)"] : null);
   if (!m) return;
   layer(`<path id="cset-arrow" data-field="cruiseSpeed getCruiseLimSpeed() · colour from cruiseSpeedSet (SET)" d="${railArrow(m[0])}" fill="${m[1]}" stroke="#05070a" stroke-width="3" paint-order="stroke"/>`);
