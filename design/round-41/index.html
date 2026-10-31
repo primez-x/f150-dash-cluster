@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 41</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+  .strip { display: flex; gap: 8px; margin: 6px 0 22px; } .strip img { width: auto; max-width: 19%; }
+  table { border-collapse: collapse; margin-top: 10px; } td, th { border: 1px solid #222a33; padding: 6px 12px; text-align: left; color: #9aa4af; } th { color: #d7dde4; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 41 · Motion system</h1>
+<p>Your direction: modern transitions and transform animations throughout, for a clean, smooth UI.
+Open <a href="tow-motion.html">tow-motion.html</a> for a 28 s live drive on the locked Towing A (round 40):
+cruise set and adjust, a page change, a trailer brake event with the cruise cancel, a climb, a head temperature alert, a drive mode change, and a crawl turn.
+<code>?t=&lt;ms&gt;</code> holds one frame; <code>?pg=b</code> shows card page change B.
+Every frame on this page passes the margin check (<code>capture.js</code>: 60 frames).</p>
+<h2>Tokens</h2>
+<p>One source: <code>kit41.css</code>. The mock reads the tokens; the QML column is the device equivalent.
+The cluster runs Qt 5.14 on <code>eglfs</code> with the Mali GPU (<code>/etc/qtenv.sh</code>), so transform, opacity, and colour animate on the GPU.</p>
+<table>
+<tr><th>Token</th><th>Value</th><th>QML</th><th>Use</th></tr>
+<tr><td>--m-fast</td><td>120 ms</td><td>duration: 120</td><td>Alert in, small exits, colour changes</td></tr>
+<tr><td>--m-base</td><td>200 ms</td><td>duration: 200</td><td>Moves: focus, cruise arrow, chips, switches, segment pill</td></tr>
+<tr><td>--m-slow</td><td>280 ms</td><td>duration: 280</td><td>Page and column enter, background glow</td></tr>
+<tr><td>--m-smooth</td><td>120 ms time constant</td><td>Behavior { SmoothedAnimation { velocity: -1; duration: 240 } }</td><td>Continuous readings: speed bar, rpm and boost bands, steering arc, cruise arrow, brake meter</td></tr>
+<tr><td>--m-slide</td><td>56 px</td><td>x offset</td><td>Largest slide distance</td></tr>
+<tr><td>--ease-out</td><td>cubic-bezier(.33, 1, .68, 1)</td><td>Easing.OutCubic</td><td>Every enter and move</td></tr>
+<tr><td>--ease-in</td><td>cubic-bezier(.32, 0, .67, 0)</td><td>Easing.InCubic</td><td>Every exit</td></tr>
+</table>
+<ul>
+  <li>Animate transform (translate, scale, rotate), opacity, and colour only. Layout (width, height, anchors) never animates: the brake meter fill scales from the left edge.</li>
+  <li>Enter with ease-out, exit with ease-in. An exit is shorter than the matching enter, except for a warning: the warning enters within 120 ms and leaves over 200 ms.</li>
+  <li>A warning never waits for an animation. Telltales and the turn signal flash keep the existing timing.</li>
+  <li>Numbers snap to each new sample (speed digits, rpm, boost, set speed, brake output). The gauge that shows the same value moves smoothly between samples (10 Hz on the mock).</li>
+  <li>The vendor QML smoothed the speed value itself (a commented-out <code>Behavior on vehicleSpeed</code>), which also delayed the digits. The spec smooths only the gauge position.</li>
+</ul>
+<h2>Card page change: A or B</h2>
+<p>A slides the old page out and the new page in, in the page order (56 px, 120 ms out, 280 ms in). B crossfades (120 ms out, 200 ms in).
+Recommendation: <b>A</b>. The direction tells the driver which way the page moved, and a jump on a trailer brake or a climb reads as a page change, not a flicker.</p>
+<h2>Frames</h2>
+<h3>Card page change A · slide (driver pages right, trailer to tires) <small>(0, 60, 120, 200, 320 ms)</small></h3>
+<a class="strip" href="tow-motion.html?pg=a&t=1200"><img src="shots/m41-page-a-0.png" alt=""><img src="shots/m41-page-a-1.png" alt=""><img src="shots/m41-page-a-2.png" alt=""><img src="shots/m41-page-a-3.png" alt=""><img src="shots/m41-page-a-4.png" alt=""></a>
+<h3>Card page change B · crossfade <small>(0, 60, 120, 200, 320 ms)</small></h3>
+<a class="strip" href="tow-motion.html?pg=b&t=1200"><img src="shots/m41-page-b-0.png" alt=""><img src="shots/m41-page-b-1.png" alt=""><img src="shots/m41-page-b-2.png" alt=""><img src="shots/m41-page-b-3.png" alt=""><img src="shots/m41-page-b-4.png" alt=""></a>
+<h3>Trailer brake: the card jumps to the trailer page (A); the meter fill scales from the left <small>(0, 60, 120, 200, 320 ms)</small></h3>
+<a class="strip" href="tow-motion.html?pg=a&t=6000"><img src="shots/m41-brake-jump-0.png" alt=""><img src="shots/m41-brake-jump-1.png" alt=""><img src="shots/m41-brake-jump-2.png" alt=""><img src="shots/m41-brake-jump-3.png" alt=""><img src="shots/m41-brake-jump-4.png" alt=""></a>
+<h3>Set speed up: the arrow slides, the number fades in 6 px from below; the second press updates the number in place <small>(0, 40, 80, 120, 500 ms)</small></h3>
+<a class="strip" href="tow-motion.html?pg=a&t=3000"><img src="shots/m41-set-0.png" alt=""><img src="shots/m41-set-1.png" alt=""><img src="shots/m41-set-2.png" alt=""><img src="shots/m41-set-3.png" alt=""><img src="shots/m41-set-4.png" alt=""></a>
+<h3>Set-speed number: holds 3 s, fades over 0.6 s <small>(3.0, 3.15, 3.3, 3.45, 3.6 s)</small></h3>
+<a class="strip" href="tow-motion.html?pg=a&t=6500"><img src="shots/m41-set-fade-0.png" alt=""><img src="shots/m41-set-fade-1.png" alt=""><img src="shots/m41-set-fade-2.png" alt=""><img src="shots/m41-set-fade-3.png" alt=""><img src="shots/m41-set-fade-4.png" alt=""></a>
+<h3>Cruise cancel: red for 1 s, then into the amber resume colours (round 32) <small>(0, 0.5, 1.0, 1.4, 1.8 s)</small></h3>
+<a class="strip" href="tow-motion.html?pg=a&t=6000"><img src="shots/m41-cancel-0.png" alt=""><img src="shots/m41-cancel-1.png" alt=""><img src="shots/m41-cancel-2.png" alt=""><img src="shots/m41-cancel-3.png" alt=""><img src="shots/m41-cancel-4.png" alt=""></a>
+<h3>Alert banner in: full opacity within 120 ms <small>(0, 30, 60, 90, 120 ms)</small></h3>
+<a class="strip" href="tow-motion.html?pg=a&t=13000"><img src="shots/m41-alert-in-0.png" alt=""><img src="shots/m41-alert-in-1.png" alt=""><img src="shots/m41-alert-in-2.png" alt=""><img src="shots/m41-alert-in-3.png" alt=""><img src="shots/m41-alert-in-4.png" alt=""></a>
+<h3>Alert banner out: 200 ms <small>(0, 50, 100, 150, 200 ms)</small></h3>
+<a class="strip" href="tow-motion.html?pg=a&t=17000"><img src="shots/m41-alert-out-0.png" alt=""><img src="shots/m41-alert-out-1.png" alt=""><img src="shots/m41-alert-out-2.png" alt=""><img src="shots/m41-alert-out-3.png" alt=""><img src="shots/m41-alert-out-4.png" alt=""></a>
+<h3>Drive chip change (2H to 4H): scale and fade <small>(0, 50, 100, 150, 200 ms)</small></h3>
+<a class="strip" href="tow-motion.html?pg=a&t=18000"><img src="shots/m41-drive-0.png" alt=""><img src="shots/m41-drive-1.png" alt=""><img src="shots/m41-drive-2.png" alt=""><img src="shots/m41-drive-3.png" alt=""><img src="shots/m41-drive-4.png" alt=""></a>
+<h3>Boost and rpm stack out at crawl speed <small>(0, 30, 60, 90, 120 ms)</small></h3>
+<a class="strip" href="tow-motion.html?pg=a&t=22000"><img src="shots/m41-stack-out-0.png" alt=""><img src="shots/m41-stack-out-1.png" alt=""><img src="shots/m41-stack-out-2.png" alt=""><img src="shots/m41-stack-out-3.png" alt=""><img src="shots/m41-stack-out-4.png" alt=""></a>
+<h3>Boost and rpm stack back in <small>(0, 50, 100, 150, 200 ms)</small></h3>
+<a class="strip" href="tow-motion.html?pg=a&t=24100"><img src="shots/m41-stack-in-0.png" alt=""><img src="shots/m41-stack-in-1.png" alt=""><img src="shots/m41-stack-in-2.png" alt=""><img src="shots/m41-stack-in-3.png" alt=""><img src="shots/m41-stack-in-4.png" alt=""></a>
+<h3>Steering arc follows the wheel <small>(0, 0.5, 1.0, 1.5, 2.0 s)</small></h3>
+<a class="strip" href="tow-motion.html?pg=a&t=19000"><img src="shots/m41-steer-0.png" alt=""><img src="shots/m41-steer-1.png" alt=""><img src="shots/m41-steer-2.png" alt=""><img src="shots/m41-steer-3.png" alt=""><img src="shots/m41-steer-4.png" alt=""></a>
+<h2>Full frames (page change A)</h2>
+<div class="grid">
+  <div><h3>1.3 s · page slide</h3><a href="tow-motion.html?t=1300"><img src="shots/m41-full-1300.png" alt=""></a></div>
+  <div><h3>6.1 s · trailer brake jump, cruise cancel</h3><a href="tow-motion.html?t=6100"><img src="shots/m41-full-6100.png" alt=""></a></div>
+  <div><h3>13.3 s · alert and background glow</h3><a href="tow-motion.html?t=13300"><img src="shots/m41-full-13300.png" alt=""></a></div>
+</div>
+</body>
+</html>

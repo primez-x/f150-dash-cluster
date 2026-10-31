@@ -1,0 +1,21 @@
+/* Round 41: the motion system. Loads after round-38/kit38.css. kit41.js reads these tokens, so the mock and the spec share one source.
+   Each token names the QML equivalent for the device (Qt 5.14, eglfs on the Mali GPU: transform, opacity, and colour animate on the GPU).
+   Rules:
+   - Animate transform (translate, scale, rotate), opacity, and colour only. Never animate layout (width, height, anchors, margins).
+   - Enter with ease-out, exit with ease-in; an exit is shorter than the matching enter.
+   - Warnings, telltales, and the alert banner reach full opacity within --m-fast (120 ms). A warning never waits for an animation.
+   - Numbers snap to the new value (speed digits, rpm, set speed). Gauges that show the same value move smoothly.
+   - Continuous readings (speed bar, rpm and boost bands, steering arc, brake meter) follow each CAN sample with --m-smooth.
+   - The turn signal flash keeps the round 3 timing. */
+:root {
+  --m-fast: 120ms;    /* QML: duration: 120. Alert in, small exits, colour changes. */
+  --m-base: 200ms;    /* QML: duration: 200. Moves: focus, cruise arrow, chips, switches, segment pill. */
+  --m-slow: 280ms;    /* QML: duration: 280. Page and column enter. */
+  --m-smooth: 120ms;  /* Time constant for continuous readings. QML: Behavior { SmoothedAnimation { velocity: -1; duration: 240 } }. */
+  --m-slide: 56px;    /* Largest slide distance. */
+  --ease-out: cubic-bezier(.33, 1, .68, 1);    /* QML: Easing.OutCubic */
+  --ease-in: cubic-bezier(.32, 0, .67, 0);     /* QML: Easing.InCubic */
+  --ease-inout: cubic-bezier(.65, 0, .35, 1);  /* QML: Easing.InOutCubic */
+}
+/* The motion page clock, bottom left of the stage: not part of the cluster. */
+#m41-clock { position: fixed; left: 12px; bottom: 8px; font: 14px system-ui, sans-serif; color: #6b7480; }
