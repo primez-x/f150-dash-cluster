@@ -1650,7 +1650,7 @@ Window {
             property string mTripA: "TRIP A"
             property string mTripB: "TRIP B"
             property string mFontType: "BMW Type Global"
-            property string mNotifyTextItem: ""
+            property string mNotifyTextItem: "TRACTION CONTROL OFF"
         }
     }
     // The native event handler of main.qml: the stub records each reset with the time since the last press and counts
@@ -1670,7 +1670,9 @@ Window {
     // The probe queues these calls: a load from Python would hold the GIL that the type loader thread needs.
     function open(url) { pageUrl = url }
     function reset() {
-        g.dashboard=0; g.vehicleModel=1; g.splashEnd=1; g.menuBarIndex=0; g.doorInfo=0; g.notifyTop=0; g.notifyText=0
+        g.dashboard=0; g.vehicleModel=1; g.splashEnd=1; g.menuBarIndex=0; g.doorInfo=0; g.notifyText=0
+        // As in Global: a notification, a dialog, or a shell command shows notifyTop. A case may set notifyTop directly.
+        g.notifyTop=Qt.binding(function() { return g.notifyDuration>0 || g.dialogDuration>0 || !!g.shellCmdShow?1:0 })
         g.notifyDuration=0; g.shellInfoDuration=0; g.mcuUpdateTop=0; g.mainTentShow=0; g.tpmsInfoEnabled=1; g.tripType=1
         g.drivingInfoIndex=0; g.leftInfoIndex=0; g.rightInfoIndex=0; g.swcKey=0; g.swcState=0; g.swcChanged=0
         g.turnLeftLight=0; g.turnRightLight=0; g.calls=[]; g.holds=[]
@@ -1748,7 +1750,8 @@ Window {
                               layoutLoads: g.layoutLoads, overspeed: mEventHandleId.item.overspeedInquiries,
                               layout: item?(item.objectName || "vnL"):"", layoutTow: item && item.tow!==undefined?item.tow:null,
                               layoutPages: item && item.pages!==undefined?item.pages:null,
-                              layoutHold: item && item.tripHold!==undefined?item.tripHold:null})
+                              layoutHold: item && item.tripHold!==undefined?item.tripHold:null,
+                              banner: item && item.bannerShown!==undefined?item.bannerShown:null})
     }
     // Single wheel events across the Global states that change the routes. Each event starts from fixed Global values.
     // SwcEvent acts only on a state change, so a key 0 event in state 9 first moves SwcEvent off the next state.
@@ -1872,6 +1875,12 @@ Item {
     function flashTrip() { tripFlash() }
 }
 """
+# The layout stand-in with the banner API: bannerShown while notifyDuration>0, and acknowledge() ends the notification.
+LAYOUT_BANNER_STAND_IN = LAYOUT_STAND_IN.replace('objectName: "vnL-stand-in"', 'objectName: "vnL-banner"').replace(
+    "    signal tripFlash()\n",
+    "    signal tripFlash()\n"
+    "    readonly property bool bannerShown: mGlobalId.item.notifyDuration>0\n"
+    "    function acknowledge() { mGlobalId.item.note([\"acknowledge\"]); mGlobalId.item.notifyDuration=0 }\n")
 # A layout without the optional members (no tow, pages, tripHold, or flashTrip).
 LAYOUT_BARE = """import QtQuick 2.12
 Item {
@@ -2155,6 +2164,9 @@ def dashboard_keys(fixture, result, engine, callbacks, intercepted, denied, ui_u
     # F10 A layout change or a missing layout item during a hold resets Trip A later; a layout without the optional
     #     members logs a warning or blocks the menu; any key logs a QML warning.
     # F11 The notifyDuration timeout does not end a notification.
+    # F12 With an alert banner shown (layout bannerShown), a short OK opens the menu or does not acknowledge once, an OK
+    #     hold starts or keeps a Trip A hold, the release after a hold acknowledges, or Left and Right stop paging; a
+    #     banner that shows during a hold does not end the hold; a banner gone at a short release blocks the menu.
     harness = shell_harness(fixture, result, engine, ui_units, real_layout)
     window, verify, call, settle = harness["window"], harness["verify"], harness["call"], harness["settle"]
     harness["open_shell"]("owned", "file:///etc/vnD.qml")
@@ -2192,10 +2204,10 @@ def dashboard_keys(fixture, result, engine, callbacks, intercepted, denied, ui_u
                 call("set", step[1], step[2], wait=step[3])
             elif step[0] == "layout":
                 call("layoutActive", step[1], wait=step[2])
-            elif step[0] == "bare":
-                # Swap the layout file for one without the optional members and load the layout again. The Loader keeps
-                # the layout component while the URL stays, so the URLs clear first; then the engine reads the file again.
-                layout_file.write_text(LAYOUT_BARE)
+            elif step[0] == "layout-file":
+                # Swap the layout file and load the layout again. The Loader keeps the layout component while the URL
+                # stays, so the URLs clear first; then the engine reads the file again.
+                layout_file.write_text(step[1])
                 call("layoutUrls", True, wait=50)
                 engine.clearComponentCache()
                 call("layoutUrls", False, wait=300)
@@ -2290,11 +2302,6 @@ def dashboard_keys(fixture, result, engine, callbacks, intercepted, denied, ui_u
          lambda s: [entry[1:] for entry in calls(s["end"], "menu")] == [[LEFT, 1], [LEFT, 0], [RIGHT, 1], [RIGHT, 0],
                                                                          [ENTER, 1], [ENTER, 0], [ENTER, 1], [ENTER, 0]]
          and len(s["end"]["calls"]) == 8 and quiet(s["end"], 1) and s["end"]["drivingInfoIndex"] == 0),
-        ("notification shown: Right to the trip page, then a 1300 ms OK hold", "F8",
-         "the dashboard key map acts: 4 -> 0, one resetTrip(0), one flashTrip",
-         dict(dashboard=0, drivingInfoIndex=4, notifyTop=1, notifyText=1409, notifyDuration=100000),
-         press(RIGHT, 60) + [("sample", "a")] + press(ENTER, 1300),
-         lambda s: s["a"]["drivingInfoIndex"] == 0 and one_reset(s["end"]) and len(s["end"]["calls"]) == 2),
         ("door popup: Left", "F8", "press does nothing; the release closes the popup",
          dict(dashboard=0, drivingInfoIndex=0, doorInfo=1), [("key", LEFT, 1, 60), ("sample", "a"), ("key", LEFT, 0, 60)],
          lambda s: s["a"]["doorInfo"] == 1 and s["a"]["drivingInfoIndex"] == 0 and s["end"]["doorInfo"] == 0
@@ -2338,11 +2345,53 @@ def dashboard_keys(fixture, result, engine, callbacks, intercepted, denied, ui_u
          dict(dashboard=0, notifyTop=1, notifyText=1409), [("set", "notifyDuration", 300, 0), ("sample", "a"), ("wait", 500)],
          lambda s: s["a"]["notifyDuration"] == 300 and s["end"]["notifyDuration"] == 0),
     ]
+    banner = dict(dashboard=0, notifyText=1409, notifyDuration=100000)
+    if not real_layout:
+        # A layout without bannerShown keeps the key map while a notification shows (the stand-in has no banner API).
+        cases.append(("notification on a layout without bannerShown: Right to the trip page, then a 1300 ms OK hold",
+                      "F8 F12", "the dashboard key map acts: 4 -> 0, one resetTrip(0), one flashTrip",
+                      dict(banner, drivingInfoIndex=4), press(RIGHT, 60) + [("sample", "a")] + press(ENTER, 1300),
+                      lambda s: s["a"]["banner"] is None and s["a"]["drivingInfoIndex"] == 0 and one_reset(s["end"])
+                      and len(s["end"]["calls"]) == 2))
+    # Banner cases. The stand-in shows the banner while notifyDuration>0, and acknowledge() records the call and
+    # ends the notification. The real vnL shows the adapter banner while notifyTop with the Translation text, and
+    # acknowledge() ends the notification through the Global hide functions; the cases read bannerShown.
+    swap = [] if real_layout else [("layout-file", LAYOUT_BANNER_STAND_IN)]
+    def acks(sample):
+        return len(calls(sample, "acknowledge"))
+    def acknowledged(sample):
+        return sample["banner"] is False and (real_layout or acks(sample) == 1)
+    cases += [
+        ("banner: short OK (100 ms)", "F12", "one acknowledge; no menu, no reset",
+         dict(banner, drivingInfoIndex=1), swap + [("sample", "a")] + press(ENTER, 100),
+         lambda s: s["a"]["banner"] is True and acknowledged(s["end"]) and s["end"]["menuBarIndex"] == 0
+         and not calls(s["end"], "resetTrip") and not calls(s["end"], "menu")),
+        ("banner: OK held 1300 ms on the trip page, with hold states", "F12", "no reset, no flash, no menu, no acknowledge; tripHold stays 0",
+         dict(banner, drivingInfoIndex=0), swap + press(ENTER, 1300, (1, 2, 3, 0)),
+         lambda s: quiet(s["end"]) and s["end"]["banner"] is True and acks(s["end"]) == 0),
+        ("banner raised 600 ms into a trip hold", "F12", "the hold ends: no reset, no flash, no menu, no acknowledge",
+         dict(banner, drivingInfoIndex=0, notifyDuration=0), swap + [("key", ENTER, 1, 600), ("sample", "mid"),
+                                                                   ("set", "notifyDuration", 100000, 900), ("key", ENTER, 0, 60)],
+         lambda s: s["mid"]["banner"] is False and s["mid"]["tripHold"] > 0 and s["end"]["banner"] is True
+         and not calls(s["end"], "resetTrip") and not calls(s["end"], "flashTrip") and s["end"]["menuBarIndex"] == 0
+         and s["end"]["tripHold"] == 0 and s["end"]["layoutHold"] == 0 and acks(s["end"]) == 0),
+        ("banner ends (timeout) between a short OK press and the release", "F12", "the release opens the menu; no acknowledge",
+         dict(banner, drivingInfoIndex=1), swap + [("key", ENTER, 1, 80), ("set", "notifyDuration", 0, 40), ("key", ENTER, 0, 60)],
+         lambda s: s["end"]["menuBarIndex"] == 1 and acks(s["end"]) == 0 and not calls(s["end"], "menu")),
+        ("banner: Right, then Left", "F12", "4 -> 0 -> 4; the banner stays",
+         dict(banner, drivingInfoIndex=4), swap + press(RIGHT, 60) + [("sample", "a")] + press(LEFT, 60),
+         lambda s: s["a"]["drivingInfoIndex"] == 0 and s["end"]["drivingInfoIndex"] == 4 and s["end"]["banner"] is True
+         and acks(s["end"]) == 0 and s["end"]["menuBarIndex"] == 0),
+        ("banner: short OK, then a second short OK", "F12", "the first acknowledges; the second opens the menu",
+         dict(banner, drivingInfoIndex=1), swap + press(ENTER, 100) + [("sample", "a")] + press(ENTER, 100),
+         lambda s: acknowledged(s["a"]) and s["a"]["menuBarIndex"] == 0 and s["end"]["menuBarIndex"] == 1
+         and acks(s["end"]) == acks(s["a"])),
+    ]
     if not real_layout:
         # Last: the swap leaves the bare layout in the component cache.
         cases.append(("layout without tow, pages, tripHold, or flashTrip: Left, Right, a 1300 ms OK hold, then a short OK",
                       "F10", "no paging, no reset, no warning; the short OK opens the menu",
-                      dict(dashboard=0, drivingInfoIndex=0), [("bare",), ("sample", "a")] + press(LEFT, 60) + press(RIGHT, 60)
+                      dict(dashboard=0, drivingInfoIndex=0), [("layout-file", LAYOUT_BARE), ("sample", "a")] + press(LEFT, 60) + press(RIGHT, 60)
                       + press(ENTER, 1300) + [("sample", "b")] + press(ENTER, 100),
                       lambda s: s["a"]["layout"] == "vnL-bare" and s["a"]["layoutPages"] is None and s["b"]["drivingInfoIndex"] == 0
                       and s["b"]["menuBarIndex"] == 0 and not calls(s["end"], "resetTrip") and not calls(s["end"], "flashTrip")

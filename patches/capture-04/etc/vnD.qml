@@ -112,6 +112,9 @@ Item {
     // - Left and Right page the card on the press through the "pages" array of the layout.
     // - OK released within mOkShortMs opens the menu, as the compiled Left release does.
     // - OK held on the trip page fills tripHold from mOkShortMs to mOkResetMs, then resets Trip A.
+    // - While the layout shows an alert banner (bannerShown), OK goes to the banner first: a short OK release calls
+    //   acknowledge() in place of the menu, and an OK hold does nothing. A banner that shows during a Trip A hold ends
+    //   the hold. A banner that is gone at the release leaves the short OK to the menu.
     // - Up and Down do nothing. Back and Modes keep the compiled functions.
     // Presses do nothing while the door popup shows; the release closes the popup, as before.
     readonly property int mOkShortMs: 250
@@ -135,6 +138,11 @@ Item {
         var pages=layoutPages()
         return pages!==null && pages[pageIndex(pages)]==="trip"
     }
+    // True while the layout shows an alert banner. A layout without bannerShown shows none.
+    function bannerShown() {
+        var item=mDashboardId.item
+        return !!item && item.bannerShown===true
+    }
     // Left (step -1) and Right (step 1). Global stores drivingInfoIndex on each change.
     function key_card(step, state) {
         if(state!==1 || mGlobalId.item.doorInfo)
@@ -151,7 +159,7 @@ Item {
                 break
             mOkDown=true
             mOkShortTimerId.restart()
-            if(isTripPage()) {
+            if(isTripPage() && !bannerShown()) {
                 mOkHoldItem=mDashboardId.item
                 mTripHoldId.restart()
             }
@@ -159,20 +167,29 @@ Item {
         case 0:
             var open=mOkDown && mOkShortTimerId.running
             okCancel()
-            if(open)
+            if(!open)
+                break
+            var item=mDashboardId.item
+            if(bannerShown() && typeof item.acknowledge==="function")
+                item.acknowledge()
+            else
                 key_back(0)
             break
         }
     }
-    // Ends the tracked OK press: no menu and no reset for this press.
-    function okCancel() {
-        mOkDown=false
+    // Ends the Trip A hold of the tracked OK press. The press stays tracked, so a short release still reaches the banner.
+    function holdCancel() {
         mOkHoldItem=null
-        mOkShortTimerId.stop()
         if(mTripHoldId.running)
             mTripHoldId.stop()
         if(tripHold>0)
             mTripHoldDropId.restart()
+    }
+    // Ends the tracked OK press: no menu and no reset for this press.
+    function okCancel() {
+        mOkDown=false
+        mOkShortTimerId.stop()
+        holdCancel()
     }
     // The last step of mTripHoldId, at mOkResetMs. Menu > Vehicle > Reset > Reset TripA makes the same call (vnM runReset).
     function tripHoldDone() {
@@ -218,6 +235,15 @@ Item {
         value: mRootId.tripHold
         when: mTripHoldTarget!==null
         restoreMode: Binding.RestoreBindingOrValue
+    }
+    // A banner that shows during a Trip A hold ends the hold. A layout without bannerShown has no change signal.
+    Connections {
+        target: mDashboardId.item
+        ignoreUnknownSignals: true
+        onBannerShownChanged: {
+            if(bannerShown())
+                holdCancel()
+        }
     }
 
     // fn 10 (enabled) and fn 11 (onStateChanged). SwcEvent sets key and then state for each wheel event.
