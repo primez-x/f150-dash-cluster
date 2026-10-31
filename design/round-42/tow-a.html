@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 42 · Towing A · Locked</title>
+<link rel="stylesheet" href="../round-01/shared.css">
+<link rel="stylesheet" href="../round-02/kit.css">
+<link rel="stylesheet" href="../round-04/kit4.css">
+<link rel="stylesheet" href="../round-06/kit6.css">
+<link rel="stylesheet" href="../round-07/kit7.css">
+<link rel="stylesheet" href="../round-08/kit8.css">
+<link rel="stylesheet" href="../round-10/kit10.css">
+<link rel="stylesheet" href="../round-12/kit12.css">
+<link rel="stylesheet" href="../round-13/kit13.css">
+<link rel="stylesheet" href="../round-14/kit14.css">
+<link rel="stylesheet" href="../round-15/kit15.css">
+<link rel="stylesheet" href="../round-16/kit16.css">
+<link rel="stylesheet" href="../round-17/kit17.css">
+<link rel="stylesheet" href="../round-18/kit18.css">
+<link rel="stylesheet" href="../round-19/kit19.css">
+<link rel="stylesheet" href="../round-20/kit20.css">
+<link rel="stylesheet" href="../round-22/kit22.css">
+<link rel="stylesheet" href="../round-23/kit23.css">
+<link rel="stylesheet" href="../round-24/kit24.css">
+<link rel="stylesheet" href="../round-25/kit25.css">
+<link rel="stylesheet" href="../round-26/kit26.css">
+<link rel="stylesheet" href="../round-28/kit28.css">
+<link rel="stylesheet" href="../round-29/kit29.css">
+<link rel="stylesheet" href="../round-30/kit30.css">
+<link rel="stylesheet" href="../round-31/kit31.css">
+<link rel="stylesheet" href="../round-32/kit32.css">
+<link rel="stylesheet" href="../round-33/kit33.css">
+<link rel="stylesheet" href="../round-34/kit34.css">
+<link rel="stylesheet" href="../round-35/kit35.css">
+<link rel="stylesheet" href="../round-36/kit36.css">
+<link rel="stylesheet" href="../round-37/kit37.css">
+<link rel="stylesheet" href="../round-38/kit38.css">
+<link rel="stylesheet" href="../round-41/kit41.css">
+<link rel="stylesheet" href="kit42.css">
+<style>
+  .gblk { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+  .state { font: 600 var(--small) "BMW Type Global"; letter-spacing: 4px; color: var(--accent); }
+  .tp { column-gap: 40px; }
+</style>
+</head>
+<body class="tow grow">
+<div id="stage"><div id="canvas"></div></div>
+<script src="../round-01/shared.js"></script>
+<!-- Round 25 fixes the side: the clock stack left, the warning lights right (round 23 side B). -->
+<script>params.set("side", "b");</script>
+<script src="../round-02/kit.js"></script>
+<script src="../round-04/kit4.js"></script>
+<script src="../round-06/kit6.js"></script>
+<script src="../round-07/kit7.js"></script>
+<script src="../round-08/kit8.js"></script>
+<script src="../round-10/kit10.js"></script>
+<script src="../round-12/kit12.js"></script>
+<script src="../round-13/kit13.js"></script>
+<script src="../round-14/kit14.js"></script>
+<script src="../round-15/kit15.js"></script>
+<script src="../round-16/kit16.js"></script>
+<script src="../round-17/kit17.js"></script>
+<script src="../round-18/kit18.js"></script>
+<script src="../round-19/kit19.js"></script>
+<script src="../round-20/kit20.js"></script>
+<script src="../round-22/kit22.js"></script>
+<script src="../round-23/kit23.js"></script>
+<script src="../round-24/kit24.js"></script>
+<script src="../round-25/kit25.js"></script>
+<script src="../round-26/kit26.js"></script>
+<script src="../round-27/kit27.js"></script>
+<script src="../round-28/kit28.js"></script>
+<script src="../round-30/kit30.js"></script>
+<script src="../round-31/kit31.js"></script>
+<script src="../round-32/kit32.js"></script>
+<script src="../round-33/kit33.js"></script>
+<script src="../round-34/kit34.js"></script>
+<script src="../round-35/kit35.js"></script>
+<script src="../round-37/kit37.js"></script>
+<script>params.set("brake", "c");</script>
+<script src="../round-38/kit38.js"></script>
+<script src="../round-39/kit39.js"></script>
+<script src="../round-40/kit40.js"></script>
+<script src="kit42.js"></script>
+<script>
+// Towing A, locked: rounds 25 to 41, with boost and rpm on at all speeds (kit42.js).
+draw42(state("tow"));
+</script>
+</body>
+</html>

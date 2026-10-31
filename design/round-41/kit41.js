@@ -16,13 +16,8 @@
 // - Set-speed number: in over --m-fast from 6 px below, holds 3 s, fades over 0.6 s (round 32 timing).
 // - Cruise cancel: the round 32 red hold and fade, on the loop clock.
 // - Drive chip change: scale 0.85 to 1 with a fade, --m-base.
-// User direction (2026-10-30): the boost and rpm stack stays on at all speeds. The round 34 crawl hide no longer applies.
+// User direction (2026-10-30): the boost and rpm stack stays on at all speeds (round-42/kit42.js, loaded before this kit).
 const PG = params.get("pg") === "b" ? "b" : "a";
-const finish40 = finish;
-finish = function (s) {
-  finish40(s);
-  if (crawl(s)) place(stack34(s));
-};
 const TOK = (() => {
   const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue(n).trim();
   return { fast: parseFloat(v("--m-fast")), base: parseFloat(v("--m-base")), slow: parseFloat(v("--m-slow")), smooth: parseFloat(v("--m-smooth")),

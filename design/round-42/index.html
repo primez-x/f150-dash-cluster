@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F150 cluster · Design round 42</title>
+<style>
+  body { margin: 0; padding: 32px 40px 60px; background: #0b0d10; color: #d7dde4; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 40px 0 6px; border-top: 1px solid #222a33; padding-top: 24px; }
+  h3 { margin: 0 0 8px; font-size: 15px; color: #fff; }
+  p, li { color: #9aa4af; max-width: 1100px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 14px; }
+  img { width: 100%; display: block; border: 1px solid #222a33; border-radius: 6px; }
+  a { color: #7fbfff; }
+  .strip { display: flex; gap: 8px; margin: 6px 0 22px; } .strip img { width: auto; max-width: 19%; }
+  table { border-collapse: collapse; margin-top: 10px; } td, th { border: 1px solid #222a33; padding: 6px 12px; text-align: left; color: #9aa4af; } th { color: #d7dde4; }
+</style>
+</head>
+<body>
+<h1>F150 cluster · Design round 42 · The final layout set</h1>
+<p>Your direction: lock the card page slide, then finalize the remaining layouts. Round 41 page change A (slide) is locked.
+Daily A and Daily B stopped at round 24, so this round brings both onto the locked Towing A system. Each layout gets one pick.
+Every shot passes the margin check (<code>capture.js</code>: 30 shots).</p>
+<h2>Carried to every layout (no pick)</h2>
+<ul>
+  <li>Top bar (round 25 side): the clock stack left with the odometer, the compass at top center, the warning lights right.</li>
+  <li>Steering arc above the digits (round 37), MPH under the digits with both cruise cues (rounds 32 and 37 A).</li>
+  <li>Bottom-right corner: the fuel band, the gear and drive mode on the y 690 row, the range on the y 734 row (rounds 38 and 40).</li>
+  <li>Bottom-left corner: boost and rpm, on at all speeds (2026-10-30), except where an option moves rpm into a main gauge.</li>
+  <li>Paged card with the slide (round 41 A) and the round 41 motion tokens.</li>
+  <li>Daily content: no TOW label, trailer page, or trailer brake. Card pages: trip, economy, tires, engine, level.</li>
+</ul>
+<h2>Daily A · pick A or B</h2>
+<p>A · Crescents: the speed crescent left and the rpm crescent right (round 24) take the card places. The paged card takes the bottom center in place of the speed bar.
+Coolant and oil read beside the crescents; the other temperatures raise an alert when hot. Instant economy takes the bottom-left corner, because rpm is on the right crescent.
+Both top stacks move in to x 400, clear of the crescent labels. In reverse the large R takes the card place.<br>
+B · The Towing A frame with daily content: the temperature card, the paged card, the speed bar, and boost and rpm in the bottom-left corner.<br>
+Recommendation: <b>A</b>. Daily A then looks and reads different from Towing A, so the layout choice in the menu means something.</p>
+<div class="grid">
+  <div><h3>A · highway</h3><a href="daily-a.html?opt=a"><img src="shots/daily-a-a-normal.png" alt=""></a></div>
+  <div><h3>B · highway</h3><a href="daily-a.html?opt=b"><img src="shots/daily-ab-b-normal.png" alt=""></a></div>
+  <div><h3>A · cruise set</h3><a href="daily-a.html?opt=a&scene=cruise"><img src="shots/daily-a-a-cruise.png" alt=""></a></div>
+  <div><h3>B · cruise set</h3><a href="daily-a.html?opt=b&scene=cruise"><img src="shots/daily-ab-b-cruise.png" alt=""></a></div>
+  <div><h3>A · six warning lights and cruise set</h3><a href="daily-a.html?opt=a&scene=busycruise"><img src="shots/daily-a-a-busycruise.png" alt=""></a></div>
+  <div><h3>B · six warning lights and cruise set</h3><a href="daily-a.html?opt=b&scene=busycruise"><img src="shots/daily-ab-b-busycruise.png" alt=""></a></div>
+  <div><h3>A · economy page</h3><a href="daily-a.html?opt=a&page=1"><img src="shots/daily-a-a-economy.png" alt=""></a></div>
+  <div><h3>B · economy page</h3><a href="daily-a.html?opt=b&page=1"><img src="shots/daily-ab-b-economy.png" alt=""></a></div>
+  <div><h3>A · transmission hot</h3><a href="daily-a.html?opt=a&scene=hottrans"><img src="shots/daily-a-a-hottrans.png" alt=""></a></div>
+  <div><h3>B · transmission hot</h3><a href="daily-a.html?opt=b&scene=hottrans"><img src="shots/daily-ab-b-hottrans.png" alt=""></a></div>
+  <div><h3>A · low fuel</h3><a href="daily-a.html?opt=a&scene=lowfuel"><img src="shots/daily-a-a-lowfuel.png" alt=""></a></div>
+  <div><h3>B · low fuel</h3><a href="daily-a.html?opt=b&scene=lowfuel"><img src="shots/daily-ab-b-lowfuel.png" alt=""></a></div>
+  <div><h3>A · crawl, wheel turned</h3><a href="daily-a.html?opt=a&scene=crawl"><img src="shots/daily-a-a-crawl.png" alt=""></a></div>
+  <div><h3>B · crawl, wheel turned</h3><a href="daily-a.html?opt=b&scene=crawl"><img src="shots/daily-ab-b-crawl.png" alt=""></a></div>
+  <div><h3>A · reversing</h3><a href="daily-a.html?opt=a&scene=backing"><img src="shots/daily-a-a-backing.png" alt=""></a></div>
+  <div><h3>B · reversing</h3><a href="daily-a.html?opt=b&scene=backing"><img src="shots/daily-ab-b-backing.png" alt=""></a></div>
+  <div><h3>A · no data</h3><a href="daily-a.html?opt=a&scene=stale"><img src="shots/daily-a-a-stale.png" alt=""></a></div>
+  <div><h3>B · no data</h3><a href="daily-a.html?opt=b&scene=stale"><img src="shots/daily-ab-b-stale.png" alt=""></a></div>
+</div>
+
+<h2>Daily B · pick A or B</h2>
+<p>A · rpm halo: the round 24 rpm ring around the digits, in place of the steering arc. The cards and the speed bar stay. Instant economy takes the bottom-left corner; boost stays on the engine page.<br>
+B · The Towing A frame with daily content: the same page as Daily A option B.<br>
+Recommendation: <b>B</b>. Daily B then matches Towing A without the trailer content, so a trip with and without the trailer reads the same.
+Daily A option A keeps a distinct second look. If you pick B on both layouts, Daily A and Daily B become one page.</p>
+<div class="grid">
+  <div><h3>A · highway</h3><a href="daily-b.html?opt=a"><img src="shots/daily-b-a-normal.png" alt=""></a></div>
+  <div><h3>B · highway</h3><a href="daily-b.html?opt=b"><img src="shots/daily-ab-b-normal.png" alt=""></a></div>
+  <div><h3>A · cruise set</h3><a href="daily-b.html?opt=a&scene=cruise"><img src="shots/daily-b-a-cruise.png" alt=""></a></div>
+  <div><h3>B · cruise set</h3><a href="daily-b.html?opt=b&scene=cruise"><img src="shots/daily-ab-b-cruise.png" alt=""></a></div>
+  <div><h3>A · six warning lights and cruise set</h3><a href="daily-b.html?opt=a&scene=busycruise"><img src="shots/daily-b-a-busycruise.png" alt=""></a></div>
+  <div><h3>B · six warning lights and cruise set</h3><a href="daily-b.html?opt=b&scene=busycruise"><img src="shots/daily-ab-b-busycruise.png" alt=""></a></div>
+  <div><h3>A · economy page</h3><a href="daily-b.html?opt=a&page=1"><img src="shots/daily-b-a-economy.png" alt=""></a></div>
+  <div><h3>B · economy page</h3><a href="daily-b.html?opt=b&page=1"><img src="shots/daily-ab-b-economy.png" alt=""></a></div>
+  <div><h3>A · transmission hot</h3><a href="daily-b.html?opt=a&scene=hottrans"><img src="shots/daily-b-a-hottrans.png" alt=""></a></div>
+  <div><h3>B · transmission hot</h3><a href="daily-b.html?opt=b&scene=hottrans"><img src="shots/daily-ab-b-hottrans.png" alt=""></a></div>
+  <div><h3>A · low fuel</h3><a href="daily-b.html?opt=a&scene=lowfuel"><img src="shots/daily-b-a-lowfuel.png" alt=""></a></div>
+  <div><h3>B · low fuel</h3><a href="daily-b.html?opt=b&scene=lowfuel"><img src="shots/daily-ab-b-lowfuel.png" alt=""></a></div>
+  <div><h3>A · crawl, wheel turned</h3><a href="daily-b.html?opt=a&scene=crawl"><img src="shots/daily-b-a-crawl.png" alt=""></a></div>
+  <div><h3>B · crawl, wheel turned</h3><a href="daily-b.html?opt=b&scene=crawl"><img src="shots/daily-ab-b-crawl.png" alt=""></a></div>
+  <div><h3>A · reversing</h3><a href="daily-b.html?opt=a&scene=backing"><img src="shots/daily-b-a-backing.png" alt=""></a></div>
+  <div><h3>B · reversing</h3><a href="daily-b.html?opt=b&scene=backing"><img src="shots/daily-ab-b-backing.png" alt=""></a></div>
+  <div><h3>A · no data</h3><a href="daily-b.html?opt=a&scene=stale"><img src="shots/daily-b-a-stale.png" alt=""></a></div>
+  <div><h3>B · no data</h3><a href="daily-b.html?opt=b&scene=stale"><img src="shots/daily-ab-b-stale.png" alt=""></a></div>
+</div>
+
+<h2>Towing A · locked</h2>
+<p>The round 40 page, with boost and rpm on at all speeds. <code>tow-a.html</code> is now the static Towing A; <code>../round-41/tow-motion.html</code> plays the motion.</p>
+<div class="grid">
+  <div><h3>highway</h3><a href="tow-a.html"><img src="shots/tow-a-normal.png" alt=""></a></div>
+  <div><h3>crawl, wheel turned: boost and rpm on</h3><a href="tow-a.html?scene=crawl"><img src="shots/tow-a-crawl.png" alt=""></a></div>
+  <div><h3>reversing</h3><a href="tow-a.html?scene=backing"><img src="shots/tow-a-backing.png" alt=""></a></div>
+</div>
+</body>
+</html>

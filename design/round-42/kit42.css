@@ -1,0 +1,3 @@
+/* Round 42: the final layout set (kit42.js). Loads after round-41/kit41.css. */
+/* Daily A option A: coolant and oil beside the crescents (round 24 placement). */
+.tread { top: 560px; display: flex; align-items: center; gap: 12px; }
