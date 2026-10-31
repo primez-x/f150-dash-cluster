@@ -11,6 +11,8 @@
 //   the bottom center in place of the speed bar. B: the Towing A frame with daily content.
 // - Daily B, ?opt=a|b. A: the rpm halo (round 24) rings the digits in place of the steering arc; the Towing A cards and speed
 //   bar stay. B: the Towing A frame with daily content (the same page as Daily A option B).
+// Picks (2026-10-31): Daily A option A is locked; Daily B is dropped (both options are the Towing A frame). The final set is
+// Towing A and Daily A. The other options stay here as the round record.
 // - Option A on both layouts moves rpm out of the bottom-left corner, so instant economy takes that corner (round 9); boost
 //   stays on the engine page.
 const OPT = params.get("opt") === "b" ? "b" : "a";
