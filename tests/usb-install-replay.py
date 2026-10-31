@@ -50,7 +50,7 @@ SOUND_SET = ROOT / "design/round-43/sounds/a"
 STOCK_SOUND = ROOT / "installed/capture-04/rootfs/etc/sound"
 
 RETIRED = ["vnB.qml", "vnF.qml"]
-APPLETS = ["awk", "cat", "chmod", "cp", "date", "grep", "head", "mkdir", "mv", "rm", "sha256sum", "sync", "tar", "wc"]
+APPLETS = ["awk", "cat", "chmod", "cp", "date", "grep", "head", "mkdir", "rm", "sha256sum", "sync", "tar", "wc"]
 MARKERS = {"install": ("VIKNAV-UI-INSTALL.txt", "VIKNAV_UI_INSTALL"),
            "rollback": ("VIKNAV-UI-ROLLBACK.txt", "VIKNAV_UI_ROLLBACK_CAPTURE04"),
            "log": ("VIKNAV-UI-LOG.txt", "VIKNAV_UI_LOG"),
@@ -75,6 +75,10 @@ FAILURE_MODES = [
     "A rollback leaves set A sounds, or reports success after a failed sound restore",
     "A repeated install or rollback skips a needed sound change",
     "Log collection omits the /etc/sound hashes",
+    "A rollback renames a stock file before every stock file is on disk, or changes the cluster when a copy fails",
+    "A power cut during a settings restore leaves the cluster with no settings or the wrong settings",
+    "A failed rollback step leaves the dashboard stopped",
+    "A rollback reports success when the restarted Launcher fails the start check",
 ]
 
 sha = lambda data: hashlib.sha256(data).hexdigest()
@@ -98,6 +102,8 @@ printf 'start cwd=%s fd1=%s\n' "$(pwd)" "$(readlink /proc/$$/fd/1)" >> "$T/calls
 h=$(sha256sum "$R/usr/bin/Launcher"); h=${h%% *}
 mode=healthy
 [ "$h" = "__CANDIDATE__" ] && mode=$(cat "$T/candidate-mode")
+# original-mode sets the start of any other Launcher; without the file, that Launcher is healthy.
+[ "$h" != "__CANDIDATE__" ] && [ -f "$T/original-mode" ] && mode=$(cat "$T/original-mode")
 # The process runs before the process writes a log line. A process that dies leaves the flag off.
 [ "$mode" = dies ] || : > "$T/running"
 # locksound: the candidate does not start, and /etc/sound turns read-only, so the sound restore fails.
@@ -122,6 +128,15 @@ exit 0
 """
 STUB_SLEEP = "#!/bin/sh\nexec __BB__ sleep 0.02\n"
 STUB_FBINIT = "#!/bin/sh\nexit 0\n"
+STUB_MV = r"""#!/bin/sh
+# Test stub for mv: a move to a target that ends with the text in __T__/mv-fail fails. Other moves run.
+for a; do d=$a; done
+if [ -f __T__/mv-fail ]; then
+    s=$(cat __T__/mv-fail)
+    [ "${d%"$s"}" = "$d" ] || exit 1
+fi
+exec __BB__ mv "$@"
+"""
 STUB_DF = r"""#!/bin/sh
 # Test stub for df: the file __T__/df-<folder> sets the free space of that folder. Other folders report real values.
 for a; do d=$a; done
@@ -177,7 +192,7 @@ class Case:
             (fakebin / applet).symlink_to(BUSYBOX)
         # The recorder runs in a second shell. dash keeps the sleep stub in use (the BusyBox shell would run its own sleep).
         (fakebin / "sh").symlink_to("/bin/dash")
-        stubs = {"ps": STUB_PS, "killall": STUB_KILLALL, "sleep": STUB_SLEEP, "fbinit": STUB_FBINIT, "df": STUB_DF}
+        stubs = {"ps": STUB_PS, "killall": STUB_KILLALL, "sleep": STUB_SLEEP, "fbinit": STUB_FBINIT, "df": STUB_DF, "mv": STUB_MV}
         for name, text in stubs.items():
             self.stub(fakebin / name, text)
         self.stub(self.root / "etc/qtenv.sh", STUB_QTENV)
@@ -219,6 +234,29 @@ class Case:
 
     def status(self):
         return (self.out / "STATUS.txt").read_text().split("\n")[0] if self.out and (self.out / "STATUS.txt").exists() else None
+
+    def detail(self):
+        lines = (self.out / "STATUS.txt").read_text().split("\n") if self.out and (self.out / "STATUS.txt").exists() else []
+        return lines[1] if len(lines) > 2 else None
+
+    def running(self):
+        return (self.t / "running").exists()
+
+    def private(self):
+        """Every entry under /private, so a test sees leftover restore folders."""
+        return sorted(str(p.relative_to(self.root / "private")) for p in (self.root / "private").rglob("*"))
+
+    def cut_restore(self, current, old, new, complete):
+        """Leave /private as a power cut during a settings restore leaves the folder. None means absent."""
+        private = self.root / "private"
+        shutil.rmtree(private / "Launcher")
+        # The restore moves /private/Launcher to .Launcher.old and extracts the backup to .Launcher.restore/Launcher.
+        for folder, data in (("Launcher", current), (".Launcher.old", old), (".Launcher.restore/Launcher", new)):
+            if data is not None:
+                (private / folder).mkdir(parents=True)
+                (private / folder / "settings.db").write_bytes(data)
+        if complete:
+            (private / ".Launcher.restore/.complete").write_text("")
 
     def calls(self):
         path = self.t / "calls"
@@ -726,6 +764,82 @@ def main():
             return [c.status(), c.state() == before, c.starts()]
         check("rollback-damaged-sound-payload-refused", 15, ["ABORTED payload original/sound/ding.wav", True, 1],
               rollback_bad_sound_payload)
+
+        def rollback_copy_fails():
+            c = install(new())
+            c.unmark()
+            c.marker("rollback")
+            # A folder in the place of one staged sound makes the copy of that one sound fail.
+            blocker = c.root / "etc/sound/.ding.wav.new"
+            blocker.mkdir()
+            before, calls = c.state(), len(c.calls())
+            c.run()
+            blocker.chmod(0o755)
+            return [c.status(), c.state() == before, c.running(), c.calls()[calls:], c.leftovers()]
+        check("rollback-copy-failure-changes-nothing", 18, ["ROLLBACK_FAILED", True, True, [], ["etc/sound/.ding.wav.new"]],
+              rollback_copy_fails)
+
+        # Power cut states of a settings restore: (current, .Launcher.old, .Launcher.restore, .complete) -> settings after.
+        candidate_settings = b"changed by candidate\n"
+        for name, cut, settings in (
+                ("between-moves", (None, candidate_settings, SETTINGS, True), SETTINGS),
+                ("before-moves", (candidate_settings, None, SETTINGS, True), SETTINGS),
+                ("in-copy-old-moved", (None, b"settings kept\n", b"part", False), b"settings kept\n"),
+                ("in-copy", (SETTINGS, None, b"part", False), SETTINGS)):
+            def cut_restore(cut=cut):
+                c = install(new())
+                c.unmark()
+                c.marker("rollback")
+                c.run()
+                c.cut_restore(*cut)
+                c.run()
+                return [c.status(), c.settings().decode(), c.private(), c.running()]
+            check(f"rollback-after-settings-cut-{name}", 19, ["ALREADY_ORIGINAL", settings.decode(), ["Launcher", "Launcher/settings.db"], True],
+                  cut_restore)
+
+        def install_after_cut():
+            c = install(new())
+            c.unmark()
+            c.marker("rollback")
+            c.run()
+            c.cut_restore(None, candidate_settings, SETTINGS, True)
+            c.unmark()
+            install(c)
+            with tarfile.open(c.out / "private-Launcher.tar") as tar:
+                saved = tar.extractfile("Launcher/settings.db").read()
+            return [c.status(), saved == SETTINGS, c.private()]
+        check("install-after-settings-cut-restores-first", 19, ["INSTALLED", True, ["Launcher", "Launcher/settings.db"]], install_after_cut)
+
+        for target, detail, device in (
+                ("etc/sound/door.wav", "move /etc/sound/door.wav failed; original Launcher started", "mixed launcher=original etc=[] sound=mixed"),
+                ("usr/bin/Launcher", "move Launcher failed; current Launcher started", f"mixed launcher=candidate etc={ETC} sound=stock")):
+            def move_fails(target=target):
+                c = install(new())
+                c.unmark()
+                c.marker("rollback")
+                (c.t / "mv-fail").write_text(target)
+                c.run()
+                return [c.status(), c.detail(), c.running(), c.device(), c.leftovers()]
+            check(f"rollback-move-failure-restarts-{target.rsplit('/', 1)[1]}", 20, ["ROLLBACK_FAILED", detail, True, device, []], move_fails)
+
+        def rollback_start_fails():
+            c = install(new())
+            c.unmark()
+            c.marker("rollback")
+            (c.t / "original-mode").write_text("nomarker")
+            c.run()
+            return [c.status(), c.detail(), c.device()]
+        check("rollback-start-check-failure-reported", 21,
+              ["ROLLBACK_FAILED", "original Launcher start check failed: startup markers missing", "original"], rollback_start_fails)
+
+        def unhealthy_start_fails():
+            c = new()
+            (c.t / "original-mode").write_text("nomarker")
+            install(c, "nomarker")
+            return [c.status(), c.detail(), c.device()]
+        check("unhealthy-start-check-failure-reported", 21,
+              ["ROLLBACK_FAILED startup markers missing", "original Launcher start check failed: startup markers missing", "original"],
+              unhealthy_start_fails)
 
         def log_sounds():
             c = install(new())

@@ -30,9 +30,9 @@ ETC_FILES="vnD.qml vnG.qml vnL.qml vnM.qml vnN.qml vnS.qml vnV.qml"
 RETIRED_FILES="vnB.qml vnF.qml"
 etc_sha256() {
     case "$1" in
-        vnD.qml) echo edafa15cf5118423f1fe6e71a9bd54f525099dbbf3083a275e7d1fa1ba67806c ;;
+        vnD.qml) echo 78758c2c2ba1e07f366b08751fad5cd0795634a4f04e14c753ea446b603097be ;;
         vnG.qml) echo 2db5953fe0ddda609fab05f25fdda2449a71b7f63fde2a03e63024155bb9cb84 ;;
-        vnL.qml) echo b151901cadd37b7b1342a987ebf482db5692f40e05251311c8b38f299a258a80 ;;
+        vnL.qml) echo 591be06b20724b84b1a15de69dd744e159875a28b0b9fa1b69b50e03a7847659 ;;
         vnM.qml) echo b7d449482ee2d7d952060ededcfbcc544e23f155855eb1bf556625eb43840af4 ;;
         vnN.qml) echo 976b5fb15f96b1a2c894ac8d23a993fd03890c8d58bdec952560990e48274595 ;;
         vnS.qml) echo 4d285e170e0de495842a247faf83c2d62834ceea8c1e25be7c56de45ee8bfa45 ;;
@@ -46,11 +46,12 @@ etc_sha256() {
 # menu-v8: menu motion. The menu-v8 files are the current files. menu-v9 and menu-v10 did not ship.
 # menu-v11 adds vnD (the owned dashboard shell with the wheel key map), vnN (the fixed notification text), and a new Launcher.
 # menu-v12 adds vnL (the Daily A and Towing A layouts) and changes vnD, vnG, and vnM for the two layouts. The Launcher stays.
-# menu-v13 adds chime set A in /etc/sound and changes vnL (the round 43/44 alert panel, overspeed, and cruise). The Launcher stays.
+# menu-v13 adds chime set A in /etc/sound and changes vnL (the round 43/44 alert panel, overspeed, and cruise) and vnD (the Trip A hold
+# follows the shown card). The Launcher stays.
 etc_previous() {
     case "$1" in
         vnB.qml) echo cf4c014945f604b5a0da27d70ec0849a54fb57c972bd9ca55c3f0effd8504aee ;;
-        vnD.qml) echo 7cb87b4ba052d3b52934c2e8c57e61398c6bb638d8e64acace967b2b5d619c56 ;;
+        vnD.qml) echo 7cb87b4ba052d3b52934c2e8c57e61398c6bb638d8e64acace967b2b5d619c56 edafa15cf5118423f1fe6e71a9bd54f525099dbbf3083a275e7d1fa1ba67806c ;;
         vnF.qml) echo e3b79fe488506ec3d1c096f3b545df1c166a3e9928f773b1b6507a63e1eb1e12 ;;
         vnG.qml) echo ce54efec52bfda1778234c1939f29dae6c703d1aa3315856260e37543edaf33e 1f018311b704ef57c0ac2ba2c6dca7bf62ebd00e14a4a5394d0a71f075892e9b c300a6bf3999a7dd406c1b956ff64693b4b5a5f0e9ba45205e7a76c22b19f2b4 ;;
         vnL.qml) echo 826b4c2dc9c2e65471220741edf43e2d339b1e986d8cb2433dcfe2c30d031d7e ;;
@@ -297,50 +298,109 @@ check_launcher() {
     [ "$launcher" = "$ORIGINAL_SHA256" ] || [ "$launcher" = "$CANDIDATE_SHA256" ] || listed "$launcher" "$PREVIOUS_LAUNCHERS" ||
         abort "unknown Launcher"
 }
-# Restore /private/Launcher from a tar of the directory. The old directory stays until the new one is in place.
+SETTINGS_NEW=$R/private/.Launcher.restore
+SETTINGS_OLD=$R/private/.Launcher.old
+# Put the complete copy in .Launcher.restore in place of /private/Launcher. The old folder stays until the new one is in place.
+settings_swap() {
+    if [ -e "$R/private/Launcher" ]; then
+        mv "$R/private/Launcher" "$SETTINGS_OLD" || return 1
+    fi
+    if ! mv "$SETTINGS_NEW/Launcher" "$R/private/Launcher"; then
+        [ ! -e "$SETTINGS_OLD" ] || mv "$SETTINGS_OLD" "$R/private/Launcher"
+        return 1
+    fi
+    rm -rf "$SETTINGS_NEW" "$SETTINGS_OLD"
+}
+# Restore /private/Launcher from a tar of the directory. The .complete file marks a full copy on disk,
+# so recover_settings can finish a restore that a power cut stopped.
 restore_settings() {
     if [ ! -f "$1" ]; then
         log "no settings backup at $1"
         return 0
     fi
-    new=$R/private/.Launcher.restore
-    old=$R/private/.Launcher.old
-    rm -rf "$new" "$old"
-    mkdir "$new" && tar -xf "$1" -C "$new" 2>>"$out/install.log" && [ -d "$new/Launcher" ] || { rm -rf "$new"; return 1; }
-    if [ -e "$R/private/Launcher" ]; then
-        mv "$R/private/Launcher" "$old" || { rm -rf "$new"; return 1; }
-    fi
-    if ! mv "$new/Launcher" "$R/private/Launcher"; then
-        [ ! -e "$old" ] || mv "$old" "$R/private/Launcher"
-        rm -rf "$new"
+    rm -rf "$SETTINGS_NEW" "$SETTINGS_OLD"
+    if ! mkdir "$SETTINGS_NEW" || ! tar -xf "$1" -C "$SETTINGS_NEW" 2>>"$out/install.log" || [ ! -d "$SETTINGS_NEW/Launcher" ] ||
+        ! sync || ! : > "$SETTINGS_NEW/.complete" || ! sync || ! settings_swap; then
+        rm -rf "$SETTINGS_NEW"
         return 1
     fi
-    rm -rf "$new" "$old"
     log "settings restored from $1"
 }
-# Put back the original Launcher, remove the new /etc files, put back the stock sounds, restore the settings,
-# and start the original Launcher. Sets started to the start check result.
+# Finish or undo a settings restore that a power cut stopped. Runs first in an install and a rollback.
+# A complete copy goes in place. Without one, the folder from before the restore comes back. Then the leftovers go.
+recover_settings() {
+    [ -e "$SETTINGS_NEW" ] || [ -e "$SETTINGS_OLD" ] || return 0
+    if [ -f "$SETTINGS_NEW/.complete" ] && [ -d "$SETTINGS_NEW/Launcher" ]; then
+        # The Launcher must not hold the settings database during the swap.
+        launcher_stop
+        [ ! -e "$R/private/Launcher" ] || rm -rf "$SETTINGS_OLD"
+        settings_swap || abort "settings recovery"
+        log "settings: finished a restore that a power cut stopped"
+        launcher_start recovered
+        return 0
+    fi
+    if [ ! -e "$R/private/Launcher" ] && [ -d "$SETTINGS_OLD" ]; then
+        launcher_stop
+        mv "$SETTINGS_OLD" "$R/private/Launcher" || abort "settings recovery"
+        log "settings: put back the folder from before a restore that a power cut stopped"
+        launcher_start recovered
+    fi
+    [ -d "$R/private/Launcher" ] || abort "settings recovery"
+    rm -rf "$SETTINGS_NEW" "$SETTINGS_OLD"
+    log "settings: removed the leftovers of a stopped restore"
+}
+# Put back the original Launcher and the stock sounds, remove the new /etc files, restore the settings, and start the Launcher.
+# Every stock file stages first, while the dashboard still runs, so a failed copy changes nothing.
+# After the stop, each step runs where safe and a Launcher always starts again.
+# Sets started to the result detail. Returns 1 when a step or the start check fails.
 restore_original() {
-    launcher_stop
     remove_staged
-    stage "$P/original/Launcher" "$LAUNCHER" "$ORIGINAL_SHA256" 777 && mv -f "$R/usr/bin/.Launcher.new" "$LAUNCHER" || return 1
-    for f in $ETC_FILES $RETIRED_FILES; do
-        rm -f "$R/etc/$f" || return 1
-    done
+    copied=1
+    stage "$P/original/Launcher" "$LAUNCHER" "$ORIGINAL_SHA256" 777 || copied=0
     for f in $SOUND_FILES; do
-        stage "$P/original/sound/$f" "$R/etc/sound/$f" "$(sound_stock "$f")" "$(sound_mode "$f")" && mv -f "$R/etc/sound/.$f.new" "$R/etc/sound/$f" || return 1
+        [ "$copied" -eq 1 ] || break
+        stage "$P/original/sound/$f" "$R/etc/sound/$f" "$(sound_stock "$f")" "$(sound_mode "$f")" || copied=0
     done
-    restore_settings "$1" || return 1
+    if [ "$copied" -eq 0 ]; then
+        remove_staged
+        started="stock file copy failed; nothing changed"
+        if ! launcher_running; then
+            launcher_start current
+            started="$started; current Launcher started"
+        fi
+        log "$started"
+        return 1
+    fi
+    # The root filesystem mounts with noauto_da_alloc, so a rename does not flush the data first. Write the staged data now.
     sync
-    [ "$(hash_of "$LAUNCHER")" = "$ORIGINAL_SHA256" ] || return 1
+    launcher_stop
+    failed=
+    moved=1
+    mv -f "$R/usr/bin/.Launcher.new" "$LAUNCHER" || { failed="move Launcher"; moved=0; }
     for f in $SOUND_FILES; do
-        [ "$(hash_of "$R/etc/sound/$f")" = "$(sound_stock "$f")" ] || return 1
+        mv -f "$R/etc/sound/.$f.new" "$R/etc/sound/$f" || failed=${failed:-move /etc/sound/$f}
     done
-    launcher_start original
-    if health; then started="original Launcher started"; else started="original Launcher start check failed: $reason"; fi
-    cp "$LAUNCHER_LOG" "$out/Launcher-original.log" 2>/dev/null
+    # The original Launcher ignores the /etc files. Without the original Launcher, the /etc files and settings stay.
+    if [ "$moved" -eq 1 ]; then
+        for f in $ETC_FILES $RETIRED_FILES; do
+            rm -f "$R/etc/$f" || failed=${failed:-remove /etc/$f}
+        done
+        restore_settings "$1" || failed=${failed:-restore settings}
+    fi
+    remove_staged
+    sync
+    which=original
+    [ "$(hash_of "$LAUNCHER")" = "$ORIGINAL_SHA256" ] || { which=current; failed=${failed:-verify Launcher}; }
+    for f in $SOUND_FILES; do
+        [ "$(hash_of "$R/etc/sound/$f")" = "$(sound_stock "$f")" ] || failed=${failed:-verify /etc/sound/$f}
+    done
+    launcher_start "$which"
+    healthy=1
+    if health; then started="$which Launcher started"; else started="$which Launcher start check failed: $reason"; healthy=0; fi
+    cp "$LAUNCHER_LOG" "$out/Launcher-$which.log" 2>/dev/null
+    [ -z "$failed" ] || started="$failed failed; $started"
     log "$started"
-    return 0
+    [ -z "$failed" ] && [ "$healthy" -eq 1 ]
 }
 # Failure before the new files are in place: nothing changed. Start the original Launcher again.
 fail_restart() {
@@ -357,12 +417,13 @@ rollback_now() {
     if restore_original "$out/private-Launcher.tar"; then
         finish "ROLLED_BACK $1" "$started"
     else
-        finish "ROLLBACK_FAILED $1"
+        finish "ROLLBACK_FAILED $1" "$started"
     fi
     exit 0
 }
 
 do_install() {
+    recover_settings
     [ ! -e "$usb_root/INSTALL-BLOCKED.txt" ] || { finish BLOCKED "Remove INSTALL-BLOCKED.txt only after the cause is fixed."; exit 0; }
     payload_check original/Launcher "$ORIGINAL_SHA256"
     payload_check Launcher "$CANDIDATE_SHA256"
@@ -445,6 +506,7 @@ do_install() {
 }
 
 do_rollback() {
+    recover_settings
     payload_check original/Launcher "$ORIGINAL_SHA256"
     for f in $SOUND_FILES; do
         payload_check "original/sound/$f" "$(sound_stock "$f")"
@@ -459,7 +521,7 @@ do_rollback() {
     if restore_original "$P/settings-before-install.tar"; then
         finish "ROLLED_BACK by request" "$started"
     else
-        finish ROLLBACK_FAILED
+        finish ROLLBACK_FAILED "$started"
     fi
 }
 
