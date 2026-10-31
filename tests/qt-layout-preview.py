@@ -10,6 +10,7 @@ behaviour checks. Checks:
 - pixels: mean absolute difference on a 1/4 scale and the worst 64 x 64 tiles (report only);
 - behaviour: card pages 0 to 4 and an index outside the pages, the tripHold ring, flashTrip, the dashboard switch,
   the sentinels, the banner sources, the trailer gain notify, the overspeed badge, and the warning light blink.
+- showcase (report only, not a pass gate): open review items as showcase-<layout>-<item>.png; warnings still fail.
 Output: analysis/capture-04/qt-host/layout-preview/<layout>-<scene>.png and report.json there. Exit 1 on a failure.
 
 Run from Windows Git Bash:
@@ -633,6 +634,87 @@ def child(layout):
     swing = max(region_diff(frames[0], f, lamp_box) for f in frames)
     check("warning light: state 2 blinks (opacity reaches 0 and 1, and the lamp pixels change)",
           lamps and {0.0, 1.0} <= seen and swing > 0.1, [sorted(seen), round(swing, 3)])
+    # ----- Showcase captures (report only) -----
+    showcase = result["showcase"] = {}
+    trip_page = pages.index("trip")
+
+    def show(name, note):
+        path = OUT / ("showcase-%s-%s.png" % (layout, name))
+        capture(path)
+        showcase[path.name] = note
+
+    def poll(read, test, limit_ms=4000):
+        waited = 0
+        while not test(read()) and waited < limit_ms:
+            settle(5)
+            waited += 5
+        return test(read())
+
+    # 1. Card jumps: a low right-rear tire and a 5 % climb, each with the trip page selected.
+    apply("normal", {"drivingInfoIndex": trip_page, "tpmsRRState": 1})
+    show("tire-jump", "right-rear tire low with the trip page selected: card %s" % prop("cardShown"))
+    apply("normal", {"drivingInfoIndex": trip_page, "mPitch": 3})
+    show("climb-jump", "grade %s %% with the trip page selected: card %s" % (prop("grade"), prop("cardShown")))
+    # 2. Overspeed badge at full opacity: the blink writes opacity 1 at the end of the fade in, then pauses 100 ms.
+    apply("normal")
+    set_value("overSpeedWarningSpeed", 113)
+    set_value("overSpeedWarningEnabled", 1)
+    set_value("overSpeedWarningState", 1)
+    settle(50)
+    badge = [c for c, o in walk(window.contentItem()) if c.objectName() == "overspeed"]
+    body = badge[0].childItems()[0] if badge else None
+    full = bool(body) and poll(lambda: body.opacity(), lambda v: v < 0.01) and poll(lambda: body.opacity(), lambda v: v > 0.99)
+    show("overspeed", "overspeed badge active, 70 MPH threshold, captured at full opacity (%s)" % full)
+    set_value("overSpeedWarningState", 0)
+    set_value("overSpeedWarningEnabled", 0)
+    # 3. Cruise: set, ACC set (adaptive), and LIM (limiter).
+    apply("cruise")
+    show("cruise-set", "cruise set at 65 mph: green cue, no mode label")
+    apply("cruise", {"cruiseAccInterfaceState": 1})
+    show("cruise-acc", "adaptive cruise set at 65 mph: label %r" % prop("modeLabel"))
+    apply("cruise", {"cruiseState": 0, "cruiseSpeedSet": 0, "cruiseSetSpeedState": 0, "cruiseLimState": 1,
+                     "cruiseLimSpeed": round(65 / MPH)})
+    show("cruise-lim", "speed limiter at 65 mph, cruise off: label %r" % prop("modeLabel"))
+    # 4. Trip A hold ring at 0.3, 0.6, and 0.95.
+    apply("normal", {"drivingInfoIndex": trip_page})
+    for hold in (0.3, 0.6, 0.95):
+        item.setProperty("tripHold", hold)
+        settle(100)
+        show("triphold-%02d" % round(hold * 100), "Trip A hold ring at %s" % hold)
+    item.setProperty("tripHold", 0)
+    settle(100)
+    # 5. Trip A flash at the dimmest frame (opacity 0.25 at the end of the first fade out).
+    trip_values = [c for c, o in walk(window.contentItem()) if c.objectName() == "cell.value" and c.property("text") == prop("tripText")]
+    QtCore.QMetaObject.invokeMethod(item, "flashTrip", QtCore.Qt.DirectConnection)
+    dim = bool(trip_values) and poll(lambda: trip_values[0].opacity(), lambda v: v <= 0.27, 1000)
+    show("tripflash", "Trip A value at the dimmest flash frame (opacity %.2f, reached %s)"
+         % (trip_values[0].opacity() if trip_values else -1, dim))
+    settle(900)
+    # 6. Warning light overflow: the first 14 lamps of the layout order (alarm 31 skipped while the cue shows cruise).
+    apply("normal")
+    order = [i for i in prop("ttOrder") if i != 31]
+    for count in (14, 18, 24):
+        alarms = [0] * 300
+        for i in order[:count]:
+            alarms[int(i)] = 1
+        set_value("alarmTable", alarms)
+        set_value("alarmChanged", 1 - int(g.property("alarmChanged") or 0))
+        settle(300)
+        more = (prop("ttLayout") or {}).get("more", 0)
+        if more:
+            break
+    show("overflow", "%d warning lights on: %d rows and a +%d mark" % (count, 2 if layout == "tow-a" else 3, more))
+    if layout == "tow-a":
+        # Towing A: two rows at most, so no lamp and no "+N" mark crosses the trailer card top (y 262).
+        lit = [e for e in scene_items() if e["opacity"] > 0.01 and (e["name"].startswith("telltale.")
+               or (str(e.get("text") or "").startswith("+") and e["box"][1] < 262 + 60 and e["box"][0] > 1380))]
+        low = max((e["box"][1] + e["box"][3] for e in lit), default=0)
+        check("warning lights: Towing A with 14 lamps on ends above the card top (y 262)",
+              count == 14 and more > 0 and lit and low <= 262, [count, more, len(lit), low])
+    set_value("alarmTable", [0] * 300)
+    set_value("alarmChanged", 1 - int(g.property("alarmChanged") or 0))
+    settle(200)
+
     result["warnings"] = list(messages)
     check("zero QML warnings over the whole run", not messages, list(messages)[:20])
     check("every Global name in vnL exists in Global.qml", not missing, missing)
@@ -862,6 +944,8 @@ def parent(only):
             print("    " + w)
         for c in res["checks"]:
             print("  %s %s" % ("ok  " if c["passed"] else "FAIL", c["name"]) + ("" if c["passed"] else "  " + json.dumps(c["detail"])[:300]))
+        for name, note in res.get("showcase", {}).items():
+            print("  showcase %s: %s" % (name, note))
         for scene, v in res["scenes"].items():
             g = v["geometry"]
             print("  %-11s geometry %3d ok %2d off  pixels %.2f" % (scene, g["matched"], len(g["mismatches"]),

@@ -1069,7 +1069,8 @@ Item {
     }
 
     // Warning lights (alarmTable, AlarmIndicator unit 182 semantics): 0 hidden, 1 steady, 2 blink 300 ms, 3 blink 1400 ms.
-    // Rows of 46 px fill from the right edge in ttOrder; the third row ends with "+N" when more lights are on.
+    // Rows of 46 px on a 56 px pitch fill from the right edge in ttOrder; the last row ends with "+N" when more lights
+    // are on. Daily A has 3 rows; Towing A has 2, so the lights end above the trailer card (y 262).
     // Alarm 31 is the stock cruise glyph; the cruise cue under the digits shows cruiseState, so 31 shows only without cruise.
     readonly property var ttList: {
         var a=alarms, out=[]
@@ -1081,7 +1082,7 @@ Item {
         return out
     }
     readonly property var ttLayout: {
-        var right=tow?1770:1520, top=tow?114:140, maxW=300, gap=16, rowsMax=3
+        var right=tow?1770:1520, top=tow?114:140, maxW=300, gap=16, rowsMax=tow?2:3
         var rows=[[]], rw=[0], more=0
         for(var i=0; i<ttList.length; i++) {
             var w=ttWidth[ttList[i][0]] || 46, r=rows.length-1
