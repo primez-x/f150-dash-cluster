@@ -22,7 +22,7 @@
 Open <a href="tow-motion.html">tow-motion.html</a> for a 28 s live drive on the locked Towing A (round 40):
 cruise set and adjust, a page change, a trailer brake event with the cruise cancel, a climb, a head temperature alert, a drive mode change, and a crawl turn.
 <code>?t=&lt;ms&gt;</code> holds one frame; <code>?pg=b</code> shows card page change B.
-Every frame on this page passes the margin check (<code>capture.js</code>: 60 frames).</p>
+Every frame on this page passes the margin check (<code>capture.js</code>: 50 strip frames and 4 full frames).</p>
 <h2>Tokens</h2>
 <p>One source: <code>kit41.css</code>. The mock reads the tokens; the QML column is the device equivalent.
 The cluster runs Qt 5.14 on <code>eglfs</code> with the Mali GPU (<code>/etc/qtenv.sh</code>), so transform, opacity, and colour animate on the GPU.</p>
@@ -43,9 +43,9 @@ The cluster runs Qt 5.14 on <code>eglfs</code> with the Mali GPU (<code>/etc/qte
   <li>Numbers snap to each new sample (speed digits, rpm, boost, set speed, brake output). The gauge that shows the same value moves smoothly between samples (10 Hz on the mock).</li>
   <li>The vendor QML smoothed the speed value itself (a commented-out <code>Behavior on vehicleSpeed</code>), which also delayed the digits. The spec smooths only the gauge position.</li>
 </ul>
-<h2>Card page change: A or B</h2>
+<h2>Card page change: A locked (slide)</h2>
 <p>A slides the old page out and the new page in, in the page order (56 px, 120 ms out, 280 ms in). B crossfades (120 ms out, 200 ms in).
-Recommendation: <b>A</b>. The direction tells the driver which way the page moved, and a jump on a trailer brake or a climb reads as a page change, not a flicker.</p>
+Locked: <b>A</b> (2026-10-31). The direction tells the driver which way the page moved, and a jump on a trailer brake or a climb reads as a page change, not a flicker.</p>
 <h2>Frames</h2>
 <h3>Card page change A · slide (driver pages right, trailer to tires) <small>(0, 60, 120, 200, 320 ms)</small></h3>
 <a class="strip" href="tow-motion.html?pg=a&t=1200"><img src="shots/m41-page-a-0.png" alt=""><img src="shots/m41-page-a-1.png" alt=""><img src="shots/m41-page-a-2.png" alt=""><img src="shots/m41-page-a-3.png" alt=""><img src="shots/m41-page-a-4.png" alt=""></a>

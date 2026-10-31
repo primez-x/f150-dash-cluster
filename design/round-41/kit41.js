@@ -5,7 +5,7 @@
 // locked layout and draws every frame as a pure function of the loop time, so a capture can stop at any time:
 //   tow-motion.html        plays the loop live
 //   tow-motion.html?t=6140 holds the frame at 6.14 s
-//   tow-motion.html?pg=b   card page change B (crossfade) in place of A (slide)
+//   tow-motion.html?pg=b   card page change B (crossfade) in place of A (slide); A is locked (2026-10-31)
 // Data model: the truth of each continuous reading changes along straight segments; the cluster receives a sample every
 // 100 ms (TICK, the CAN rate on the mock). Numbers show the last sample. Gauges follow the samples with --m-smooth.
 // Motions:
