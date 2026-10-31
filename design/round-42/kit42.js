@@ -40,8 +40,10 @@ finish = function (s) {
   }
   if (CRESCENTS) {
     // The crescent scale labels fill the sides above y 230, so both top stacks move in to x 400 (round 24 Daily A).
-    document.querySelector(".stack23.left").style.left = "400px";
-    document.querySelector(".stack23.right").style.right = "400px";
+    // The cluster parent (Trucks/Dashboard.qml) draws the turn arrows over every layout: 68 x 52 at x 554 and x 1298, y 82.
+    // Both stacks start at y 140, below the arrows.
+    Object.assign(document.querySelector(".stack23.left").style, { left: "400px", top: "140px" });
+    Object.assign(document.querySelector(".stack23.right").style, { right: "400px", top: "140px" });
     // Reverse: the large R takes the bottom center under MPH, so the card steps aside (the speed bar place on Towing A).
     if (s.gear === "R") document.querySelector(".card.wide42").remove();
   }
