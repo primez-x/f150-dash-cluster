@@ -245,18 +245,6 @@ def child(phase, fixture, candidate_dir=None):
                 (fixture / alias).write_bytes(image)
                 files[alias] = None
         result["compiled_units"] = {url: hashlib.sha256(payload).hexdigest() for url, payload in ui_units.items()}
-    if phase == "settings-pages":
-        for name, index in (("FactorySeniorSetting",1),("FactoryOdoSetup",2),("FactoryTankSetup",3),
-                            ("FactoryVehicleModel",4),("FactoryShellCmd",6)):
-            back = 1 if index in (2,3,4) else 0
-            files["Trucks/menu/system/factory/"+name+".qml"] = ('import QtQuick 2.12\nItem { objectName: "vendor-page-'+str(index)+'"; '
-                'function key(code,state) { if(state===0 && (code===mGlobalId.item.swcBack || code===mGlobalId.item.swcLeft)) '
-                '{ mGlobalId.item.menuSettingsSubPageItemSetup='+str(back)+'; return 1 } return 0 } }')
-        # The compiled G-force page needs PitchInfo/RollInfo units outside the allowlist. The stub keeps the
-        # compiled Back contract (key_back release sets menuSettingsPageIndex=0) and records each forwarded key.
-        files["Trucks/menu/vehicle/MenuVehicleGForce.qml"] = ('import QtQuick 2.12\nItem { objectName: "gforce-stub"; property var keys: []; '
-            'function key(code,state) { keys=keys.concat([[code,state]]); if(state===0 && (code===mGlobalId.item.swcBack || code===mGlobalId.item.swcLeft)) '
-            '{ mGlobalId.item.menuSettingsPageIndex=0; return 1 } return 0 } }')
     for name, text in files.items():
         (fixture / name).parent.mkdir(parents=True, exist_ok=True)
         if text is None:
@@ -506,12 +494,6 @@ def settings_pages(fixture, result, app, engine, callbacks, intercepted, denied,
                           ready=component.status() == QtQml.QQmlComponent.Ready,
                           errors=[error.toString() for error in component.errors()]))
     result["settings_compile"] = pages
-    if result["phase"] == "settings-pages":
-        route_fixture = json.loads((ROOT/"evidence/fixtures/capture-04/factory-code-records.json").read_text())
-        for route in route_fixture["routes"]:
-            if route["index"] != 5:
-                prepared = QtQml.QQmlComponent(engine, QtCore.QUrl(route["qrc_path"]))
-                require(prepared.status() == QtQml.QQmlComponent.Ready, "Factory route marker compile failed")
     result["registered_ui_units"] = {url: hashlib.sha256(payload).hexdigest() for url, payload in ui_units.items()}
     if not all(page["ready"] for page in pages):
         result.update(passed=False, gap="Candidate page compile failed with actual captured UI component metadata.")
@@ -527,12 +509,13 @@ Window {
     property alias page: pageLoader.item
     property alias globalState: g
     property alias eventState: e
+    property alias translationState: t
     property int mCompleted: 0
     QtObject {
         id: mGlobalId
         property QtObject item: QtObject {
             id: g
-            property int menuSettingsPageIndex: 6
+            property int menuSettingsPageIndex: 0
             property int menuSettingsSubPageItemSetup: 0
             property int uartDebugEnabled: 0
             property int dashboardBeforeTow: -1
@@ -586,6 +569,8 @@ Window {
             property var mTpmsUnit: [" kPa", " bar", " kg/cm2", " psi"]
             // Maintenance state and text helpers copied from Global.qml.
             property int mainTentChanged: 0
+            property int trucksTrailerBrakeState: -1
+            property int trucksOilLifePercentage: 0
             property int mainTentCustomize1: 0
             property int mainTentCustomize2: 0
             property var mainTentState: [0, 1, 2, 0, 4, 5, 0, 0, 0, 0]
@@ -619,6 +604,38 @@ Window {
                 return mainTentChanged?reminder:reminder
             }
             property var mFuelUnit: ["L/100km", "km/L", "MPG"]
+            // Odometer, fuel tank, and gyro values and text helpers copied from Global.qml.
+            property double odo: 0xFFFFFF
+            function getOdo(unit) { return (odo==0xFFFFFF?"------":(odo*tripFactor).toFixed(0))+(unit?" "+tripUnit:"") }
+            function getOdoNum(index) {
+                var temp=(odo*tripFactor).toFixed(0)
+                switch(index) {
+                case 0: return odo==0xFFFFFF?0:temp/100000
+                case 1: return odo==0xFFFFFF?0:temp%100000/10000
+                case 2: return odo==0xFFFFFF?0:temp%100000%10000/1000
+                case 3: return odo==0xFFFFFF?0:temp%100000%10000%1000/100
+                case 4: return odo==0xFFFFFF?0:temp%100000%10000%1000%100/10
+                case 5: return odo==0xFFFFFF?0:temp%10
+                }
+            }
+            property int mainTank: 80
+            property int subTank: 0
+            property string tankUnit: "L"
+            property real tankUnitFactor: 1
+            function getTank(sub, unit) { return ((sub?subTank:mainTank)*tankUnitFactor).toFixed(0)+" "+tankUnit }
+            function getTankNum(sub, index) {
+                var temp=!sub?(mainTank*tankUnitFactor).toFixed(0):(subTank*tankUnitFactor).toFixed(0)
+                switch(index) {
+                case 0: return temp/100
+                case 1: return temp%100/10
+                case 2: return temp%10
+                }
+            }
+            property int mGyroCalibration: 0
+            property int mPitch: 0xFFFF
+            property int mRoll: 0xFFFF
+            function getPitchString() { return (mPitch==0xFFFF?"--":mPitch)+"\\u00b0" }
+            function getRollString() { return (mRoll==0xFFFF?"--":mRoll)+"\\u00b0" }
             property var factoryCalls: []
             property var factoryStates: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
             property int swcHome: 16777232
@@ -680,11 +697,27 @@ Window {
             function setMaintentMileage(id, mileage) { note(["svcMileage",id,mileage]) }
             function setMaintentDate(id, date) { note(["svcDate",id,date]) }
             function setMaintentReset(id) { note(["svcReset",id]) }
+            function setOdo(meter) { note(["setOdo",meter]) }
+            function setFuelTank(sub, liter) { note(["setFuelTank",sub,liter]) }
+            function setVehicleModel(model) { note(["setVehicleModel",model]) }
+            // Service command files. The reads are counted, not logged, so sends() shows only the runs.
+            property var shellFiles: ["reboot.sh", "log.sh"]
+            property int shellReads: 0
+            function getSehllCmdCount() { shellReads++; return shellFiles.length }
+            function getSehllCmdName(index) { return index<shellFiles.length?shellFiles[index]:"NONE" }
+            function setShellCmdFile(name) { note(["shell",name]) }
         }
     }
     QtObject {
         id: mTranslationId
         property QtObject item: QtObject {
+            id: t
+            // The Ford rows of VehicleModels.qml. The profile index binds to vehicleModel, as in Translation.qml.
+            property var mVehicleModelPickUp: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+            property var mVehicleModels: ["F150_09-10", "F150_11-14", "F150_15-20"]
+            property var modelIndexes: [56, 68, 69]
+            property var mVehicleModel: mVehicleModels[g.vehicleModel]
+            property var mVehicleModelIndex: modelIndexes[g.vehicleModel]
             property var mFactoryItems: FACTORY_TITLES
             property var mFactoryItemsState: g.factoryStates
             property string mBack: "Back"
@@ -816,7 +849,8 @@ Window {
         print(json.dumps(result), flush=True)
         return 0 if result["passed"] else 1
     # Settings menu engine (vnM). Failure modes, each with a check below:
-    # - Keys: action on press; no wrap; Left/Right/Modes mapped wrong; Back skips or stays at the top; Back hold leaves the menu open;
+    # - Keys: Up, Down, Enter, or Right wait for the release, or the release steps again; no wrap; Left/Right/Modes mapped wrong;
+    #   Back skips or stays at the top; Back hold leaves the menu open;
     #   a release after a hold acts again; repeated hold events act twice; a held key eats the next real tap; state 3 acts.
     # - Pages: re-entry resumes an old cursor or edit; Back loses the parent row; an inquiry runs on highlight or twice per entry.
     # - Ford: plausible values or sends before truck data; oil life sends >100 or <10, sends while editing or on cancel;
@@ -824,10 +858,14 @@ Window {
     # - Actions: one OK sends; an armed row survives another key, the 5 s timeout, or leaving the page; wrong Reset command.
     # - Clock: set row editable while GPS sets the clock; Feb day accepted past the month end; unpadded string; cancel sends.
     # - Display, Units, Service: wrong commit value; unit side effects; no-data text; wrong custom name; reset without confirm.
-    # - Hosted pages: keys not forwarded; no return on menuSettingsPageIndex 0; a Modes hold leaves the hosted guard stuck.
-    # - Factory: an inquiry missing or repeated; a press or highlight acts; a row with no effect sends; a compiled page does
-    #   not open, stays open after its Back, or leaves menuSettingsSubPageItemSetup set; a nested compiled page closes early;
-    #   Back hold leaves a compiled page value behind; a debug level outside the vendor list; the grid leaves the menu open.
+    # - G-force: Pitch or Roll keep an old value after the sensor changes; an inquiry on entry; one OK calibrates; the
+    #   calibration flag clears early, stays set past 1200 ms, or stays set after the menu closes.
+    # - Factory: an inquiry missing or repeated; a press or highlight acts; a row with no effect sends; a debug level outside
+    #   the vendor list; the grid leaves the menu open.
+    # - Odometer and fuel tank digits: a digit does not wrap 0-9 or moves the wrong way; OK sends before the last digit; the
+    #   last OK sends twice, sends a wrong value, or sends an unchanged value; Left sends; the two tank sends split or swap.
+    # - Vehicle profile: undefined models listed; one OK does not select; a profile index of -1 or undefined is sent.
+    # - Service commands: one OK runs a file; the files are read on highlight; an empty list shows no reason.
     titles_general = titles
     menu_url = QtCore.QUrl.fromLocalFile(pages[0]["copy"]).toString()
     menu_state = {}
@@ -884,22 +922,21 @@ Window {
     def assign(name, array):
         QtCore.QMetaObject.invokeMethod(global_state, "assign", QtCore.Qt.DirectConnection,
                                         QtCore.Q_ARG("QVariant", name), QtCore.Q_ARG("QVariant", array))
-    swc_code = {name: value(global_state, "swc" + name) for name in ("Back", "Down", "Enter", "Modes")}
     global_state.setProperty("vehicleModel", 1)
     global_state.setProperty("menuBarIndex", 1)
     global_state.setProperty("menuBarItemIndex", 1)
-    global_state.setProperty("menuSettingsPageIndex", 3)
-    global_state.setProperty("menuSettingsSubPageItemSetup", 0)
     menu = load_menu()
     verify("menu instantiated", menu is not None)
-    verify("menu open resets the list indexes", value(global_state, "menuBarItemIndex") == 0 and value(global_state, "menuSettingsPageIndex") == 0)
+    # No loaded page reads menuSettingsPageIndex or menuSettingsSubPageItemSetup, so the menu never writes the values.
+    verify("menu open resets the list index and leaves the old page values alone", value(global_state, "menuBarItemIndex") == 0 and
+           value(global_state, "menuSettingsPageIndex") == 0 and value(global_state, "menuSettingsSubPageItemSetup") == 0)
     verify("menu root fits the MenuPage slot", menu.property("width") == 1720 and menu.property("height") == 511)
     verify("menu top rows", titles() == ["Vehicle", "System", "Service"] and m("mPath") == ["home"] and m("mCursor") == 0)
     mark = len(log())
     swc("Down", 1)
-    verify("menu Down press keeps the cursor and shows the press", m("mCursor") == 0 and m("mPressed"))
+    verify("menu Down press moves the cursor and shows the press", m("mCursor") == 1 and m("mPressed"))
     swc("Down", 0)
-    verify("menu Down release moves the cursor", m("mCursor") == 1 and not m("mPressed"))
+    verify("menu Down release does not move again", m("mCursor") == 1 and not m("mPressed"))
     tap("Down", 2)
     verify("menu Down wraps to the first row", m("mCursor") == 0)
     tap("Up")
@@ -953,28 +990,30 @@ Window {
     focus("Oil life start value")
     tap("Enter")
     verify("menu oil life edit starts at the rounded value", m("mEditing") and m("mEditValue") == 100)
-    tap("Down")
-    verify("menu oil life edit stops at 100", m("mEditValue") == 100)
-    tap("Up", 12)
-    verify("menu oil life edit stops at 10", m("mEditValue") == 10)
+    tap("Up")
+    verify("menu oil life Up stops at 100", m("mEditValue") == 100)
+    tap("Down", 12)
+    verify("menu oil life Down stops at 10", m("mEditValue") == 10)
+    tap("Up", 2)
+    verify("menu Up raises the oil life one step at a time", m("mEditValue") == 30)
     tap("Modes")
-    verify("menu Modes release is the next value in an edit", m("mEditValue") == 20)
+    verify("menu Modes release lowers the value like Down in an edit", m("mEditValue") == 20)
     verify("menu nothing sent while editing", sends(mark) == [])
     tap("Enter")
     verify("menu oil life commits once", sends(mark) == [["ford", 14, 8, 20]] and not m("mEditing") and
            row("Oil life start value")["value"] == "20%")
     tap("Enter")
-    tap("Down")
+    tap("Up")
     tap("Left")
     verify("menu Left cancels an edit and stays on the page", sends(mark) == [["ford", 14, 8, 20]] and not m("mEditing") and
            m("mPath")[-1] == "assist" and row("Oil life start value")["value"] == "20%")
     tap("Enter")
-    tap("Down")
+    tap("Up")
     tap("Back")
     verify("menu Back cancels an edit and stays on the page", sends(mark) == [["ford", 14, 8, 20]] and not m("mEditing") and
            m("mPath")[-1] == "assist")
     tap("Enter")
-    tap("Down")
+    tap("Up")
     tap("Right")
     verify("menu Right commits an edit", sends(mark) == [["ford", 14, 8, 20], ["ford", 14, 8, 30]])
     for raw, start in ((3, 10), (250, 100)):
@@ -1003,13 +1042,13 @@ Window {
     tap("Enter")
     verify("menu unchanged commit sends nothing", sends(mark) == [] and not m("mEditing"))
     tap("Enter")
-    tap("Down")
+    tap("Up")
     tap("Enter")
-    verify("menu lamp commit sends the chosen step", sends(mark) == [["ford", 14, 2, 90]] and values() == ["90 s"])
+    verify("menu lamp Up commits the next step", sends(mark) == [["ford", 14, 2, 90]] and values() == ["90 s"])
     tap("Enter")
-    tap("Up", 5)
+    tap("Down", 5)
     tap("Enter")
-    verify("menu lamp Off", sends(mark)[-1] == ["ford", 14, 2, 0] and values() == ["Off"])
+    verify("menu lamp Down steps back to Off", sends(mark)[-1] == ["ford", 14, 2, 0] and values() == ["Off"])
     tap("Back")
     open_path("Locks")
     verify("menu lock values", titles() == ["Auto lock", "Auto unlock", "Remote unlock"] and values() == ["Value 3", "On", "Two stage"])
@@ -1022,9 +1061,9 @@ Window {
     focus("Run time")
     verify("menu run time label", row("Run time")["value"] == "5 min")
     tap("Enter")
-    tap("Down")
+    tap("Up")
     tap("Enter")
-    verify("menu run time commit", sends(mark)[-1] == ["ford", 14, 14, 2] and row("Run time")["value"] == "10 min")
+    verify("menu run time Up commits the next option", sends(mark)[-1] == ["ford", 14, 14, 2] and row("Run time")["value"] == "10 min")
     focus("Climate")
     tap("Enter")
     verify("menu climate toggle", sends(mark)[-1] == ["ford", 14, 13, 1] and row("Climate")["value"] == "Automatic")
@@ -1078,25 +1117,47 @@ Window {
         verify("menu reset rows for Ford vehicle model " + str(vehicle), titles() == expected)
         tap("Back")
     global_state.setProperty("vehicleModel", 1)
-    # Hosted G-force.
+    # G-force: live Pitch and Roll rows (the Global text of the stock gauges) and a Calibrate action.
+    mark = len(log())
     open_path("G-force")
-    stub = menu.findChild(QtCore.QObject, "gforce-stub")
-    verify("menu G-force hosted on entry", stub is not None and value(global_state, "menuSettingsPageIndex") == 1 and
-           m("mPath") == ["home", "vehicle", "gforce"])
-    tap("Down")
-    verify("menu keys forward to the hosted page", value(stub, "keys") == [[swc_code["Down"], 1], [swc_code["Down"], 0]])
-    tap("Back")
-    QtTest.QTest.qWait(20)
-    verify("menu hosted Back returns to the G-force row", m("mPath") == ["home", "vehicle"] and m("mCursor") == 5 and
-           menu.findChild(QtCore.QObject, "gforce-stub") is None)
+    verify("menu G-force is a native page with no inquiry", m("mPath") == ["home", "vehicle", "gforce"] and
+           calls_since(mark) == [] and value(global_state, "menuSettingsPageIndex") == 0)
+    verify("menu G-force rows", titles() == ["Pitch", "Roll", "Calibrate"] and values() == ["--°", "--°", ""] and
+           [entry["kind"] for entry in rows()] == ["info", "info", "action"])
+    global_state.setProperty("mPitch", 4)
+    global_state.setProperty("mRoll", -3)
+    advance()
+    verify("menu G-force rows follow the sensor", values()[:2] == ["4°", "-3°"])
+    global_state.setProperty("mPitch", 5)
+    advance()
+    verify("menu G-force Pitch refreshes on each change", values()[:2] == ["5°", "-3°"])
     tap("Enter")
-    stub = menu.findChild(QtCore.QObject, "gforce-stub")
-    swc("Back", 1)
-    swc("Back", 2)
-    verify("menu Back hold closes the menu from a hosted page", value(global_state, "menuBarIndex") == 0)
-    swc("Back", 0)
-    verify("menu release after the Back hold is swallowed", m("mPath")[-1] == "gforce" and
-           [swc_code["Back"], 0] not in value(stub, "keys"))
+    verify("menu info rows on G-force do nothing", m("mPath")[-1] == "gforce" and calls_since(mark) == [] and m("mArmedRow") == -1)
+    focus("Calibrate")
+    tap("Enter")
+    verify("menu Calibrate arms and changes nothing", m("mArmedRow") == 2 and value(global_state, "mGyroCalibration") == 0 and
+           row("Calibrate")["value"] == "Press OK again to calibrate")
+    tap("Up")
+    verify("menu another key disarms Calibrate", m("mArmedRow") == -1 and value(global_state, "mGyroCalibration") == 0)
+    focus("Calibrate")
+    tap("Enter")
+    tap("Enter")
+    started = time.monotonic()
+    verify("menu Calibrate sets the calibration flag on the second OK", value(global_state, "mGyroCalibration") == 1 and
+           row("Calibrate")["value"] == "Calibrating" and calls_since(mark) == [])
+    QtTest.QTest.qWait(900)
+    verify("menu calibration flag holds before 1200 ms", value(global_state, "mGyroCalibration") == 1)
+    verify("menu calibration flag clears after 1200 ms",
+           wait_until(lambda: value(global_state, "mGyroCalibration") == 0, 4000) and time.monotonic() - started >= 1.15 and
+           row("Calibrate")["value"] == "")
+    tap("Enter")
+    tap("Enter")
+    verify("menu Calibrate runs again", value(global_state, "mGyroCalibration") == 1)
+    global_state.setProperty("menuBarIndex", 1)
+    menu = load_menu()
+    verify("menu close during calibration clears the calibration flag", value(global_state, "mGyroCalibration") == 0)
+    QtTest.QTest.qWait(1300)
+    verify("menu G-force sends no vehicle command", sends(mark) == [])
     # Holds, swallowed releases, and state 3.
     global_state.setProperty("menuBarIndex", 1)
     menu = load_menu()
@@ -1116,17 +1177,26 @@ Window {
     tap("Modes")
     verify("menu a held key does not eat the next tap", m("mPath") == ["home", "vehicle"] and m("mCursor") == 1)
     swc("Enter", 1)
+    verify("menu Enter press opens the focus row", m("mPath") == ["home", "vehicle", "locks"] and m("mCursor") == 0)
     swc("Enter", 2)
     swc("Enter", 0)
-    verify("menu Enter hold does nothing and the release is swallowed", m("mPath") == ["home", "vehicle"] and m("mCursor") == 1)
+    verify("menu Enter hold adds nothing and the release is swallowed", m("mPath") == ["home", "vehicle", "locks"] and
+           m("mCursor") == 0)
+    tap("Back")
     swc("Down", 1)
     swc("Down", 2)
     swc("Down", 0)
-    verify("menu Down hold does nothing", m("mCursor") == 1)
+    verify("menu Down hold adds nothing to the press step", m("mCursor") == 2)
+    # A second key pressed before the first release: the late release of the first key does not step again.
+    swc("Up", 1)
+    swc("Down", 1)
+    swc("Up", 0)
+    swc("Down", 0)
+    verify("menu an overlapping release does not step again", m("mCursor") == 2)
     swc("Down", 3)
     swc("Enter", 3)
     swc("Back", 3)
-    verify("menu state 3 is ignored", m("mPath") == ["home", "vehicle"] and m("mCursor") == 1)
+    verify("menu state 3 is ignored", m("mPath") == ["home", "vehicle"] and m("mCursor") == 2)
     tap("Back")
     tap("Back")
     verify("menu Back at the top closes the menu", value(global_state, "menuBarIndex") == 0)
@@ -1138,7 +1208,7 @@ Window {
     verify("menu Left hold closes the menu (the truck wheel has no Back key)", value(global_state, "menuBarIndex") == 0)
     swc("Left", 0)
     verify("menu release after the Left hold is swallowed", value(global_state, "menuBarIndex") == 0 and m("mCursor") == 1)
-    # System: hosted Factory, Version, Language, Date and time, Units, Display.
+    # System: Factory, Version, Language, Date and time, Units, Display.
     global_state.setProperty("menuBarIndex", 1)
     menu = load_menu()
     mark = len(log())
@@ -1150,10 +1220,11 @@ Window {
     tap("Enter")
     verify("menu Factory is a native page with one shell inquiry", m("mPath") == ["home", "system", "factory"] and
            calls_since(mark) == [["shellCmdInquire"]] and value(global_state, "menuSettingsPageIndex") == 0)
-    verify("menu Factory rows", titles() == ["General settings", "Advanced settings", "Fuel tank setup", "Vehicle profile",
-                                             "Odometer setup", "Service commands", "ADB debugging: enable",
-                                             "ADB debugging: disable", "Debug logging", "USB image preview", "Screen grid",
-                                             "Car model options"])
+    verify("menu Factory rows", titles() == ["General settings", "Fuel tank setup", "Vehicle profile", "Odometer setup",
+                                             "Service commands", "ADB debugging: enable", "ADB debugging: disable",
+                                             "Debug logging", "USB image preview", "Screen grid", "Car model options"])
+    verify("menu Factory setup rows show the current values", values()[1:5] == ["80 L · 0 L", "F150_11-14", "------ km", ""] and
+           all(entry["kind"] == "page" for entry in rows()[:5]))
     verify("menu Factory entry leaves the tools unchanged", value(event_state, "adbCalls") == [] and
            value(global_state, "uartDebugEnabled") == 0 and value(global_state, "mediaImageEnabled") == 0 and
            value(global_state, "modelCarSelection") is False)
@@ -1168,68 +1239,164 @@ Window {
     for index in range(19):
         before = list(value(global_state, "factoryCalls"))
         swc("Enter", 1)
-        verify("menu General press sends nothing " + str(index), value(global_state, "factoryCalls") == before)
+        after_press = list(value(global_state, "factoryCalls"))
         swc("Enter", 0)
+        verify("menu General press sends once and the release sends nothing " + str(index),
+               value(global_state, "factoryCalls") == after_press and
+               after_press == before + ([] if index in no_effect else [index]))
         tap("Down")
     verify("menu General sends the vendor setter for rows with an effect",
            value(global_state, "factoryCalls") == [i for i in range(19) if i not in no_effect])
     verify("menu General rows follow the setting", values()[0] == "On" and rows()[0]["current"] == 1 and values()[7] == "210")
     tap("Back")
     verify("menu General Back returns to the Factory row", m("mPath")[-1] == "factory" and m("mCursor") == 0)
-    # Compiled Factory pages: the stubs keep the compiled Back contract (1 for Odometer, Fuel tank, Vehicle profile).
-    for title, page_value in (("Advanced settings", 1), ("Fuel tank setup", 3), ("Vehicle profile", 4),
-                              ("Odometer setup", 2), ("Service commands", 6)):
-        focus(title)
-        cursor = m("mCursor")
-        swc("Enter", 1)
-        verify("menu Factory page opens only on release " + str(page_value), value(global_state, "menuSettingsSubPageItemSetup") == 0)
-        swc("Enter", 0)
-        verify("menu Factory hosts the compiled page " + str(page_value),
-               m("mPath")[-1] == "fsub" + str(page_value) and value(global_state, "menuSettingsSubPageItemSetup") == page_value and
-               value(global_state, "menuSettingsPageIndex") == 1 and
-               menu_state["page"].findChild(QtCore.QObject, "vendor-page-" + str(page_value)) is not None)
-        tap("Back")
-        verify("menu compiled page Back returns to the Factory row " + str(page_value),
-               m("mPath")[-1] == "factory" and m("mCursor") == cursor and value(global_state, "menuSettingsSubPageItemSetup") == 0 and
-               value(global_state, "menuSettingsPageIndex") == 0)
-    focus("Advanced settings")
+    # Odometer setup (stock FactoryOdoSetup): six digits from getOdoNum, one setOdo(Number(digits)) after the last digit.
+    global_state.setProperty("odo", 123456)
+    mark = len(log())
+    focus("Odometer setup")
+    cursor = m("mCursor")
     tap("Enter")
-    global_state.setProperty("menuSettingsSubPageItemSetup", 3)
-    advance()
-    verify("menu Advanced settings can open Fuel tank setup", m("mPath")[-1] == "fsub1" and
-           menu_state["page"].findChild(QtCore.QObject, "vendor-page-3") is not None)
-    tap("Back")
-    verify("menu nested Fuel tank Back returns to Advanced settings", m("mPath")[-1] == "fsub1" and
-           value(global_state, "menuSettingsSubPageItemSetup") == 1)
-    tap("Back")
-    verify("menu Advanced settings Back returns to Factory", m("mPath")[-1] == "factory" and value(global_state, "menuSettingsSubPageItemSetup") == 0)
-    focus("Fuel tank setup")
+    verify("menu Odometer setup is a native page with no inquiry", m("mPath")[-1] == "odometer" and calls_since(mark) == [] and
+           value(global_state, "menuSettingsSubPageItemSetup") == 0 and value(global_state, "menuSettingsPageIndex") == 0)
+    verify("menu Odometer row shows the odometer", titles() == ["Odometer"] and values() == ["123456 km"] and
+           rows()[0]["kind"] == "digits")
     tap("Enter")
-    swc("Back", 1)
-    swc("Back", 2)
-    verify("menu Back hold in a compiled page closes the menu and the page", value(global_state, "menuBarIndex") == 0 and
-           m("mPath")[-1] == "factory" and value(global_state, "menuSettingsSubPageItemSetup") == 0)
-    swc("Back", 0)
-    global_state.setProperty("menuBarIndex", 1)
+    verify("menu odometer editor starts from the odometer digits", m("mEditing") and m("mEditFields") == [1, 2, 3, 4, 5, 6] and
+           m("mEditField") == 0 and m("mEditText") == "123456 km")
+    tap("Up")
+    verify("menu Up raises the marked digit", m("mEditFields") == [2, 2, 3, 4, 5, 6])
+    tap("Down", 3)
+    verify("menu Down lowers the digit and wraps from 0 to 9", m("mEditFields")[0] == 9)
+    tap("Up")
+    verify("menu Up wraps the digit from 9 to 0", m("mEditFields")[0] == 0)
+    tap("Enter")
+    verify("menu OK moves to the next digit and sends nothing", m("mEditField") == 1 and m("mEditing") and sends(mark) == [])
+    tap("Up")
+    tap("Enter", 4)
+    verify("menu odometer sends nothing before the last digit", m("mEditField") == 5 and sends(mark) == [] and
+           m("mEditText") == "033456 km")
+    tap("Enter")
+    verify("menu odometer commits once with the stock call", sends(mark) == [["setOdo", 33456]] and not m("mEditing"))
+    tap("Enter")
+    tap("Down")
+    tap("Enter")
+    tap("Down")
+    tap("Left")
+    verify("menu Left cancels the odometer edit and sends nothing", not m("mEditing") and m("mPath")[-1] == "odometer" and
+           sends(mark) == [["setOdo", 33456]])
+    tap("Enter")
+    verify("menu odometer re-edit starts fresh", m("mEditFields") == [1, 2, 3, 4, 5, 6] and m("mEditField") == 0)
+    tap("Enter", 6)
+    verify("menu unchanged odometer sends nothing", not m("mEditing") and sends(mark) == [["setOdo", 33456]])
+    global_state.setProperty("odo", 16777215)
+    tap("Enter")
+    verify("menu odometer without data starts at zero", m("mEditFields") == [0] * 6 and row("Odometer")["value"] == "------ km")
+    tap("Left")
+    tap("Back")
+    verify("menu Odometer Back returns to the Factory row", m("mPath")[-1] == "factory" and m("mCursor") == cursor)
+    # Fuel tank setup (stock FactoryTankSetup): three main and three sub digits, then setFuelTank(0, main), setFuelTank(1, sub).
+    mark = len(log())
+    open_path("Fuel tank setup")
+    verify("menu Fuel tank row shows both tanks", m("mPath")[-1] == "tank" and titles() == ["Main and sub tank"] and
+           values() == ["80 L · 0 L"] and calls_since(mark) == [])
+    tap("Enter")
+    verify("menu tank editor starts from the tank digits", m("mEditFields") == [0, 8, 0, 0, 0, 0] and
+           m("mEditText") == "Main 080 · Sub 000 L")
+    tap("Enter")
+    tap("Up")
+    tap("Enter")
+    tap("Up", 5)
+    tap("Enter", 2)
+    tap("Up", 4)
+    tap("Enter")
+    verify("menu tank sends nothing before the last digit", m("mEditField") == 5 and sends(mark) == [] and
+           m("mEditText") == "Main 095 · Sub 040 L")
+    tap("Enter")
+    verify("menu tank commits main, then sub, once", sends(mark) == [["setFuelTank", 0, 95], ["setFuelTank", 1, 40]] and
+           not m("mEditing"))
+    tap("Enter", 6)
+    tap("Up")
+    tap("Enter")
+    verify("menu a sub tank change sends both tanks in order",
+           sends(mark)[2:] == [["setFuelTank", 0, 80], ["setFuelTank", 1, 1]])
+    tap("Enter")
+    tap("Down")
+    tap("Left")
+    tap("Enter", 7)
+    verify("menu tank cancel and unchanged edits send nothing", len(sends(mark)) == 4 and not m("mEditing"))
+    tap("Back")
+    # Vehicle profile (stock FactoryVehicleModel): the defined models only; one OK selects and sends the profile index.
+    mark = len(log())
+    open_path("Vehicle profile")
+    verify("menu Vehicle profile lists only the defined models", m("mPath")[-1] == "profile" and
+           titles() == ["F150_09-10", "F150_11-14", "F150_15-20"] and values() == ["", "Selected", ""] and
+           all(entry["kind"] == "select" for entry in rows()) and calls_since(mark) == [])
+    focus("F150_15-20")
+    swc("Enter", 1)
+    verify("menu one OK selects the profile and sends the profile index",
+           value(global_state, "vehicleModel") == 2 and sends(mark) == [["setVehicleModel", 69]])
+    swc("Enter", 0)
+    verify("menu profile release sends nothing", sends(mark) == [["setVehicleModel", 69]] and values()[2] == "Selected")
+    translation_state = window.property("translationState")
+    for indexes, label in (([-1, -1, -1], "-1"), ([56, 68], "undefined")):
+        translation_state.setProperty("modelIndexes", indexes)
+        focus("F150_11-14" if label == "-1" else "F150_15-20")
+        if label == "undefined":
+            global_state.setProperty("vehicleModel", 0)
+        tap("Enter")
+        verify("menu profile with a " + label + " index selects the profile and sends nothing",
+               value(global_state, "vehicleModel") == (1 if label == "-1" else 2) and sends(mark) == [["setVehicleModel", 69]])
+    translation_state.setProperty("modelIndexes", [56, 68, 69])
+    global_state.setProperty("vehicleModel", 1)
+    tap("Back")
+    # Service commands (stock FactoryShellCmd): one row per command file; a run needs a second OK.
+    event_state.setProperty("shellReads", 0)
+    mark = len(log())
+    open_path("Service commands")
+    verify("menu Service commands reads the command files once on entry", m("mPath")[-1] == "commands" and
+           titles() == ["reboot.sh", "log.sh"] and value(event_state, "shellReads") == 1 and calls_since(mark) == [] and
+           all(entry["kind"] == "action" for entry in rows()))
+    tap("Down")
+    tap("Up")
+    verify("menu Service commands highlight reads nothing", value(event_state, "shellReads") == 1)
+    tap("Enter")
+    verify("menu one OK arms the command and runs nothing", m("mArmedRow") == 0 and sends(mark) == [] and
+           row("reboot.sh")["value"] == "Press OK again to run")
+    tap("Enter")
+    verify("menu the second OK runs the command file once", sends(mark) == [["shell", "reboot.sh"]] and
+           row("reboot.sh")["value"] == "Command sent")
+    tap("Down")
+    tap("Enter")
+    tap("Up")
+    verify("menu another key disarms the command", m("mArmedRow") == -1 and sends(mark) == [["shell", "reboot.sh"]])
+    tap("Back")
+    event_state.setProperty("shellFiles", [])
+    open_path("Service commands")
+    verify("menu no command files shows the reason", [(entry["kind"], entry["title"], entry["value"]) for entry in rows()] ==
+           [("unavailable", "Service commands", "No command files on the cluster or a USB drive")])
+    tap("Enter")
+    verify("menu the empty list does nothing", m("mPath")[-1] == "commands" and sends(mark) == [["shell", "reboot.sh"]])
+    event_state.setProperty("shellFiles", ["reboot.sh", "log.sh"])
+    tap("Back")
     for title, argument in (("ADB debugging: enable", 1), ("ADB debugging: disable", 0)):
         focus(title)
         before = list(value(event_state, "adbCalls"))
         swc("Enter", 1)
-        verify("menu ADB command waits for release " + str(argument), value(event_state, "adbCalls") == before)
+        verify("menu ADB command on the press " + str(argument), value(event_state, "adbCalls") == before + [argument])
         swc("Enter", 0)
-        verify("menu ADB command " + str(argument), value(event_state, "adbCalls") == before + [argument])
+        verify("menu ADB command release sends nothing " + str(argument), value(event_state, "adbCalls") == before + [argument])
     focus("Debug logging")
     verify("menu Debug logging shows the level", row("Debug logging")["value"] == "Off")
     tap("Enter")
-    tap("Down", 2)
-    verify("menu Debug logging edit", m("mEditText") == "‹ UART receive ›" and value(global_state, "uartDebugEnabled") == 0)
+    tap("Up", 2)
+    verify("menu Debug logging Up steps to the next levels", m("mEditText") == "UART receive" and value(global_state, "uartDebugEnabled") == 0)
     tap("Enter")
     verify("menu Debug logging sets the vendor value", value(global_state, "uartDebugEnabled") == 2 and
            row("Debug logging")["value"] == "UART receive")
     tap("Enter")
-    tap("Down", 3)
+    tap("Up", 3)
     tap("Enter")
-    verify("menu Debug logging wraps to Off", value(global_state, "uartDebugEnabled") == 0)
+    verify("menu Debug logging Up wraps from the last level to Off", value(global_state, "uartDebugEnabled") == 0)
     focus("USB image preview")
     tap("Enter")
     verify("menu USB image preview on", value(global_state, "mediaImageEnabled") == 1 and row("USB image preview")["current"] == 1)
@@ -1244,9 +1411,8 @@ Window {
     verify("menu Car model options off", value(global_state, "modelCarSelection") is False)
     focus("Screen grid")
     swc("Enter", 1)
-    verify("menu Screen grid waits for release", value(global_state, "screenGridEnabled") == 0)
     swc("Enter", 0)
-    verify("menu Screen grid shows the grid and closes the menu", value(global_state, "screenGridEnabled") == 1 and
+    verify("menu Screen grid shows the grid and closes the menu on the press", value(global_state, "screenGridEnabled") == 1 and
            value(global_state, "menuBarIndex") == 0)
     global_state.setProperty("screenGridEnabled", 0)
     global_state.setProperty("menuBarIndex", 1)
@@ -1293,20 +1459,20 @@ Window {
     tap("Enter")
     verify("menu clock editor starts from the clock", m("mEditing") and m("mEditFields") == [2028, 1, 31, 7, 5] and m("mEditField") == 0)
     tap("Enter")
-    tap("Down")
-    verify("menu Feb 2028 clamps the day to 29", m("mEditFields") == [2028, 2, 29, 7, 5] and m("mEditField") == 1)
-    tap("Enter")
-    tap("Down")
-    verify("menu day wraps after Feb 29", m("mEditFields")[2] == 1)
     tap("Up")
-    verify("menu day wraps back to Feb 29", m("mEditFields")[2] == 29)
+    verify("menu Up raises the month; Feb 2028 clamps the day to 29", m("mEditFields") == [2028, 2, 29, 7, 5] and m("mEditField") == 1)
+    tap("Enter")
+    tap("Up")
+    verify("menu Up wraps the day after Feb 29", m("mEditFields")[2] == 1)
+    tap("Down")
+    verify("menu Down wraps the day back to Feb 29", m("mEditFields")[2] == 29)
     tap("Back")
     verify("menu Back cancels the clock edit", not m("mEditing") and sends(mark) == [])
     global_state.setProperty("rtcDate", "2027-01-30")
     tap("Enter")
     verify("menu clock re-edit starts fresh", m("mEditFields") == [2027, 1, 30, 7, 5] and m("mEditField") == 0)
     tap("Enter")
-    tap("Down")
+    tap("Up")
     verify("menu Feb 2027 clamps the day to 28", m("mEditFields")[2] == 28)
     tap("Enter", 3)
     verify("menu clock sends nothing before the last field", sends(mark) == [] and m("mEditField") == 4)
@@ -1315,8 +1481,8 @@ Window {
     global_state.setProperty("rtcDate", "2020-05-05")
     tap("Enter")
     verify("menu clock year starts inside 2024..2099", m("mEditFields")[0] == 2024)
-    tap("Up")
-    verify("menu clock year wraps to 2099", m("mEditFields")[0] == 2099)
+    tap("Down")
+    verify("menu Down wraps the clock year to 2099", m("mEditFields")[0] == 2099)
     tap("Left")
     focus("Time format")
     verify("menu time format 24 h", row("Time format")["value"] == "24 h")
@@ -1347,15 +1513,15 @@ Window {
     verify("menu Follow status text", "Follow" in row("Speed and distance")["value"] and "Follow" in row("Temperature")["value"])
     focus("Fuel economy")
     tap("Enter")
-    tap("Down")
+    tap("Up")
     verify("menu fuel economy edit is local", value(global_state, "consumptionUnit") == 0)
     tap("Enter")
     verify("menu fuel economy commit", value(global_state, "consumptionUnit") == 1 and row("Fuel economy")["value"] == "km/L")
     focus("Tyre pressure")
     tap("Enter")
-    tap("Up")
+    tap("Down")
     tap("Enter")
-    verify("menu tyre pressure choice wraps", value(global_state, "pressureUnit") == 3 and len(sends(mark)) == 3)
+    verify("menu tyre pressure Down wraps to the last option", value(global_state, "pressureUnit") == 3 and len(sends(mark)) == 3)
     tap("Back")
     mark = len(log())
     open_path("Display")
@@ -1381,16 +1547,16 @@ Window {
     focus("Day brightness")
     tap("Enter")
     verify("menu day brightness edit starts at the level", m("mEditValue") == 50)
-    tap("Down")
+    tap("Up")
     tap("Enter")
     verify("menu day brightness commit", sends(mark) == [["setBright", 0, 150]] and row("Day brightness")["value"] == "60%")
     focus("Night brightness")
     tap("Enter")
-    tap("Up")
-    verify("menu night brightness starts at 10", m("mEditValue") == 10)
-    tap("Enter")
-    tap("Enter")
     tap("Down")
+    verify("menu night brightness starts at 10 and Down stops there", m("mEditValue") == 10)
+    tap("Enter")
+    tap("Enter")
+    tap("Up")
     tap("Enter")
     verify("menu night brightness commit", sends(mark) == [["setBright", 0, 150], ["setBright", 1, 50]])
     verify("menu speed warning value unavailable while off",
@@ -1403,15 +1569,15 @@ Window {
     verify("menu speed warning toggle", value(global_state, "overSpeedWarningEnabled") == 1 and sends(mark)[-1] == ["warnEnabled", 1])
     focus("Speed warning at")
     tap("Enter")
-    tap("Up")
-    verify("menu speed warning edit starts at 20", m("mEditValue") == 20)
     tap("Down")
+    verify("menu speed warning edit starts at 20 and Down stops there", m("mEditValue") == 20)
+    tap("Up")
     tap("Enter")
     verify("menu speed warning commit", sends(mark)[-1] == ["warnSpeed", 25])
     global_state.setProperty("overSpeedWarningSpeed", 199)
     tap("Enter")
-    tap("Down")
-    verify("menu speed warning stops at 200", m("mEditValue") == 200)
+    tap("Up")
+    verify("menu speed warning Up stops at 200", m("mEditValue") == 200)
     tap("Back")
     tap("Back")
     tap("Back")
@@ -1420,25 +1586,30 @@ Window {
     mark = len(log())
     open_path("Service")
     verify("menu Service entry runs one inquiry", calls_since(mark) == [["serviceInquire"]])
-    verify("menu service titles", titles() == ["Oil & Oil filter", "Front brake", "Inspection", "Brake fluid", "Rear brake",
-                                               "Filter", "spark plug", "Individual 2"])
-    verify("menu service no-data text", all(entry == "No data from adapter" for entry in values()))
-    verify("menu service colours", [entry["color"] for entry in rows()] ==
+    verify("menu service titles", titles() == ["Oil life", "Reset oil life", "Oil & Oil filter", "Front brake", "Inspection",
+                                               "Brake fluid", "Rear brake", "Filter", "spark plug", "Individual 2"])
+    verify("menu service no-data text", values()[0] == "No data from truck" and
+           all(entry == "No data from adapter" for entry in values()[2:]))
+    verify("menu service colours", [entry["color"] for entry in rows()[2:]] ==
            ["white", "orange", "red", "white", "orange", "red", "white", "white"])
+    global_state.setProperty("trucksOilLifePercentage", 64)
+    global_state.setProperty("trucksTrailerBrakeState", 0)
+    advance()
+    verify("menu service shows the truck oil life after the first frame", values()[0] == "64%")
     for name, data in (("mainTentReminder", 1000), ("mainTentMileage", 8000), ("mainTentYear", 27), ("mainTentMonth", 3), ("mainTentDay", 15)):
         array = value(global_state, name)
         array[0] = data
         assign(name, array)
     global_state.setProperty("mainTentChanged", 1)
     advance()
-    verify("menu service reminder text", values()[0] == "1000 km")
+    verify("menu service reminder text", values()[2] == "1000 km")
     open_path("Oil & Oil filter")
     verify("menu service item rows", titles() == ["Next service date", "Service interval", "Reset"] and
            values() == ["2027/3/15", "8000 km", ""])
     tap("Enter")
     verify("menu service date starts from the stored date", m("mEditFields") == [2027, 3, 15])
     tap("Enter")
-    tap("Down")
+    tap("Up")
     tap("Enter")
     verify("menu service date waits for the last field", sends(mark) == [])
     tap("Enter")
@@ -1450,7 +1621,7 @@ Window {
     focus("Service interval")
     tap("Enter")
     verify("menu interval edit starts from the stored interval", m("mEditValue") == 8000)
-    tap("Down")
+    tap("Up")
     tap("Enter")
     verify("menu interval commit", sends(mark)[-1] == ["svcMileage", 0, 8500])
     focus("Reset")
@@ -1473,19 +1644,29 @@ Window {
     open_path("spark plug")
     verify("menu custom rows", titles() == ["Item", "Next service date", "Service interval", "Reset"] and values()[0] == "spark plug")
     tap("Enter")
-    tap("Down")
+    tap("Up")
     tap("Enter")
-    verify("menu custom item commit", value(global_state, "mainTentCustomize1") == 3 and sends(mark)[-1] == ["svcItem", 6, 3] and
+    verify("menu custom item Up commits the next item", value(global_state, "mainTentCustomize1") == 3 and sends(mark)[-1] == ["svcItem", 6, 3] and
            values()[0] == "Wiper")
     focus("Service interval")
     tap("Enter")
-    tap("Up")
-    verify("menu interval without data starts at 0", m("mEditValue") == 0)
     tap("Down")
+    verify("menu interval without data starts at 0 and Down stops there", m("mEditValue") == 0)
+    tap("Up")
     tap("Enter")
     verify("menu custom interval commit", sends(mark)[-1] == ["svcMileage", 6, 500])
     tap("Back")
-    verify("menu custom name in the service list", titles()[6] == "Wiper")
+    verify("menu custom name in the service list", titles()[8] == "Wiper")
+    mark = len(log())
+    focus("Reset oil life")
+    tap("Enter")
+    verify("menu oil life reset arms and sends nothing", m("mArmedRow") == 1 and sends(mark) == [])
+    tap("Enter")
+    verify("menu oil life reset sends the Vehicle > Reset command", sends(mark) == [["oil"]])
+    verify("menu oil life reset reads the Ford setup back once",
+           wait_until(lambda: inquiries(mark, "fordInquire") == [["fordInquire"]], 4000))
+    QtTest.QTest.qWait(600)
+    verify("menu oil life read-back runs once", inquiries(mark, "fordInquire") == [["fordInquire"]])
     # Locked view (round 21 layout A, values B, confirm A): the open path stays on screen as columns.
     global_state.setProperty("menuBarIndex", 1)
     menu = load_menu()
@@ -1503,7 +1684,22 @@ Window {
     texts = item_texts(sip.cast(menu_state["page"], QtQuick.QQuickItem))
     verify("menu view shows a column for each open page", {"Settings", "Vehicle", "Driver assist"} <= texts)
     verify("menu view keeps the parent rows on screen", {"System", "Lighting", "Remote start"} <= texts)
-    verify("menu view shows the edit value with the meter", "‹ 100% ›" in texts)
+    verify("menu view shows the edit value with the meter", "100%" in texts)
+    def visible_names(item):
+        found = []
+        for child in item.childItems():
+            if child.isVisible():
+                found.append(child.objectName())
+                found += visible_names(child)
+        return found
+    verify("menu view shows the up and down edit mark, not left and right arrows",
+           visible_names(sip.cast(menu_state["page"], QtQuick.QQuickItem)).count("editChevrons") == 1 and
+           not any("‹" in text or "›" in text for text in texts))
+    tap("Down")
+    lowered = m("mEditValue")
+    tap("Up")
+    verify("menu keys follow the chevrons: on a number row Down lowers the value and Up raises the value",
+           lowered == 90 and m("mEditValue") == 100)
     verify("menu view shows segment labels", {"Electric", "Electric over hydraulic", "Normal", "Towing"} <= texts)
     verify("menu view shows edit key hints", {"Save", "Cancel"} <= texts and "Close menu" not in texts)
     window.setProperty("previewTitle", "Host Qt fixture preview - settings menu")
@@ -1575,6 +1771,52 @@ Window {
     preview("general", "vnM locked view; System > Factory > General settings.")
     tap("Back")
     preview("factory", "vnM locked view; System > Factory.")
+    # The former compiled pages use the same rows, editor, confirm, and hints as the other pages.
+    page_item = sip.cast(menu_state["page"], QtQuick.QQuickItem)
+    global_state.setProperty("odo", 123456)
+    open_path("Odometer setup")
+    tap("Enter")
+    tap("Up")
+    texts = item_texts(page_item)
+    verify("menu view marks the active odometer digit",
+           any(text.startswith("<u>") and text.endswith("23456 km") for text in texts) and
+           visible_names(page_item).count("editChevrons") == 1)
+    verify("menu view shows digit key hints", {"Change", "Next", "Cancel"} <= texts and "Save" not in texts)
+    preview("odometer-edit", "vnM locked view; Factory > Odometer setup with the first digit in edit.")
+    tap("Left")
+    tap("Back")
+    open_path("Fuel tank setup")
+    tap("Enter")
+    tap("Enter", 5)
+    texts = item_texts(page_item)
+    verify("menu view marks the last tank digit and the save hint",
+           any(text.startswith("Main 080 · Sub 00<u>") for text in texts) and {"Change", "Save", "Cancel"} <= texts)
+    preview("tank-edit", "vnM locked view; Factory > Fuel tank setup with the last sub tank digit in edit.")
+    tap("Left")
+    tap("Back")
+    open_path("Vehicle profile")
+    texts = item_texts(page_item)
+    verify("menu view lists the profiles and marks the selected one", {"F150_09-10", "F150_11-14", "F150_15-20", "Selected"} <= texts)
+    preview("profile", "vnM locked view; Factory > Vehicle profile.")
+    tap("Back")
+    open_path("Service commands")
+    tap("Enter")
+    texts = item_texts(page_item)
+    verify("menu view shows the armed command with a run hint", {"Press OK again to run", "Run", "Cancel"} <= texts and
+           "Reset" not in texts)
+    preview("commands-armed", "vnM locked view; Factory > Service commands with reboot.sh armed.")
+    tap("Left")
+    tap("Back")
+    tap("Back")
+    tap("Back")
+    global_state.setProperty("mPitch", 3)
+    global_state.setProperty("mRoll", -2)
+    open_path("Vehicle", "G-force")
+    texts = item_texts(page_item)
+    verify("menu view shows the live pitch and roll", {"Pitch", "Roll", "3°", "-2°", "Calibrate"} <= texts)
+    preview("gforce", "vnM locked view; Vehicle > G-force with live pitch and roll.")
+    global_state.setProperty("mPitch", 65535)
+    global_state.setProperty("mRoll", 65535)
     # Screen grid (vnS): the page fills the window and shows the size, the frame legend, and point labels.
     window.resize(1920, 720)
     window.setProperty("pageUrl", QtCore.QUrl.fromLocalFile(pages[1]["copy"]).toString())
@@ -1593,8 +1835,8 @@ Window {
                         width=image.width(), height=image.height(), label="vnS screen grid at 1920 x 720."))
     window.setProperty("pageUrl", "")
     advance()
-    result["menu_scope"] = ("vnM engine on host Qt with safe stubs. G-force and the compiled Factory pages use stubs with the "
-                            "compiled Back contract. Native calls record arguments only.")
+    result["menu_scope"] = ("vnM engine on host Qt with safe stubs. G-force, Odometer, Fuel tank, Vehicle profile, and Service "
+                            "commands are vnM pages; the stub Global copies the stock value helpers. Native calls record arguments only.")
     for page in pages:
         page["source_bytes_unchanged"] = hashlib.sha256(Path(page["source"]).read_bytes()).hexdigest() == page["sha256"]
     verify("page source bytes unchanged", all(page["source_bytes_unchanged"] for page in pages))

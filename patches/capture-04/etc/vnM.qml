@@ -1,8 +1,10 @@
 import QtQuick 2.12
 import "qrc:/Trucks/common"
 
-// Settings menu. Replaces the compiled MenuItemsList and every page under the list: Vehicle, System, Service, and Factory.
-// MenuPage hosts this file in a 1720x511 slot and calls key(keycode, state). MenuPage reads nothing else.
+// Settings menu. Replaces the compiled MenuItemsList and every page under the list: Vehicle, System, Service, and Factory,
+// with G-force and the Factory setup pages (stock MenuVehicleGForce, FactoryOdoSetup, FactoryTankSetup, FactoryVehicleModel,
+// and FactoryShellCmd; cache 100, 084, 080, 082, 079). MenuPage hosts this file in a 1720x511 slot and calls
+// key(keycode, state). MenuPage reads nothing else.
 // Two blocks: the engine (state, rows, keys, native calls) and the view. The view reads engine properties only.
 // Fixes: vehicle.md #1-#9, system.md #1, #3-#8, #10, #14, #15, shell-service.md S1-S9, K2 (analysis/capture-04/menu-audit).
 ItemInfo {
@@ -19,15 +21,14 @@ ItemInfo {
     property bool mEditing: false
     property var mEditValue: 0
     property var mEditStart: 0
-    property var mEditFields: []        // date editors: [year, month, day] or [year, month, day, hour, minute]
+    property var mEditFields: []        // field editors: date [year, month, day(, hour, minute)] or digits [d0, d1, ...]
     property int mEditField: 0
     property int mArmedRow: -1          // action row that waits for the second OK
-    property int mSentRow: -1           // action row that shows "Reset sent"
+    property int mSentRow: -1           // action row that shows the sent text
+    property var mShellCmds: []         // service command file names, read once when Service commands opens
     readonly property string mPage: mPath[mPath.length-1]
     readonly property var mRows: pageRows(mPage, mArmedRow, mSentRow)
     readonly property var mFocusRow: mCursor<mRows.length?mRows[mCursor]:null
-    readonly property string mHostedUrl: mPage==="gforce"?"qrc:/Trucks/menu/vehicle/MenuVehicleGForce.qml":
-                                         mPage.indexOf("fsub")===0?mFactoryUrls[mGlobalId.item.menuSettingsSubPageItemSetup]||"":""
     readonly property string mPathText: mPath.map(pageTitle).join(" › ")
     readonly property string mEditText: mEditing?editText():""
     readonly property bool mF150: Number(mTrucksModel)===1 && mGlobalId.item.vehicleModel===1
@@ -60,15 +61,9 @@ ItemInfo {
         "home": "Settings", "vehicle": "Vehicle", "lighting": "Lighting", "locks": "Locks", "assist": "Driver assist",
         "remote": "Remote start", "reset": "Reset", "gforce": "G-force", "system": "System", "language": "Language",
         "datetime": "Date and time", "units": "Units", "display": "Display", "version": "Version", "factory": "Factory",
-        "general": "General settings", "fsub1": "Advanced settings", "fsub2": "Odometer setup", "fsub3": "Fuel tank setup",
-        "fsub4": "Vehicle profile", "fsub6": "Service commands", "service": "Service"
+        "general": "General settings", "odometer": "Odometer setup", "tank": "Fuel tank setup", "profile": "Vehicle profile",
+        "commands": "Service commands", "service": "Service"
     })
-    // Compiled Factory pages by menuSettingsSubPageItemSetup value. The pages move between each other with the same value.
-    // Value 5 was the old General settings page. vnM owns General settings now.
-    readonly property var mFactoryUrls: ["", "qrc:/Trucks/menu/system/factory/FactorySeniorSetting.qml",
-        "qrc:/Trucks/menu/system/factory/FactoryOdoSetup.qml", "qrc:/Trucks/menu/system/factory/FactoryTankSetup.qml",
-        "qrc:/Trucks/menu/system/factory/FactoryVehicleModel.qml", "", "qrc:/Trucks/menu/system/factory/FactoryShellCmd.qml"]
-    property int mFactoryEntry: 0       // the Factory page value that opened the hosted Factory page
     // No compiled page or native code reads these General settings in this firmware (Global.setFactory cases).
     readonly property var mFactoryNoEffect: [6, 10, 11, 12, 13, 16, 17]
     readonly property var mDebugLevels: [0, 1, 2, 4, 8]
@@ -76,34 +71,16 @@ ItemInfo {
 
     Component.onCompleted: {
         mGlobalId.item.menuBarItemIndex=0
-        mGlobalId.item.menuSettingsPageIndex=0
     }
     onMRowsChanged: {
         if(mCursor>=mRows.length)
             mCursor=Math.max(0, mRows.length-1)
     }
-    // A hosted page returns to the parent page when the hosted page sets menuSettingsPageIndex to 0.
-    // A compiled Factory page returns when the page sets menuSettingsSubPageItemSetup to 0. Odometer, Fuel tank, and
-    // Vehicle profile set 1 (their old parent, Advanced settings). Value 1 also returns when one of them opened the page.
-    Connections {
-        target: mGlobalId.item
-        onMenuSettingsPageIndexChanged: {
-            if(mHostedUrl!=="" && mGlobalId.item.menuSettingsPageIndex===0)
-                closePage()
-        }
-        onMenuSettingsSubPageItemSetupChanged: {
-            var value=mGlobalId.item.menuSettingsSubPageItemSetup
-            if(mPage.indexOf("fsub")===0 && (!mFactoryUrls[value] || (value===1 && mFactoryEntry>=2 && mFactoryEntry<=4)))
-                closePage()
-        }
-    }
-    // Hosted page (G-force or a compiled Factory page). The engine owns the Loader and forwards keys to the page.
-    // A replacement view may move the Loader; x is the only view setting.
-    Loader {
-        id: mHostedLoader
-        x: 450
-        z: 1
-        source: mHostedUrl
+    // MenuPage unloads this file when the menu closes. A calibration that is still on would keep the gyro offsets
+    // following the truck (VehicleEvent onPitchRollNotify) until the next menu open, so the close ends the calibration.
+    Component.onDestruction: {
+        if(mGlobalId.item.mGyroCalibration)
+            mGlobalId.item.mGyroCalibration=0
     }
     Timer {
         id: mArmTimer
@@ -126,27 +103,38 @@ ItemInfo {
         interval: 500
         onTriggered: mEventHandleId.item.maintenacneInquire()
     }
+    // Gyro calibration: the same 1200 ms window as the stock G-force page. VehicleEvent stores the offsets while the
+    // flag is on; the flag clears 1200 ms after any write of 1.
+    Timer {
+        interval: 1200
+        running: !!mGlobalId.item.mGyroCalibration
+        onTriggered: mGlobalId.item.mGyroCalibration=0
+    }
 
     // ----- Keys -----
-    // States: 0 release, 1 press, 2 hold, 3 (3 s hold) ignored. Pages act on release.
+    // States: 0 release, 1 press, 2 hold, 3 (3 s hold) ignored. Up, Down, Enter, and Right act on press, so a step does
+    // not wait for the release; the release of these keys does nothing. Back, Left, and Modes act on release, because a
+    // hold of these keys has a different action.
     // Hold: Modes = Enter, Back = close the menu, other keys nothing. The next release of a held key is swallowed.
     // A new press ends the hold, so a hold without a release does not swallow the next tap.
     // Each key event writes one "viknav-key" line to the Launcher log: time (ms), key code, state, then the page path,
-    // cursor, and edit or hosted state after the event. The lines show repeated, held, or missing events from the wheel.
+    // cursor, and edit state after the event. The lines show repeated, held, or missing events from the wheel.
     function key(code, state) {
         handleKey(code, state)
-        console.log("viknav-key "+Date.now()+" "+code+" "+state+" "+mPath.join("/")+" "+mCursor+
-                    (mEditing?" edit":"")+(mHostedUrl!==""?" hosted":""))
+        console.log("viknav-key "+Date.now()+" "+code+" "+state+" "+mPath.join("/")+" "+mCursor+(mEditing?" edit":""))
         return 1
     }
     function handleKey(code, state) {
         var g=mGlobalId.item
-        var hosted=mHostedUrl!==""
+        var onPress=code===g.swcUp || code===g.swcDown || code===g.swcEnter || code===g.swcRight
         if(state===1) {
             mHeldKey=-1
-            mPressed=!hosted
-            if(hosted)
-                forward(code, 1)
+            mPressed=true
+            if(onPress) {
+                // The release (and a hold) of this key is swallowed.
+                mHeldKey=code
+                release(code)
+            }
             return 1
         }
         if(state===2) {
@@ -158,9 +146,7 @@ ItemInfo {
             if(code===g.swcBack || code===g.swcLeft)
                 closeMenu()
             else if(code===g.swcModes)
-                hosted?forward(g.swcEnter, 0):release(g.swcEnter)
-            else if(hosted)
-                forward(code, 2)
+                release(g.swcEnter)
             return 1
         }
         if(state!==0)
@@ -170,12 +156,9 @@ ItemInfo {
             mHeldKey=-1
             return 1
         }
-        hosted?forward(code, 0):release(code)
+        if(!onPress)
+            release(code)
         return 1
-    }
-    function forward(code, state) {
-        if(mHostedLoader.item)
-            mHostedLoader.item.key(code, state)
     }
     function release(code) {
         var g=mGlobalId.item
@@ -187,10 +170,12 @@ ItemInfo {
             return
         if(mArmedRow>=0 && action!=="enter")
             disarm()
+        // In an editor the keys follow the up and down chevrons: Up raises the value, the field, or goes to the next
+        // option; Down (and Modes) lowers the value or goes to the previous option.
         if(mEditing) {
             switch(action) {
-            case "up": editStep(-1); break
-            case "down": editStep(1); break
+            case "up": editStep(1); break
+            case "down": editStep(-1); break
             case "back": dropState(); break
             case "enter": editEnter(); break
             }
@@ -216,20 +201,20 @@ ItemInfo {
         mPath=mPath.concat([page])
         mCursor=0
         var e=mEventHandleId.item
-        var g=mGlobalId.item
-        if(page.indexOf("fsub")===0) {
-            mFactoryEntry=Number(page.slice(4))
-            g.menuSettingsPageIndex=1
-            g.menuSettingsSubPageItemSetup=mFactoryEntry
-            return
-        }
         switch(page) {
         case "vehicle": if(mF150) e.seniorF150_11_14_SetupInquire(); break
         case "service": e.maintenacneInquire(); break
         case "version": e.versionInquire(); break
         case "factory": e.shellCmdInquire(); break
         case "general": e.systemInquire(); break
-        case "gforce": g.menuSettingsPageIndex=1; break
+        case "commands":
+            // The stock page reads the local and USB command files once, when the page loads.
+            var names=[]
+            var count=Number(e.getSehllCmdCount())
+            for(var i=0; i<count; i++)
+                names.push(e.getSehllCmdName(i))
+            mShellCmds=names
+            break
         }
     }
     function closePage() {
@@ -238,21 +223,13 @@ ItemInfo {
             return
         }
         dropState()
-        var leaving=mPage
         var parentRow=mCursors[mCursors.length-1]
         mCursors=mCursors.slice(0, -1)
         mPath=mPath.slice(0, -1)
         mCursor=parentRow
-        // The path changes first, so these writes do not close a second page.
-        if(leaving.indexOf("fsub")===0) {
-            mGlobalId.item.menuSettingsSubPageItemSetup=0
-            mGlobalId.item.menuSettingsPageIndex=0
-        }
     }
     function closeMenu() {
         dropState()
-        if(mPage.indexOf("fsub")===0)
-            closePage()
         mGlobalId.item.menuBarIndex=0
     }
     function dropState() {
@@ -274,8 +251,9 @@ ItemInfo {
     }
 
     // ----- Rows -----
-    // Row fields: kind (page, hosted, toggle, choice, number, date, action, command, select, info, unavailable), title, value,
-    // and per kind: page, op, arg, options, texts, start, min, max, step, unit, color.
+    // Row fields: kind (page, toggle, choice, number, date, digits, action, command, select, info, unavailable), title, value,
+    // and per kind: page, op, arg, options, texts, start, min, max, step, unit, color, verb and done (action: the word of the
+    // second OK and the text after the send; default Reset and "Reset sent"; an empty done shows no text).
     // View fields: current (index of the value in seg or options, -1 when the value is outside), seg (labels for a segment
     // control; a toggle without seg is a switch), note (a short state next to the control).
     function makeRow(kind, title, value, extra) {
@@ -295,11 +273,14 @@ ItemInfo {
         var rows=buildRows(page)
         for(var i=0; i<rows.length; i++) {
             if(i===armedRow)
-                rows[i].value="Press OK again to reset"
+                rows[i].value="Press OK again to "+actionVerb(rows[i]).toLowerCase()
             else if(i===sentRow)
-                rows[i].value="Reset sent"
+                rows[i].value=rows[i].done!==undefined?rows[i].done:"Reset sent"
         }
         return rows
+    }
+    function actionVerb(row) {
+        return row && row.verb?row.verb:"Reset"
     }
     function buildRows(page) {
         var g=mGlobalId.item
@@ -316,7 +297,9 @@ ItemInfo {
                              unavailableRow(entry[1], "Not set up for this vehicle profile")
             })
             return vehicle.concat([makeRow("page", "Reset", "", {"page": "reset"}),
-                                   makeRow("hosted", "G-force", "", {"page": "gforce"})])
+                                   makeRow("page", "G-force", "", {"page": "gforce"})])
+        case "gforce":
+            return gforceRows()
         case "lighting":
         case "locks":
         case "assist":
@@ -337,6 +320,18 @@ ItemInfo {
             return factoryRows()
         case "general":
             return generalRows()
+        case "odometer":
+            return [makeRow("digits", "Odometer", g.getOdo(1), {"op": "odo"})]
+        case "tank":
+            return [makeRow("digits", "Main and sub tank", tankText(), {"op": "tank"})]
+        case "profile":
+            return profileRows()
+        case "commands":
+            if(mShellCmds.length===0)
+                return [unavailableRow("Service commands", "No command files on the cluster or a USB drive")]
+            return mShellCmds.map(function(name) {
+                return makeRow("action", name, "", {"op": "shell", "arg": name, "verb": "Run", "done": "Command sent"})
+            })
         case "language":
             return t.mSystemLangPickUp.map(function(code) {
                 return makeRow("select", t.mSystemLanguages[code], code===g.language?"Selected":"", {"op": "language", "arg": code})
@@ -361,7 +356,9 @@ ItemInfo {
             return [makeRow("info", "App", g.launcherVersion, {}), makeRow("info", "Plugins", g.pluginsVersion, {}),
                     makeRow("info", "Protocol", g.mcuVersion, {})]
         case "service":
-            var items=[]
+            // The truck oil life comes first: the service reminders below are the adapter's own counters, and their
+            // Reset does not reset the truck oil life. Reset oil life sends the same command as Vehicle > Reset.
+            var items=mF150?[oilLifeRow(), makeRow("action", "Reset oil life", "", {"op": "reset", "arg": "oil"})]:[]
             for(var id=0; id<8; id++)
                 items.push(makeRow("page", serviceName(id), g.mainTentReminder[id]===0xFFFFFF?"No data from adapter":g.getMaintentReminder(id),
                                    {"page": "svc"+id, "color": g.getMaintentStateColor(id)}))
@@ -472,9 +469,24 @@ ItemInfo {
             break
         case "key": if(yukon) e.setFordSetup(13, 8, 1); break
         case "tpmsLearn": if(yukon) e.setFordSetup(13, 9, 1); break
-        case "oil": if(yukon || (model===1 && vehicle===1)) e.resetOilLife(); break
+        case "oil":
+            if(yukon || (model===1 && vehicle===1)) {
+                e.resetOilLife()
+                // resetOilLife writes fordSetupInfo[59] in place: refresh the rows, then read the Ford setup back.
+                mGlobalId.item.fordSetupInfoChanged=!mGlobalId.item.fordSetupInfoChanged
+                if(model===1)
+                    mFordReadBack.restart()
+            }
+            break
         case "compass": if(yukon) e.setFordSetup(13, 14, 1); break
         }
+    }
+    // G-force: the pitch and roll text of the stock gauges (Global getPitchString and getRollString, "--°" before the
+    // first sensor frame). The rows follow each sensor change. The values hold still while the calibration runs.
+    function gforceRows() {
+        var g=mGlobalId.item
+        return [makeRow("info", "Pitch", g.getPitchString(), {}), makeRow("info", "Roll", g.getRollString(), {}),
+                makeRow("action", "Calibrate", g.mGyroCalibration?"Calibrating":"", {"op": "gyro", "verb": "Calibrate", "done": ""})]
     }
 
     // ----- System -----
@@ -536,17 +548,18 @@ ItemInfo {
     }
 
     // ----- Factory -----
-    // Rows and actions: ported from the Factory catalog (vnF.qml). The five setup pages stay compiled pages.
+    // Rows and actions: ported from the Factory catalog (vnF.qml). The stock Advanced settings page (cache 083) sets
+    // only the odometer, the fuel tanks, and the vehicle profile, the same calls as their own pages, so the menu has no
+    // Advanced settings row.
     function factoryRows() {
         var g=mGlobalId.item
         var debug=g.uartDebugEnabled
         var level=mDebugLevels.indexOf(debug)
         return [makeRow("page", "General settings", "", {"page": "general"}),
-                makeRow("hosted", "Advanced settings", "", {"page": "fsub1"}),
-                makeRow("hosted", "Fuel tank setup", "", {"page": "fsub3"}),
-                makeRow("hosted", "Vehicle profile", "", {"page": "fsub4"}),
-                makeRow("hosted", "Odometer setup", "", {"page": "fsub2"}),
-                makeRow("hosted", "Service commands", "", {"page": "fsub6"}),
+                makeRow("page", "Fuel tank setup", tankText(), {"page": "tank"}),
+                makeRow("page", "Vehicle profile", mTranslationId.item.mVehicleModel, {"page": "profile"}),
+                makeRow("page", "Odometer setup", g.getOdo(1), {"page": "odometer"}),
+                makeRow("page", "Service commands", "", {"page": "commands"}),
                 makeRow("command", "ADB debugging: enable", "", {"op": "adb", "arg": 1}),
                 makeRow("command", "ADB debugging: disable", "", {"op": "adb", "arg": 0}),
                 makeRow("choice", "Debug logging", level>=0?mDebugTexts[level]:"Value "+debug,
@@ -555,6 +568,30 @@ ItemInfo {
                 makeRow("toggle", "USB image preview", g.mediaImageEnabled?"On":"Off", {"op": "preview", "current": g.mediaImageEnabled?1:0}),
                 makeRow("command", "Screen grid", "", {"op": "grid"}),
                 makeRow("toggle", "Car model options", g.modelCarSelection?"On":"Off", {"op": "model", "current": g.modelCarSelection?1:0})]
+    }
+    function tankText() {
+        var g=mGlobalId.item
+        return g.getTank(0, 1)+" · "+g.getTank(1, 1)
+    }
+    // Vehicle profile (stock FactoryVehicleModel). The stock page lists 11 rows; the Ford table names 3 profiles, so the
+    // menu lists the defined profiles only.
+    function profileRows() {
+        var t=mTranslationId.item
+        var rows=[]
+        t.mVehicleModelPickUp.forEach(function(index) {
+            if(t.mVehicleModels[index]!==undefined)
+                rows.push(makeRow("select", t.mVehicleModels[index], index===mGlobalId.item.vehicleModel?"Selected":"",
+                                  {"op": "profile", "arg": index}))
+        })
+        return rows
+    }
+    // Same order as the stock page: the profile first, then the device profile index that the new profile binds
+    // (Translation mVehicleModelIndex). The stock Advanced settings page sends no index of -1; an undefined index is not sent.
+    function selectProfile(index) {
+        mGlobalId.item.vehicleModel=index
+        var device=mTranslationId.item.mVehicleModelIndex
+        if(device!==undefined && Number(device)!==-1)
+            mEventHandleId.item.setVehicleModel(device)
     }
     // Rows: ported from the General settings page (vnB.qml). OK sends Global.setFactory(index), which flips the setting.
     // Row 7 steps through five speed scale values.
@@ -575,6 +612,12 @@ ItemInfo {
     }
 
     // ----- Service -----
+    // The truck oil life percent (JLY 0x1A, the trailer info frame). The trailer brake state of the same frame stays -1
+    // until the first frame, so the row can tell no data from 0%.
+    function oilLifeRow() {
+        var g=mGlobalId.item
+        return makeRow("info", "Oil life", g.trucksTrailerBrakeState<0?"No data from truck":g.trucksOilLifePercentage+"%", {})
+    }
     function serviceName(id) {
         var t=mTranslationId.item
         var g=mGlobalId.item
@@ -617,7 +660,6 @@ ItemInfo {
         var g=mGlobalId.item
         switch(row.kind) {
         case "page":
-        case "hosted":
             openPage(row.page)
             break
         case "toggle":
@@ -630,16 +672,20 @@ ItemInfo {
             mEditing=true
             break
         case "date":
-            mEditFields=dateStart(row)
+        case "digits":
+            mEditFields=fieldStart(row)
+            mEditStart=mEditFields
             mEditField=0
             mEditing=true
             break
         case "action":
             if(mArmedRow===mCursor) {
                 disarm()
-                row.op==="reset"?runReset(row.arg):serviceSend("reset", row.arg)
-                mSentRow=mCursor
-                mSentTimer.restart()
+                runAction(row)
+                if(row.done!=="") {
+                    mSentRow=mCursor
+                    mSentTimer.restart()
+                }
             } else {
                 mSentRow=-1
                 mArmedRow=mCursor
@@ -660,7 +706,20 @@ ItemInfo {
         case "select":
             if(row.op==="language")
                 g.language=row.arg
+            else if(row.op==="profile")
+                selectProfile(row.arg)
             break
+        }
+    }
+    // The second OK of an action row.
+    function runAction(row) {
+        switch(row.op) {
+        case "reset": runReset(row.arg); break
+        case "svcReset": serviceSend("reset", row.arg); break
+        // Stock FactoryShellCmd: one OK ran the file; the menu asks for a second OK first.
+        case "shell": mEventHandleId.item.setShellCmdFile(row.arg); break
+        // Stock G-force: the flag only; the Timer above clears the flag after 1200 ms.
+        case "gyro": mGlobalId.item.mGyroCalibration=1; break
         }
     }
     function toggle(row) {
@@ -711,32 +770,31 @@ ItemInfo {
             mEditValue=row.options[(index+step+count)%count]
         } else if(row.kind==="number") {
             mEditValue=clamp(mEditValue+step*row.step, row.min, row.max)
-        } else if(row.kind==="date") {
+        } else if(mEditFields.length>0) {
             var fields=mEditFields.slice()
-            var range=fieldRange(fields, mEditField)
+            var range=fieldRange(row, fields, mEditField)
             var value=fields[mEditField]+step
             fields[mEditField]=value>range[1]?range[0]:value<range[0]?range[1]:value
-            fields[2]=Math.min(fields[2], daysInMonth(fields[0], fields[1]))
+            if(row.kind==="date")
+                fields[2]=Math.min(fields[2], daysInMonth(fields[0], fields[1]))
             mEditFields=fields
         }
     }
     function editEnter() {
         var row=mFocusRow
-        if(!row || (row.kind!=="choice" && row.kind!=="number" && row.kind!=="date")) {
+        if(!row || (row.kind!=="choice" && row.kind!=="number" && row.kind!=="date" && row.kind!=="digits")) {
             dropState()
             return
         }
-        if(row.kind==="date") {
+        if(mEditFields.length>0) {
             if(mEditField<mEditFields.length-1) {
                 mEditField++
                 return
             }
             var fields=mEditFields
+            var start=mEditStart
             dropState()
-            if(row.op==="clock")
-                mEventHandleId.item.setRtc(fields[0]+"-"+pad2(fields[1])+"-"+pad2(fields[2])+" "+pad2(fields[3])+":"+pad2(fields[4])+":00")
-            else
-                serviceSend("date", row.arg, fields[0]+"-"+fields[1]+"-"+fields[2])
+            commitFields(row, fields, start)
             return
         }
         var value=mEditValue
@@ -744,6 +802,30 @@ ItemInfo {
         dropState()
         if(changed)
             commit(row, value)
+    }
+    // The last OK of a field editor. A digit editor sends only a changed value; the stock page sent every Set, and a
+    // re-send of the same odometer in miles can move the stored kilometres by the rounding.
+    function commitFields(row, fields, start) {
+        var e=mEventHandleId.item
+        switch(row.op) {
+        case "clock":
+            e.setRtc(fields[0]+"-"+pad2(fields[1])+"-"+pad2(fields[2])+" "+pad2(fields[3])+":"+pad2(fields[4])+":00")
+            break
+        case "svcDate":
+            serviceSend("date", row.arg, fields[0]+"-"+fields[1]+"-"+fields[2])
+            break
+        case "odo":
+            if(fields.join("")!==start.join(""))
+                e.setOdo(Number(fields.join("")))
+            break
+        case "tank":
+            // The stock Set sends both tanks together, the main tank first.
+            if(fields.join("")!==start.join("")) {
+                e.setFuelTank(0, Number(fields.slice(0, 3).join("")))
+                e.setFuelTank(1, Number(fields.slice(3).join("")))
+            }
+            break
+        }
     }
     function commit(row, value) {
         var g=mGlobalId.item
@@ -780,9 +862,19 @@ ItemInfo {
         }
         mServiceReadBack.restart()
     }
-    function dateStart(row) {
+    // Start values of a field editor. The digits come from the same Global helpers as the stock pages; the stock digit
+    // property is an int, so a fraction from the helper drops to the whole digit.
+    function fieldStart(row) {
         var g=mGlobalId.item
         var fields
+        if(row.op==="odo" || row.op==="tank") {
+            fields=[]
+            for(var digit=0; digit<6; digit++) {
+                var raw=Math.floor(Number(row.op==="odo"?g.getOdoNum(digit):g.getTankNum(digit<3?0:1, digit%3)))
+                fields.push(clamp(isNaN(raw)?0:raw, 0, 9))
+            }
+            return fields
+        }
         if(row.op==="clock") {
             var date=String(g.rtcDate).split("-").map(Number)
             var time=String(g.rtcTime).split(":").map(Number)
@@ -794,12 +886,14 @@ ItemInfo {
             fields=[today.getFullYear(), today.getMonth()+1, today.getDate()]
         }
         for(var i=0; i<fields.length; i++) {
-            var range=fieldRange(fields, i)
+            var range=fieldRange(row, fields, i)
             fields[i]=clamp(isNaN(fields[i])?range[0]:fields[i], range[0], range[1])
         }
         return fields
     }
-    function fieldRange(fields, index) {
+    function fieldRange(row, fields, index) {
+        if(row.kind==="digits")
+            return [0, 9]
         switch(index) {
         case 0: return [2024, 2099]
         case 1: return [1, 12]
@@ -811,17 +905,27 @@ ItemInfo {
     function daysInMonth(year, month) {
         return new Date(year, month, 0).getDate()
     }
-    function editText() {
+    // The edited value. Up and Down change the value, so the view shows an up and down mark next to the value, not
+    // left and right arrows. mark(text) wraps the field that Up and Down change; without mark the text is plain.
+    function editText(mark) {
         var row=mFocusRow
         if(!row)
             return ""
         if(row.kind==="choice")
-            return "‹ "+row.texts[row.options.indexOf(mEditValue)]+" ›"
+            return row.texts[row.options.indexOf(mEditValue)]
         if(row.kind==="number")
-            return "‹ "+mEditValue+row.unit+" ›"
+            return mEditValue+row.unit
+        var fields=mEditFields
+        if(row.kind==="digits") {
+            var digits=fields.map(String)
+            if(mark)
+                digits[mEditField]=mark(digits[mEditField])
+            if(row.op==="tank")
+                return "Main "+digits.slice(0, 3).join("")+" · Sub "+digits.slice(3).join("")+" "+mGlobalId.item.tankUnit
+            return digits.join("")+" "+mGlobalId.item.tripUnit
+        }
         if(row.kind!=="date")
             return ""
-        var fields=mEditFields
         var parts=[String(fields[0]), pad2(fields[1]), pad2(fields[2])]
         var suffix=""
         if(fields.length>3) {
@@ -832,7 +936,8 @@ ItemInfo {
             }
             parts.push(row.op==="clock" && !mGlobalId.item.rtc24h?String(hour):pad2(hour), pad2(fields[4]))
         }
-        parts[mEditField]="‹"+parts[mEditField]+"›"
+        if(mark)
+            parts[mEditField]=mark(parts[mEditField])
         var text=parts[0]+"-"+parts[1]+"-"+parts[2]
         return parts.length>3?text+"  "+parts[3]+":"+parts[4]+suffix:text
     }
@@ -866,6 +971,8 @@ ItemInfo {
         readonly property color mute: "#4d5661"
         readonly property color line: "#1f262e"
         readonly property color quiet: "#9aa4af"
+        // Values stay readable without the focus: about 12:1 on the panel (sub is about 5:1, mute about 2.6:1).
+        readonly property color bright: "#c9d1d9"
         readonly property color caution: "#ffb020"
         readonly property color hot: "#ff3b30"
         readonly property color ok: "#3ee07a"
@@ -875,7 +982,6 @@ ItemInfo {
         readonly property int depth: mPath.length
         // At most three columns fit. A deeper page moves the oldest columns off the left side.
         readonly property int first: Math.max(0, depth-3)
-        readonly property int lastX: columnX(depth-1)
         function columnX(level) {
             var x=0
             for(var i=first; i<level; i++)
@@ -899,10 +1005,11 @@ ItemInfo {
             NumberAnimation { target: mView; property: "enterOpacity"; from: 0; to: 1; duration: 280; easing.type: Easing.OutCubic }
         }
         function hints() {
+            // A field editor moves to the next field until the last one.
             if(mEditing)
-                return [["▲ ▼", "Change"], ["OK", "Save"], ["◀", "Cancel"]]
+                return [["▲ ▼", "Change"], ["OK", mEditField<mEditFields.length-1?"Next":"Save"], ["◀", "Cancel"]]
             if(mArmedRow>=0)
-                return [["OK", "Reset"], ["◀", "Cancel"]]
+                return [["OK", actionVerb(mFocusRow)], ["◀", "Cancel"]]
             return [["▲ ▼", "Select"], ["OK", "Open or change"], ["◀", "Back"], ["Hold ◀", "Close menu"]]
         }
 
@@ -912,12 +1019,6 @@ ItemInfo {
             radius: 12
             color: "#0b0e12"
             opacity: 0.94
-        }
-        // A hosted page (G-force or a compiled Factory page) takes the place of the deepest column.
-        Binding {
-            target: mHostedLoader
-            property: "x"
-            value: mView.lastX
         }
 
         Repeater {
@@ -930,15 +1031,16 @@ ItemInfo {
                 // Back shortens mCursors before mPath, so a parent column can briefly have no saved row.
                 readonly property int focusRow: last?mCursor:(mCursors[level]!==undefined?mCursors[level]:0)
                 readonly property int rowHeight: last?68:60
-                // The narrow first column shows titles only. The values stay in the wider columns.
-                readonly property bool compact: !last && level===mView.first
+                // Parent columns show titles and the open chevrons only, so the titles do not elide. The values stay in the
+                // focused column.
+                readonly property bool compact: !last
                 readonly property int headHeight: 54
                 readonly property int visibleRows: Math.floor((height-headHeight)/rowHeight)
                 readonly property int firstRow: Math.max(0, Math.min(focusRow-visibleRows+2, rows.length-visibleRows))
                 x: mView.columnX(level)
                 width: last?menuRoot.width-x:mView.widths[Math.min(level-mView.first, mView.widths.length-1)]
                 height: menuRoot.height-mView.hintHeight
-                visible: level>=mView.first && !(last && mHostedUrl!=="")
+                visible: level>=mView.first
                 opacity: last?mView.enterOpacity:1
                 transform: Translate { x: mColumn.last?mView.enterX:0 }
 
@@ -1007,7 +1109,7 @@ ItemInfo {
                                     readonly property bool editing: focused && mEditing
                                     width: parent.width
                                     height: mColumn.rowHeight
-                                    opacity: !mColumn.last && !onPath?0.45:1
+                                    opacity: !mColumn.last && !onPath?0.6:1
                                     Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
 
                                     // Parent columns mark the open row; the focus highlight marks the focused row.
@@ -1044,11 +1146,33 @@ ItemInfo {
                                             readonly property bool focused: mRow.focused
                                             readonly property bool editing: mRow.editing
                                             readonly property bool compact: mColumn.compact
+                                            visible: !compact || row.kind==="page"
                                             sourceComponent: mRow.armed?mArmedText:mRow.sent?mSentText:mRow.na?mReasonText:
-                                                             (row.kind==="page" || row.kind==="hosted")?mOpenValue:
+                                                             row.kind==="page"?mOpenValue:
                                                              row.seg && (editing || row.current>=0)?mSegments:
                                                              row.kind==="toggle" && row.current>=0?mSwitch:
                                                              row.kind==="number" && row.unit==="%"?mMeter:mTextValue
+                                        }
+                                        // While the row edits, Up and Down change the value: an up and a down chevron.
+                                        Item {
+                                            objectName: "editChevrons"
+                                            visible: mRow.editing
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            width: 16
+                                            height: 34
+                                            Repeater {
+                                                model: [-45, 135]
+                                                // Chevron: two strokes of a square turned to point up, then down.
+                                                Item {
+                                                    x: 1
+                                                    y: index===0?4:16
+                                                    width: 12
+                                                    height: 12
+                                                    rotation: modelData
+                                                    Rectangle { width: parent.width; height: 3; color: mView.accent }
+                                                    Rectangle { anchors.right: parent.right; width: 3; height: parent.height; color: mView.accent }
+                                                }
+                                            }
                                         }
                                     }
                                     // Confirm A: the bar runs down over the 5 s the row stays armed.
@@ -1085,9 +1209,8 @@ ItemInfo {
             }
         }
 
-        // Key hints under the menu. The hosted pages fill the full height and have their own rows.
+        // Key hints under the menu.
         Row {
-            visible: mHostedUrl===""
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 10
@@ -1122,10 +1245,14 @@ ItemInfo {
                 readonly property var row: parent.row
                 readonly property bool focused: parent.focused
                 readonly property bool editing: parent.editing
-                text: editing?mEditText:row.value
+                readonly property bool fields: editing && mEditFields.length>0
+                // The date field or digit that Up and Down change takes the accent colour and an underline.
+                text: fields?editText(function(part) { return "<u><font color=\""+mView.accent+"\">"+part+"</font></u>" }):
+                             editing?mEditText:row.value
+                textFormat: fields?Text.StyledText:Text.PlainText
                 font.family: mView.family
                 font.pixelSize: 28
-                color: focused?"#ffffff":mView.sub
+                color: focused?"#ffffff":mView.bright
             }
         }
         Component {
@@ -1137,7 +1264,7 @@ ItemInfo {
                 text: row.value
                 font.family: mView.family
                 font.pixelSize: 22
-                color: mView.mute
+                color: mView.sub
             }
         }
         Component {
@@ -1178,7 +1305,7 @@ ItemInfo {
                     text: row.value
                     font.family: mView.family
                     font.pixelSize: 28
-                    color: focused?"#ffffff":mView.sub
+                    color: focused?"#ffffff":mView.bright
                 }
                 // Chevron: two strokes of a square turned 45 degrees.
                 Item {
@@ -1230,7 +1357,7 @@ ItemInfo {
                     text: row.note!==undefined?row.note:""
                     font.family: mView.family
                     font.pixelSize: 22
-                    color: mView.mute
+                    color: mView.sub
                 }
                 Rectangle {
                     width: mSegmentRow.width+8
@@ -1270,7 +1397,7 @@ ItemInfo {
                                     text: modelData
                                     font.family: mView.family
                                     font.pixelSize: 22
-                                    color: parent.on?(focused?"#05070a":"#ffffff"):mView.sub
+                                    color: parent.on?(focused?"#05070a":"#ffffff"):mView.quiet
                                     Behavior on color { ColorAnimation { duration: 120 } }
                                 }
                             }
@@ -1328,7 +1455,7 @@ ItemInfo {
                     text: editing?mEditText:row.value
                     font.family: mView.family
                     font.pixelSize: 28
-                    color: focused?"#ffffff":mView.sub
+                    color: focused?"#ffffff":mView.bright
                 }
             }
         }

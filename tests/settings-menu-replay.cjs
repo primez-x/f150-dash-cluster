@@ -13,7 +13,7 @@ const expected = [
   'Factory is a native vnM page with one shell inquiry on entry.',
   'General settings shows the 19 vendor rows, sends the vendor setter for rows with an effect, and shows a reason for the rest.',
   'General settings runs the original system inquiry once on entry, without arguments.',
-  'Compiled Factory pages open on release and return to the Factory row with their compiled Back values.',
+  'Odometer, Fuel tank, Vehicle profile, and Service commands are vnM pages that send the stock calls and arguments.',
   'ADB, Debug logging, USB image preview, Car model options, and Screen grid send the vendor values.',
   'Factory code contains no vendor code gate and loads no retired Factory file.',
   'Display > Dashboard layout offers two segments, Daily and Towing; OK switches the layout and a Tow/Haul choice shows a note.'
@@ -24,12 +24,16 @@ const report = {schema_version: 2, authority: 'PC source and reduced decoded ven
   vehicle_verification: 'Not run', cases: 0,
   page_contracts: {
     factory: {owner: 'patches/capture-04/etc/vnM.qml', page: 'factory',
-      controls: 'General settings, five compiled setup pages, ADB, Debug logging, USB image preview, Screen grid, Car model options',
+      controls: 'General settings, Fuel tank, Vehicle profile, Odometer, Service commands, ADB, Debug logging, USB image preview, Screen grid, Car model options',
       return: 'Back returns to System'},
     general: {owner: 'patches/capture-04/etc/vnM.qml', page: 'general', controls: '19 vendor rows',
       setter: 'mGlobalId.item.setFactory(index)', context: ['mGlobalId', 'mTranslationId']},
-    compiled_pages: 'vnM hosts FactorySeniorSetting, FactoryOdoSetup, FactoryTankSetup, FactoryVehicleModel, and FactoryShellCmd by menuSettingsSubPageItemSetup.',
-    keys: 'vnM key(code,state) acts on release. Qt owns the press, hold, and Modes checks.'
+    setup_pages: {owner: 'patches/capture-04/etc/vnM.qml', hosted_pages: 'none',
+      odometer: 'setOdo(Number(six digits)) once after the last digit (cache 084 key_enter)',
+      tank: 'setFuelTank(0, main) then setFuelTank(1, sub) after the last digit (cache 080 key_enter)',
+      profile: 'vehicleModel=index, then setVehicleModel(mVehicleModelIndex) unless the index is -1 or undefined (cache 082, 083 key_enter)',
+      commands: 'setShellCmdFile(getSehllCmdName(row)) on the second OK (cache 079 key_enter)'},
+    keys: 'vnM key(code,state): Up, Down, Enter, and Right act on press; Back, Left, and Modes on release. Qt owns the press, hold, and Modes checks.'
   }, limitations: [
     'Source replay does not prove QML component rendering or native context lookup.',
     'Loader offsets and identities come from reduced metadata fixtures. This replay does not verify native binary bytes.',
@@ -59,14 +63,6 @@ function methods(text, scope) {
     vm.runInContext(declaration(text, match[1]), context);
   }
   return context;
-}
-function handler(text, marker) {
-  const start = text.indexOf(marker);
-  assert.ok(start >= 0, 'Missing handler ' + marker);
-  const suffix = text.slice(start + marker.length).trimStart();
-  if (!suffix.startsWith('{')) return suffix.split(/\r?\n/)[0];
-  const wrapper = declaration('function callback() ' + suffix, 'callback');
-  return wrapper.slice(wrapper.indexOf('{') + 1, -1);
 }
 try {
   const provenance = JSON.parse(fs.readFileSync(path.join(fixtures, 'manifest.json')));
@@ -108,7 +104,7 @@ try {
     call_anchor: 'qrc:/Trucks/menu/system/factory/FactoryGenericSetup.qml:385'},
     boundary: 'Source replay verifies the command target and arguments. The 50 ms delay of the original page is not kept.'};
 
-  // vnM engine in a VM. Property bindings and Connections handlers are read from vnM.qml and run as getters and setters.
+  // vnM engine in a VM. Property bindings are read from vnM.qml and run as getters.
   const binding = name => {
     const match = new RegExp('readonly property \\w+ ' + name + ': ').exec(menuText);
     assert.ok(match, 'Missing binding ' + name);
@@ -125,37 +121,49 @@ try {
   let states = Array(19).fill(0);
   const calls = [];
   const log = [];
-  const g = {menuBarIndex: 1, language: 0, gpsAutoSetRtcEnabled: 0, getRtcTime() { return '12:00'; }, getAmPm() { return ''; },
+  const g = {menuBarIndex: 1, menuSettingsPageIndex: 0, menuSettingsSubPageItemSetup: 0, language: 0, gpsAutoSetRtcEnabled: 0, getRtcTime() { return '12:00'; }, getAmPm() { return ''; },
     uartDebugEnabled: 0, mediaImageEnabled: 0, modelCarSelection: false, screenGridEnabled: 0,
     fordSetupInfoChanged: false, mainTentChanged: false, swcUp: 1, swcDown: 2, swcBack: 3, swcLeft: 4, swcEnter: 5, swcRight: 6,
-    swcModes: 7, setFactory(index) { calls.push(index); states[index] = index === 7 ? (states[index] + 1) % 5 : (states[index] ? 0 : 1); }};
+    swcModes: 7, setFactory(index) { calls.push(index); states[index] = index === 7 ? (states[index] + 1) % 5 : (states[index] ? 0 : 1); },
+    // Odometer, tank, and gyro helpers as in Global.qml, metric units.
+    vehicleModel: 1, odo: 12345, tripUnit: 'km', mainTank: 80, subTank: 0, tankUnit: 'L',
+    getOdo(unit) { return this.odo.toFixed(0) + (unit ? ' km' : ''); },
+    getOdoNum(index) { const temp = this.odo.toFixed(0);
+      return [temp / 100000, temp % 100000 / 10000, temp % 10000 / 1000, temp % 1000 / 100, temp % 100 / 10, temp % 10][index]; },
+    getTank(sub) { return (sub ? this.subTank : this.mainTank).toFixed(0) + ' L'; },
+    getTankNum(sub, index) { const temp = (sub ? this.subTank : this.mainTank).toFixed(0); return [temp / 100, temp % 100 / 10, temp % 10][index]; },
+    mGyroCalibration: 0, mPitch: 4, mRoll: -3, getPitchString() { return this.mPitch + '\u00b0'; }, getRollString() { return this.mRoll + '\u00b0'; }};
+  let shellFiles = ['a.sh', 'b.sh'];
+  let shellReads = 0;
   const e = {systemInquire(...args) { log.push(['systemInquire', ...args]); },
-    shellCmdInquire(...args) { log.push(['shellCmdInquire', ...args]); }, adb(value) { log.push(['adb', value]); }};
+    shellCmdInquire(...args) { log.push(['shellCmdInquire', ...args]); }, adb(value) { log.push(['adb', value]); },
+    setOdo(...args) { log.push(['setOdo', ...args]); }, setFuelTank(...args) { log.push(['setFuelTank', ...args]); },
+    setVehicleModel(...args) { log.push(['setVehicleModel', ...args]); }, setShellCmdFile(...args) { log.push(['shell', ...args]); },
+    getSehllCmdCount() { shellReads++; return shellFiles.length; }, getSehllCmdName(index) { return shellFiles[index]; }};
+  let modelIndexes = [56, 68, 69];
+  const models = ['F150_09-10', 'F150_11-14', 'F150_15-20'];
   const timer = {stop() {}, restart() {}};
   const menu = methods(menuText, {Number, String, Math, mTrucksModel: 1,
-    mGlobalId: {item: g}, mTranslationId: {item: {mSystemLanguages: ['English'], mFactoryItems: titles, get mFactoryItemsState() { return states; }}},
+    mGlobalId: {item: g}, mTranslationId: {item: {mSystemLanguages: ['English'], mFactoryItems: titles, get mFactoryItemsState() { return states; },
+      mVehicleModelPickUp: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], mVehicleModels: models,
+      get mVehicleModel() { return models[g.vehicleModel]; }, get mVehicleModelIndex() { return modelIndexes[g.vehicleModel]; }}},
     mEventHandleId: {item: e}, mArmTimer: timer, mSentTimer: timer, mFordReadBack: timer, mServiceReadBack: timer,
     mPath: ['home', 'system', 'factory'], mCursors: [1, 5], mCursor: 0, mPressed: false, mHeldKey: -1, mEditing: false,
-    mEditValue: 0, mEditStart: 0, mEditFields: [], mEditField: 0, mArmedRow: -1, mSentRow: -1, mFactoryEntry: 0,
+    mEditValue: 0, mEditStart: 0, mEditFields: [], mEditField: 0, mArmedRow: -1, mSentRow: -1, mShellCmds: [],
     mFactoryNoEffect: noEffect, mDebugLevels: literal('mDebugLevels'), mDebugTexts: literal('mDebugTexts'),
-    mFactoryUrls: literal('mFactoryUrls'), mTitles: literal('mTitles')});
-  for (const name of ['mPage', 'mRows', 'mFocusRow', 'mHostedUrl']) {
+    mTitles: literal('mTitles')});
+  for (const name of ['mPage', 'mRows', 'mFocusRow']) {
     const expression = binding(name);
     Object.defineProperty(menu, name, {get() { return vm.runInContext(expression, menu); }});
   }
-  for (const name of ['menuSettingsPageIndex', 'menuSettingsSubPageItemSetup']) {
-    const body = handler(menuText, 'on' + name[0].toUpperCase() + name.slice(1) + 'Changed:');
-    let current = 0;
-    Object.defineProperty(g, name, {get() { return current; },
-      set(next) { if (next !== current) { current = next; vm.runInContext(body, menu); } }});
-  }
+  check(!/mHostedLoader|mHostedUrl|mFactoryUrls|menuSettingsPageIndex|menuSettingsSubPageItemSetup|function forward\(/.test(menuText),
+    'Menu hosts no compiled page');
   const open = title => {
     menu.mCursor = menu.mRows.findIndex(row => row.title === title);
     assert.ok(menu.mCursor >= 0, 'Missing row ' + title);
     menu.release(g.swcEnter);
   };
-  const factoryTitles = ['General settings', 'Advanced settings', 'Fuel tank setup', 'Vehicle profile', 'Odometer setup',
-    'Service commands', 'ADB debugging: enable', 'ADB debugging: disable', 'Debug logging', 'USB image preview', 'Screen grid',
+  const factoryTitles = ['General settings', 'Fuel tank setup', 'Vehicle profile', 'Odometer setup', 'Service commands', 'ADB debugging: enable', 'ADB debugging: disable', 'Debug logging', 'USB image preview', 'Screen grid',
     'Car model options'];
   check(JSON.stringify(menu.mRows.map(row => row.title)) === JSON.stringify(factoryTitles), 'Factory rows and order');
   menu.closePage();
@@ -222,32 +230,56 @@ try {
     function_index: stateArray.function_index, code_sha256: stateArray.code_sha256,
     row7_state_property: stateProperties[7], result: 'All row state sources match vendor bindings.'};
 
-  // Compiled Factory pages. Odometer, Fuel tank, and Vehicle profile return with value 1, the others with 0.
-  const urls = menu.mFactoryUrls;
-  for (const [title, value, back] of [['Advanced settings', 1, 0], ['Fuel tank setup', 3, 1], ['Vehicle profile', 4, 1],
-                                      ['Odometer setup', 2, 1], ['Service commands', 6, 0]]) {
-    open(title);
-    check(menu.mPage === 'fsub' + value && g.menuSettingsSubPageItemSetup === value && g.menuSettingsPageIndex === 1 &&
-      menu.mHostedUrl === urls[value] && /^qrc:\/Trucks\/menu\/system\/factory\/Factory\w+\.qml$/.test(urls[value]), 'Compiled page opens ' + title);
-    g.menuSettingsSubPageItemSetup = back;
-    check(menu.mPage === 'factory' && menu.mRows[menu.mCursor].title === title && g.menuSettingsSubPageItemSetup === 0 &&
-      g.menuSettingsPageIndex === 0 && menu.mHostedUrl === '', 'Compiled page Back returns to the Factory row ' + title);
-  }
-  open('Advanced settings');
-  g.menuSettingsSubPageItemSetup = 2;
-  check(menu.mPage === 'fsub1' && menu.mHostedUrl === urls[2], 'Advanced settings opens Odometer setup in place');
-  g.menuSettingsSubPageItemSetup = 1;
-  check(menu.mPage === 'fsub1' && menu.mHostedUrl === urls[1], 'Odometer Back returns to Advanced settings');
-  g.menuSettingsSubPageItemSetup = 5;
-  check(menu.mPage === 'factory' && g.menuSettingsSubPageItemSetup === 0, 'A page value with no compiled page returns to Factory');
-  open('Service commands');
-  g.menuSettingsPageIndex = 0;
-  check(menu.mPage === 'factory' && g.menuSettingsSubPageItemSetup === 0, 'A compiled page that leaves the settings page returns to Factory');
+  // Former compiled Factory pages, now vnM pages with the stock calls and arguments.
+  const sends = () => log.filter(entry => !String(entry[0]).endsWith('Inquire'));
+  const enter = count => { for (let i = 0; i < count; i++) menu.release(g.swcEnter); };
+  log.length = 0;
+  open('Odometer setup');
+  check(menu.mPage === 'odometer' && log.length === 0 && menu.mRows[0].value === '12345 km', 'Odometer setup opens with no inquiry');
+  enter(1);
+  check(menu.mEditing && JSON.stringify(menu.mEditFields) === '[0,1,2,3,4,5]', 'Odometer digits come from getOdoNum');
+  menu.release(g.swcUp);
+  check(JSON.stringify(menu.mEditFields) === '[1,1,2,3,4,5]', 'Odometer Up raises the marked digit');
+  enter(5);
+  check(sends().length === 0 && menu.mEditField === 5, 'Odometer sends nothing before the last digit');
+  enter(1);
+  check(JSON.stringify(sends()) === JSON.stringify([['setOdo', 112345]]) && !menu.mEditing, 'Odometer sends setOdo(Number(digits)) once');
+  menu.closePage();
+  log.length = 0;
+  open('Fuel tank setup');
+  enter(1);
+  check(JSON.stringify(menu.mEditFields) === '[0,8,0,0,0,0]', 'Tank digits come from getTankNum');
+  menu.release(g.swcUp);
+  check(JSON.stringify(menu.mEditFields) === '[1,8,0,0,0,0]', 'Tank Up raises the marked digit');
+  enter(6);
+  check(JSON.stringify(sends()) === JSON.stringify([['setFuelTank', 0, 180], ['setFuelTank', 1, 0]]), 'Tank sends main, then sub, once');
+  menu.closePage();
+  log.length = 0;
   open('Vehicle profile');
-  menu.closeMenu();
-  check(g.menuBarIndex === 0 && menu.mPage === 'factory' && g.menuSettingsSubPageItemSetup === 0 && g.menuSettingsPageIndex === 0,
-    'Closing the menu closes a compiled page');
-  g.menuBarIndex = 1;
+  check(JSON.stringify(menu.mRows.map(row => row.title)) === JSON.stringify(models) && menu.mRows[1].value === 'Selected',
+    'Profile lists the defined models only');
+  open('F150_15-20');
+  check(g.vehicleModel === 2 && JSON.stringify(sends()) === JSON.stringify([['setVehicleModel', 69]]), 'Profile sends the new profile index');
+  modelIndexes = [-1, -1, -1];
+  open('F150_09-10');
+  check(g.vehicleModel === 0 && sends().length === 1, 'Profile index -1 sends nothing');
+  modelIndexes = [56, 68, 69];
+  g.vehicleModel = 1;
+  menu.closePage();
+  log.length = 0;
+  open('Service commands');
+  check(shellReads === 1 && JSON.stringify(menu.mRows.map(row => row.title)) === JSON.stringify(shellFiles), 'Service commands read the files on entry');
+  enter(1);
+  check(sends().length === 0 && menu.mArmedRow === 0, 'Service command arms on the first OK');
+  enter(1);
+  check(JSON.stringify(sends()) === JSON.stringify([['shell', 'a.sh']]), 'Service command runs the file on the second OK');
+  menu.closePage();
+  shellFiles = [];
+  open('Service commands');
+  check(menu.mRows.length === 1 && menu.mRows[0].kind === 'unavailable', 'Service commands without files show the reason');
+  menu.closePage();
+  check(menu.mPage === 'factory' && g.menuSettingsPageIndex === 0 && g.menuSettingsSubPageItemSetup === 0,
+    'Setup pages leave the old hosted-page values alone');
 
   // Tools.
   for (const [title, value] of [['ADB debugging: enable', 1], ['ADB debugging: disable', 0]]) {
@@ -257,7 +289,10 @@ try {
   }
   open('Debug logging');
   check(menu.mEditing && menu.mEditValue === 0, 'Debug logging opens the editor at the current level');
-  menu.release(g.swcDown); menu.release(g.swcDown); menu.release(g.swcDown);
+  menu.release(g.swcDown);
+  check(menu.mEditValue === 8, 'Debug logging Down goes to the previous level and wraps to the last');
+  menu.release(g.swcUp); menu.release(g.swcUp); menu.release(g.swcUp); menu.release(g.swcUp);
+  check(menu.mEditValue === 4, 'Debug logging Up goes to the next level');
   check(g.uartDebugEnabled === 0, 'Debug logging edit sends nothing before OK');
   menu.release(g.swcEnter);
   check(g.uartDebugEnabled === 4 && menu.mFocusRow.value === 'UART transmit', 'Debug logging sets the vendor value');
