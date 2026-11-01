@@ -221,7 +221,7 @@ launcher_gone() {
     i=0
     while launcher_running; do
         [ "$i" -lt "$1" ] || return 1
-        sleep 1
+        sleep 1 9>&-
         i=$((i + 1))
     done
 }
@@ -259,9 +259,9 @@ health() {
     until grep -q 'VehicleEvent Ver:VehicleEvent@' "$LAUNCHER_LOG" 2>/dev/null && grep -q 'main.qml starting' "$LAUNCHER_LOG" 2>/dev/null; do
         i=$((i + 1))
         [ "$i" -le "$HEALTH_WAIT" ] || { reason="startup markers missing"; return 1; }
-        sleep 1
+        sleep 1 9>&-
     done
-    sleep "$SETTLE_WAIT"
+    sleep "$SETTLE_WAIT" 9>&-
     launcher_running || { reason="Launcher stopped"; return 1; }
     if grep -q '/etc/vn' "$LAUNCHER_LOG" 2>/dev/null; then
         reason="new QML error"
@@ -464,18 +464,19 @@ settings_copy() {
 # The journal records a rollback target: the original Launcher, the stock sounds, no /etc vn files, and the settings.
 # Line 1: the settings copy name, or none (keep the current settings). Line 2: the copy hash.
 # Line 3: the phase. files: the files and the settings still need the restore. start: the files and the settings are stock,
-# and only the start check is open.
+# and only the start check is open. Line 4: the release to block (a failed install), or none.
 # An install and a requested rollback put the journal in place before the first live change. The journal goes away only
 # after the start check passes, so a power cut or a failed step makes the next drive insert finish the rollback.
 JOURNAL=$R/etc/.viknav-rollback
-# $1: the settings copy name or none. $2: the phase.
+# $1: the settings copy name or none. $2: the phase. $3: the release to block, or empty.
 journal_write() {
     sum=
     if [ "$1" != none ]; then
         sum=$(hash_of "$R$1") || { log "rollback journal write failed: no settings copy"; return 1; }
     fi
     rm -f "$JOURNAL.new" 2>/dev/null
-    printf '%s\n%s\n%s\n' "$1" "$sum" "$2" > "$JOURNAL.new" && sync && mv -f "$JOURNAL.new" "$JOURNAL" && sync && return 0
+    printf '%s\n%s\n%s\n%s\n' "$1" "$sum" "$2" "${3:-none}" > "$JOURNAL.new" && sync && mv -f "$JOURNAL.new" "$JOURNAL" && sync &&
+        return 0
     rm -f "$JOURNAL.new" 2>/dev/null
     log "rollback journal write failed"
     return 1
@@ -487,24 +488,61 @@ journal_clear() {
     rm -f "$JOURNAL.new" "$SETTINGS_COPY" "$SETTINGS_COPY.new" 2>/dev/null
     sync
 }
-# Sets journal_name (line 1), journal_phase (line 3), and journal_settings: the settings copy path, none, or bad
-# (the copy is missing or does not have the journaled hash).
+# Sets journal_name (line 1), journal_phase (line 3), journal_block (line 4, empty for none), and journal_settings: the
+# settings copy path, none, or bad (the copy is missing or does not have the journaled hash).
 journal_read() {
     journal_name=$(awk 'NR == 1' "$JOURNAL" 2>/dev/null)
     sum=$(awk 'NR == 2' "$JOURNAL" 2>/dev/null)
     journal_phase=$(awk 'NR == 3' "$JOURNAL" 2>/dev/null)
+    journal_block=$(awk 'NR == 4 && $0 != "none"' "$JOURNAL" 2>/dev/null)
     journal_settings=bad
     case "$journal_name" in
         none) journal_settings=none ;;
         "$SETTINGS_COPY_NAME") [ -n "$sum" ] && [ "$(hash_of "$SETTINGS_COPY")" = "$sum" ] && journal_settings=$SETTINGS_COPY ;;
     esac
 }
-# Remove what a stopped run left: stage files, temp hash files, and an unpublished journal. Every journal goes in place before the first live
+# The cluster block stops a new install of a release that failed the install on this cluster. INSTALL-BLOCKED.txt on the drive
+# can be missing, removed, or not written (a read-only drive), so the block also lives on the cluster. Line 1 names the release.
+# A different release installs. A rollback insert that ends with the stock files removes the block and INSTALL-BLOCKED.txt.
+BLOCK=$R/etc/.viknav-blocked
+BLOCK_HELP="After the cause is fixed, insert a rollback drive: the rollback clears the block on the cluster and INSTALL-BLOCKED.txt on that drive. Removing INSTALL-BLOCKED.txt alone leaves the block on the cluster."
+# The release identity: the hash of the pinned Launcher, /etc, and sound hashes, one per line.
+payload_id() {
+    h=$({
+        echo "$CANDIDATE_SHA256"
+        for f in $ETC_FILES; do etc_sha256 "$f"; done
+        for f in $SOUND_FILES; do sound_sha256 "$f"; done
+    } | sha256sum)
+    printf '%s' "${h%% *}"
+}
+# 0 when the cluster block names release $1.
+block_names() {
+    [ -n "$1" ] && [ "$(awk 'NR == 1' "$BLOCK" 2>/dev/null)" = "$1" ]
+}
+# Put the block of release $1 in place: temp file, sync, rename, sync.
+block_write() {
+    block_names "$1" && return 0
+    rm -f "$BLOCK.new" 2>/dev/null
+    printf '%s\n' "$1" > "$BLOCK.new" && sync && mv -f "$BLOCK.new" "$BLOCK" && sync && return 0
+    rm -f "$BLOCK.new" 2>/dev/null
+    log "install block write failed"
+    return 1
+}
+# A rollback insert ended with the stock files: remove the cluster block and INSTALL-BLOCKED.txt on this drive. Adds a failed
+# removal to started.
+block_clear() {
+    rm -f "$BLOCK" "$BLOCK.new" "$usb_root/INSTALL-BLOCKED.txt" 2>/dev/null
+    sync
+    [ -e "$BLOCK" ] || [ -e "$usb_root/INSTALL-BLOCKED.txt" ] || return 0
+    log "install block not removed"
+    started="${started:+$started; }install block not removed"
+}
+# Remove what a stopped run left: stage files, temp hash and block files, and an unpublished journal. Every journal goes in place before the first live
 # change, so a journal that never got the final name means that nothing live changed. Without a journal, the settings copy
 # and a temp stock backup on the drive are leftovers too.
 clean_leftovers() {
     remove_staged
-    rm -f "$JOURNAL.new" "$P/.settings-before-install.tar.new" "$DRIVE_SUM.new" "$STOCK_SUM.new" 2>/dev/null
+    rm -f "$JOURNAL.new" "$BLOCK.new" "$P/.settings-before-install.tar.new" "$DRIVE_SUM.new" "$STOCK_SUM.new" 2>/dev/null
     [ -e "$JOURNAL" ] || rm -f "$SETTINGS_COPY" "$SETTINGS_COPY.new" 2>/dev/null
 }
 # When no Launcher runs, start the Launcher on disk and check the start. Adds the result to started.
@@ -548,7 +586,7 @@ files_stock() {
 # Every stock file stages first, while the dashboard still runs, so a failed copy or a Launcher that does not stop changes
 # nothing. Then the journal goes when $1 is clear (a requested rollback; the cluster is still a known release) and stays otherwise.
 # After the stop, each step runs where safe and a Launcher always starts again. The journal goes only after the start
-# check passes. A journal in the start phase over stock files needs only the start.
+# check passes and the block that the journal names is in place. A journal in the start phase over stock files needs only the start.
 # Sets started to the result detail. Returns 1 when a step or the start check fails.
 restore_original() {
     journal_read
@@ -593,7 +631,7 @@ restore_original() {
         sync
         files_stock || failed=${failed:-verify stock files}
         # The files and the settings are stock now. Only the start check stays open for a later drive insert.
-        [ -n "$failed" ] || journal_write "$journal_name" start || failed="rollback journal update"
+        [ -n "$failed" ] || journal_write "$journal_name" start "$journal_block" || failed="rollback journal update"
     fi
     which=original
     [ "$(hash_of "$LAUNCHER")" = "$ORIGINAL_SHA256" ] || which=current
@@ -609,14 +647,21 @@ restore_original() {
     cp "$LAUNCHER_LOG" "$out/Launcher-$which.log" 2>/dev/null
     started="$note$started$settings_note"
     [ -z "$failed" ] || started="$failed failed; $started"
-    if [ -z "$failed" ] && [ "$healthy" -eq 1 ] && ! journal_clear; then
-        failed="clear the rollback journal"
-        started="$failed failed; $started"
+    if [ -z "$failed" ] && [ "$healthy" -eq 1 ]; then
+        # The block of a failed install goes in place before the journal removal. A failed block write keeps the journal,
+        # so the next drive insert finishes the rollback and writes the block.
+        if [ -n "$journal_block" ] && ! block_write "$journal_block"; then
+            failed="install block write"
+        elif ! journal_clear; then
+            failed="clear the rollback journal"
+        fi
+        [ -z "$failed" ] || started="$failed failed; $started"
     fi
     log "$started"
     [ -z "$failed" ] && [ "$healthy" -eq 1 ]
 }
 # A journal on the cluster: finish that rollback before anything else, whatever the live files hold, then stop.
+# A rollback insert then removes the block. An install insert keeps the block of the failed install.
 resume_rollback() {
     [ -e "$JOURNAL" ] || return 0
     log "rollback journal found"
@@ -625,6 +670,7 @@ resume_rollback() {
     done
     payload_ok original/Launcher "$ORIGINAL_SHA256" || abort "rollback journal: payload missing"
     if restore_original keep; then
+        [ "$action" != rollback ] || block_clear
         finish "ROLLED_BACK resumed" "$started"
     else
         finish "ROLLBACK_FAILED resumed" "$started"
@@ -639,11 +685,15 @@ fail_restart() {
     launcher_start original || abort "$1" "Launcher not started: no settings folder"
     abort "$1"
 }
-# Failure after the journal: block a repeat install from this drive, then restore the original.
+# Failure after the journal: block a repeat install of this release, then restore the original. The journal names the release,
+# so the cluster block goes in place before the journal removal, also when a later drive insert finishes the rollback.
+# Without that journal line, the block goes in place now. INSTALL-BLOCKED.txt also blocks a repeat install from this drive.
 rollback_now() {
     log "rollback: $1"
     cp "$LAUNCHER_LOG" "$out/Launcher-failed.log" 2>/dev/null
-    printf '%s\n' "$1" > "$usb_root/INSTALL-BLOCKED.txt"
+    release=$(payload_id)
+    journal_write "$SETTINGS_COPY_NAME" files "$release" || block_write "$release"
+    printf '%s\n' "$1" > "$usb_root/INSTALL-BLOCKED.txt" || log "INSTALL-BLOCKED.txt write failed"
     if restore_original keep; then
         finish "ROLLED_BACK $1" "$started"
     else
@@ -657,8 +707,9 @@ rollback_now() {
 # finish a rollback to the original.
 # One run at a time reads or changes the cluster state. Two updater runs can start at once: the boot scan (mdev -s in
 # /etc/init.d/rcS) and the hotplug event, and /etc/mdev/udisk_insert starts each updater in the background.
-# The lock is a kernel lock (flock) on fd 9 of /tmp/viknav-ui.lock. The kernel drops the lock when the run ends or dies, so
-# no stale lock exists. Long-lived children (the Launcher, the recorder) start with fd 9 closed.
+# The lock is a kernel lock (flock) on fd 9 of /tmp/viknav-ui.lock. A child that has fd 9 open holds the lock too, so the
+# kernel drops the lock when the run and the short children of the run end or die. No stale lock exists. The waits (sleep)
+# and the long-lived children (the Launcher, the recorder) start with fd 9 closed.
 LOCK=$R/tmp/viknav-ui.lock
 # Returns 0 with the lock held, 1 when another run holds the lock, and 2 when the lock file does not open.
 lock_take() {
@@ -677,9 +728,15 @@ lock_take() {
 do_install() {
     clean_leftovers
     resume_rollback
-    if [ -e "$usb_root/INSTALL-BLOCKED.txt" ]; then
+    blocked=
+    if block_names "$(payload_id)"; then
+        blocked=$BLOCK_HELP
+    elif [ -e "$usb_root/INSTALL-BLOCKED.txt" ]; then
+        blocked="Remove INSTALL-BLOCKED.txt only after the cause is fixed."
+    fi
+    if [ -n "$blocked" ]; then
         launcher_keep
-        finish BLOCKED ${started:+"$started"} "Remove INSTALL-BLOCKED.txt only after the cause is fixed."
+        finish BLOCKED ${started:+"$started"} "$blocked"
         exit 0
     fi
     payload_check original/Launcher "$ORIGINAL_SHA256"
@@ -768,7 +825,7 @@ do_install() {
     # The start check passed: the journal removal commits the install.
     journal_clear || rollback_now "clear the rollback journal"
     finish INSTALLED "Keep the drive in for 3 more minutes for Launcher-later.log."
-    sleep "$LOG_WAIT"
+    sleep "$LOG_WAIT" 9>&-
     cp "$LAUNCHER_LOG" "$out/Launcher-later.log" 2>/dev/null
     log "later log copied"
     sync
@@ -795,6 +852,7 @@ do_rollback() {
     check_sound
     if [ "$launcher" = "$ORIGINAL_SHA256" ] && [ "$etc_present" -eq 0 ] && [ "$etc_old" -eq 0 ] && [ "$sound_new" -eq 0 ]; then
         launcher_keep
+        block_clear
         finish ALREADY_ORIGINAL ${started:+"$started"}
         exit 0
     fi
@@ -809,6 +867,7 @@ do_rollback() {
     esac
     journal_write "$settings" files || rollback_not_started "rollback journal write"
     if restore_original clear; then
+        block_clear
         finish "ROLLED_BACK by request" "$started"
     else
         finish ROLLBACK_FAILED "$started"
@@ -836,6 +895,11 @@ do_log() {
             cat "$JOURNAL"
         else
             echo "rollback journal: none"
+        fi
+        if [ -e "$BLOCK" ]; then
+            echo "install block: $(awk 'NR == 1' "$BLOCK")"
+        else
+            echo "install block: none"
         fi
         df -k "$R/usr/bin"
         ps

@@ -84,12 +84,17 @@ FAILURE_MODES = [
     "Two runs at once share the rollback journal, or a lock left by a stopped run blocks every later run",
     "The installer changes the cluster while a Launcher that does not stop still runs",
     "A damaged or changed stock settings backup reaches the cluster",
+    "A block from a failed install stops a different release, or stays after a rollback",
 ]
 # A real truck settings archive: the run backup of the menu-v2 install (Launcher/Databases sqlite and ini files).
 TRUCK_SETTINGS = ROOT / "analysis/capture-04/vehicle-runs/menu-v2-install-1/private-Launcher.tar"
 BACKUP_HELP = "Copy private-Launcher.tar from the first install folder to viknav-ui/settings-before-install.tar."
 HASH_NOTE = "settings backup hash recorded now"
 BUSY = "BUSY another viknav-ui run is active"
+# STATUS.txt line 2 of BLOCKED: the drive marker alone, or the block on the cluster (with or without the drive marker).
+DRIVE_BLOCK_HELP = "Remove INSTALL-BLOCKED.txt only after the cause is fixed."
+CLUSTER_BLOCK_HELP = ("After the cause is fixed, insert a rollback drive: the rollback clears the block on the cluster and "
+                      "INSTALL-BLOCKED.txt on that drive. Removing INSTALL-BLOCKED.txt alone leaves the block on the cluster.")
 
 sha = lambda data: hashlib.sha256(data).hexdigest()
 ORIGINAL_BYTES = ORIGINAL.read_bytes()
@@ -99,6 +104,9 @@ SOUNDS = sorted(path.name for path in STOCK_SOUND.glob("*.wav"))
 if len(SOUNDS) != 15 or not all((SOUND_SET / name).is_file() for name in SOUNDS):
     raise SystemExit("Chime set A is missing: run python3 design/round-43/sounds/make_sounds.py")
 SOUND_BYTES = {name: (SOUND_SET / name).read_bytes() for name in SOUNDS}
+# The release identity in the cluster block: the hash of the pinned Launcher, /etc, and sound hashes, one per line.
+PAYLOAD_ID = sha("".join(h + "\n" for h in [sha(CANDIDATE_BYTES)] + [sha(ETC_BYTES[n]) for n in ETC]
+                         + [sha(SOUND_BYTES[n]) for n in SOUNDS]).encode())
 STOCK_SOUND_BYTES = {name: (STOCK_SOUND / name).read_bytes() for name in SOUNDS}
 SETTINGS = b"settings before install\n"
 # The settings that the candidate stub writes, and the settings in the backup of a failed install (rollback_now).
@@ -153,7 +161,11 @@ esac
 rm -f __T__/running
 exit 0
 """
-STUB_SLEEP = "#!/bin/sh\nexec __BB__ sleep 0.02\n"
+# __T__/real-sleep holds one duration in seconds: a sleep of that duration runs in full. Every other sleep is short.
+STUB_SLEEP = """#!/bin/sh
+[ "$1" = "$(cat __T__/real-sleep 2>/dev/null)" ] && exec __BB__ sleep "$1"
+exec __BB__ sleep 0.02
+"""
 STUB_FBINIT = "#!/bin/sh\nexit 0\n"
 STUB_MV = r"""#!/bin/sh
 # Test stub for mv: a move to a target that ends with the text in __T__/mv-fail fails. Other moves run.
@@ -279,6 +291,18 @@ class Case:
     def journal_path(self):
         return self.root / "etc/.viknav-rollback"
 
+    def block_path(self):
+        """The cluster block of a release that failed the install. Line 1 is the release identity."""
+        return self.root / "etc/.viknav-blocked"
+
+    def block(self):
+        """Line 1 of the cluster block, or None."""
+        path = self.block_path()
+        return path.read_text().split("\n")[0] if path.is_file() else None
+
+    def drive_blocked(self):
+        return (self.usb / "INSTALL-BLOCKED.txt").exists()
+
     def lock_path(self):
         """The run lock file on tmpfs. A run holds a kernel lock (flock) on the file."""
         return self.root / "tmp/viknav-ui.lock"
@@ -320,8 +344,9 @@ class Case:
         """The internal copy of the settings tar that the journal names."""
         return self.root / "etc/.viknav-settings.tar"
 
-    def journal_text(self, phase):
-        return f"/etc/.viknav-settings.tar\n{sha(self.copy_path().read_bytes())}\n{phase}\n"
+    def journal_text(self, phase, block=False):
+        """The journal that the installer writes. block: line 4 names the release to block (a failed install)."""
+        return f"/etc/.viknav-settings.tar\n{sha(self.copy_path().read_bytes())}\n{phase}\n{PAYLOAD_ID if block else 'none'}\n"
 
     def settings_tar(self, path, data):
         """Write a tar of /private/Launcher with one settings file, as the installer makes the settings backup."""
@@ -383,6 +408,8 @@ class Case:
                 (self.t / "running").write_text("")
                 (private / "Launcher/settings.db").write_bytes(CANDIDATE_SETTINGS)
             if k >= 6:
+                self.journal_path().write_text(self.journal_text("files", True))
+            if k >= 7:
                 (self.usb / "INSTALL-BLOCKED.txt").write_text("startup markers missing\n")
             return expected
         # A healthy install of the release is in place and running.
@@ -408,7 +435,7 @@ class Case:
             self.put("Launcher", ORIGINAL_BYTES, "usr/bin")
             (private / "Launcher/settings.db").write_bytes(SETTINGS)
             return expected
-        self.journal_path().write_text(self.journal_text("files"))
+        self.journal_path().write_text(self.journal_text("files", automatic))
         k = CUT_RESTORE.index(step) if step in CUT_RESTORE else -1
         if k >= 0:
             self.put("Launcher", ORIGINAL_BYTES, "usr/bin", staged=True)
@@ -434,10 +461,14 @@ class Case:
             shutil.rmtree(private / ".Launcher.restore")
             shutil.rmtree(private / ".Launcher.old")
         if k >= 8:
-            self.journal_path().write_text(self.journal_text("start"))
+            self.journal_path().write_text(self.journal_text("start", automatic))
         if k >= 9:
             # The stock Launcher started and passed the start check. The cut came before the journal removal.
             (self.t / "running").write_text("")
+            if automatic:
+                (root / "etc/.viknav-blocked.new").write_text(PAYLOAD_ID + "\n")
+        if k >= 10 and automatic:
+            (root / "etc/.viknav-blocked.new").replace(self.block_path())
         return expected
 
     def calls(self):
@@ -476,7 +507,7 @@ class Case:
     def state(self):
         """Hash and link flag of every file that an install or a rollback can change."""
         paths = [self.root / "usr/bin/Launcher", self.root / "private/Launcher/settings.db", self.root / "etc/.viknav-rollback",
-                 self.root / "etc/.viknav-settings.tar"]
+                 self.root / "etc/.viknav-settings.tar", self.block_path()]
         paths += [self.root / "etc" / name for name in ETC + RETIRED] + [self.root / "etc/sound" / name for name in SOUNDS]
         return {str(p.relative_to(self.root)): [sha(p.read_bytes()) if p.is_file() else None, p.is_symlink()] for p in paths}
 
@@ -605,14 +636,27 @@ def unsafe_redirection_lines(text):
     return sorted(set(found))
 
 
-# Power cut points. CUT_INSTALL: an install over the original, from the staged files to INSTALL-BLOCKED.txt of the rollback.
+# Power cut points. CUT_INSTALL: an install over the original, from the staged files to the journal with the release to block and
+# INSTALL-BLOCKED.txt of the rollback.
 # CUT_RESTORE: the rollback of that failed install. CUT_REQUESTED: a requested rollback of a healthy install.
 CUT_INSTALL = ["install-staged", "install-journal-new", "install-journal", "install-moving", "install-moved", "install-started",
-               "blocked"]
-CUT_RESTORE = ["staged", "stopped", "launcher", "sounds", "etc", "extracted", "between", "settled", "phase-start",
-               "journal-removal"]
-CUT_REQUESTED = ["journal-new", "journal"] + CUT_RESTORE + ["cleared"]
+               "journal-block", "blocked"]
+# block-new and block: the cluster block write of a failed install (temp file, then the rename). A requested rollback has no block.
+CUT_RESTORE = ["staged", "stopped", "launcher", "sounds", "etc", "extracted", "between", "settled", "phase-start", "block-new",
+               "block", "journal-removal"]
+CUT_REQUESTED = ["journal-new", "journal"] + [s for s in CUT_RESTORE if not s.startswith("block")] + ["cleared"]
 cut_table = []
+
+
+def cut_blocks(step, automatic, action):
+    """(cluster block, drive marker) after the next drive insert at cut point step. A rollback insert clears both. The journal of a
+    failed install names the release to block, and the resumed rollback puts the block in place before the journal removal."""
+    if action == "rollback" or not automatic:
+        return False, False
+    if step in CUT_RESTORE:
+        return True, True
+    k = CUT_INSTALL.index(step)
+    return k >= 6, k >= 7
 
 
 def cut_expected(step, automatic, action):
@@ -626,7 +670,8 @@ def cut_expected(step, automatic, action):
             ("ROLLED_BACK by request", "original", SETTINGS, None)
     if step == "cleared":
         return ("INSTALLED", "candidate", CANDIDATE_SETTINGS, None) if install_next else ("ALREADY_ORIGINAL", "original", SETTINGS, None)
-    detail = "files already stock; original Launcher started" if step in ("phase-start", "journal-removal") else "original Launcher started"
+    detail = ("files already stock; original Launcher started" if step in ("phase-start", "block-new", "block", "journal-removal")
+              else "original Launcher started")
     return "ROLLED_BACK resumed", "original", AUTO_SETTINGS if automatic else SETTINGS, detail
 
 
@@ -1080,8 +1125,8 @@ def main():
             c = install(new(), "breakstock")
             (c.usb / "viknav-ui/original/sound/door.wav").write_bytes(STOCK_SOUND_BYTES["door.wav"])
             c.run()
-            return [c.status(), c.device(), c.settings() == SETTINGS, c.running(), c.journal_path().exists()]
-        check("automatic-rollback-copy-failure-resumes-next-insert", 18, ["ROLLED_BACK resumed", "original", True, True, False],
+            return [c.status(), c.device(), c.settings() == SETTINGS, c.running(), c.journal_path().exists(), c.block() == PAYLOAD_ID]
+        check("automatic-rollback-copy-failure-resumes-next-insert", 18, ["ROLLED_BACK resumed", "original", True, True, False, True],
               automatic_copy_fails_then_resume)
 
         # A power cut at each step of an install, an automatic rollback, and a requested rollback. The next drive insert of
@@ -1090,9 +1135,10 @@ def main():
             for step in steps:
                 for action in ("install", "rollback"):
                     status, device, settings, detail = cut_expected(step, automatic, action)
+                    cluster_block, drive_block = cut_blocks(step, automatic, action)
                     path = "automatic" if automatic else "requested"
                     cut_table.append({"cut": step, "path": path, "next": action, "status": status, "device": device,
-                                      "detail": detail})
+                                      "detail": detail, "clusterBlock": cluster_block, "driveBlock": drive_block})
 
                     def resume(step=step, automatic=automatic, action=action, settings=settings, detail=detail):
                         c = new()
@@ -1101,9 +1147,11 @@ def main():
                         c.run()
                         shown = c.detail() if detail is not None else None
                         return [c.status(), shown, c.device(), c.settings() == settings, c.running(), c.journal_path().exists(),
-                                c.copy_path().exists(), c.leftovers(), c.private(), c.sound_modes()]
+                                c.copy_path().exists(), c.leftovers(), c.private(), c.sound_modes(), c.block() == PAYLOAD_ID,
+                                c.drive_blocked()]
                     check(f"cut-{path}-{step}-then-{action}", 19,
-                          [status, detail, device, True, True, False, False, [], ["Launcher", "Launcher/settings.db"], True], resume)
+                          [status, detail, device, True, True, False, False, [], ["Launcher", "Launcher/settings.db"], True,
+                           cluster_block, drive_block], resume)
 
         for name, spoil in (("missing", lambda p: p.unlink()), ("changed", lambda p: p.write_bytes(b"changed\n"))):
             def copy_bad(spoil=spoil):
@@ -1210,6 +1258,34 @@ def main():
             c.run()
             return [held, free, c.status(), c.device()]
         check("killed-run-releases-lock", 22, [True, True, "INSTALLED", "candidate"], killed_run)
+
+        def killed_in_log_wait():
+            # The run stops during the wait for Launcher-later.log. Only the run process dies, as on a real kill: the sleep
+            # child stays. The sleep must not keep the lock.
+            c = new()
+            c.marker("install")
+            (c.t / "real-sleep").write_text("60")
+            source = c.script.read_text()
+            if source.count("LOG_WAIT=1\n") != 1:
+                raise ValueError("LOG_WAIT anchor missing")
+            path = c.t / "log-wait.sh"
+            path.write_text(source.replace("LOG_WAIT=1\n", "LOG_WAIT=60\n"))
+            run = subprocess.Popen([str(BUSYBOX), "ash", str(path)], env={"PATH": "/usr/bin:/bin"}, start_new_session=True,
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            try:
+                installed = wait_for(lambda: any(p.read_text().startswith("INSTALLED") for p in c.usb.glob("viknav-ui-install-*/STATUS.txt")), 60)
+                os.kill(run.pid, signal.SIGKILL)
+                run.wait()
+                (c.t / "real-sleep").unlink()
+                free = c.lock_free()
+                c.run()
+                return [installed, free, c.status()]
+            finally:
+                try:
+                    os.killpg(run.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+        check("run-killed-in-log-wait-releases-lock", 22, [True, True, "ALREADY_INSTALLED"], killed_in_log_wait)
 
         def old_pid_in_lock():
             # The lock file of the earlier design held a pid. A live, unrelated process with that pid blocks nothing.
@@ -1672,6 +1748,112 @@ def main():
             c.run()
             return [c.status(), c.detail(), c.running()]
         check("blocked-starts-a-stopped-launcher", 20, ["BLOCKED", "current Launcher started", True], blocked_starts)
+
+        def blocked_marker_write_fails():
+            # Review 6 probe: the candidate start removes write access to the drive root, so INSTALL-BLOCKED.txt cannot be
+            # written. The block on the cluster must stop the second insert.
+            c = new().install_v1(V2_ETC)
+            qtenv = c.root / "etc/qtenv.sh"
+            anchor = "log=$R/tmp/Launcher.log\n"
+            qtenv.write_text(qtenv.read_text().replace(anchor, f'[ "$h" != "{sha(CANDIDATE_BYTES)}" ] || chmod 555 "$T/usb/sda1"\n' + anchor))
+            found = []
+            try:
+                for _ in range(2):
+                    c.usb.chmod(0o755)
+                    starts = c.starts()
+                    install(c, "nomarker")
+                    found.append([c.status(), c.lines()[1:], c.drive_blocked(), c.journal_path().exists(), c.device(), c.running(),
+                                  c.starts() - starts, c.block() == PAYLOAD_ID])
+            finally:
+                c.usb.chmod(0o755)
+            return found
+        check("failed-install-blocks-without-drive-marker", 5,
+              [["ROLLED_BACK startup markers missing", ["original Launcher started", HASH_NOTE], False, False, "original", True, 2, True],
+               ["BLOCKED", [CLUSTER_BLOCK_HELP], False, False, "original", True, 0, True]], blocked_marker_write_fails)
+
+        def cluster_block_same_release():
+            c = new()
+            c.block_path().write_text(PAYLOAD_ID + "\n")
+            before, calls = c.state(), len(c.calls())
+            install(c)
+            return [c.lines(), c.state() == before, c.calls()[calls:], c.running(), c.leftovers()]
+        check("cluster-block-stops-the-same-release", 5, [["BLOCKED", CLUSTER_BLOCK_HELP], True, [], True, []], cluster_block_same_release)
+
+        def cluster_block_other_release():
+            c = new()
+            c.block_path().write_text("0" * 64 + "\n")
+            install(c)
+            return [c.status(), c.device(), c.block()]
+        check("cluster-block-of-another-release-installs", 25, ["INSTALLED", "candidate", "0" * 64], cluster_block_other_release)
+
+        def drive_marker_only():
+            c = new()
+            (c.usb / "INSTALL-BLOCKED.txt").write_text("startup markers missing\n")
+            install(c)
+            return [c.lines(), c.device()]
+        check("drive-marker-alone-blocks", 5, [["BLOCKED", DRIVE_BLOCK_HELP], "original"], drive_marker_only)
+
+        def rollback_clears_block():
+            found = []
+            c = install(new(), "dies")
+            found.append([c.status(), c.block() == PAYLOAD_ID, c.drive_blocked()])
+            c.unmark()
+            c.marker("log")
+            c.run()
+            found.append([c.status(), f"install block: {PAYLOAD_ID}" in (c.out / "installed-sha256.txt").read_text()])
+            # Removing the drive marker alone leaves the block on the cluster.
+            (c.usb / "INSTALL-BLOCKED.txt").unlink()
+            c.unmark()
+            install(c, "dies")
+            found.append([c.lines(), c.starts()])
+            c.unmark()
+            c.marker("rollback")
+            c.run()
+            found.append([c.status(), c.block(), c.drive_blocked(), c.leftovers()])
+            c.unmark()
+            install(c)
+            found.append([c.status(), c.device()])
+            return found
+        check("rollback-insert-clears-the-block", 25,
+              [["ROLLED_BACK Launcher stopped", True, True], ["LOGGED", True], [["BLOCKED", CLUSTER_BLOCK_HELP], 2],
+               ["ALREADY_ORIGINAL", None, False, []], ["INSTALLED", "candidate"]], rollback_clears_block)
+
+        def requested_rollback_clears_block():
+            c = install(new())
+            c.block_path().write_text(PAYLOAD_ID + "\n")
+            (c.usb / "INSTALL-BLOCKED.txt").write_text("startup markers missing\n")
+            c.unmark()
+            c.marker("rollback")
+            c.run()
+            return [c.status(), c.device(), c.block(), c.drive_blocked()]
+        check("requested-rollback-clears-the-block", 25, ["ROLLED_BACK by request", "original", None, False],
+              requested_rollback_clears_block)
+
+        def block_removal_fails():
+            # A folder in the place of the cluster block cannot be removed. The result says so.
+            c = new()
+            c.block_path().mkdir()
+            c.marker("rollback")
+            c.run()
+            return [c.lines(), c.block_path().exists(), c.running()]
+        check("rollback-reports-a-block-not-removed", 25, [["ALREADY_ORIGINAL", "install block not removed"], True, True],
+              block_removal_fails)
+
+        def block_write_fails():
+            c = new()
+            blocker = c.root / "etc/.viknav-blocked.new"
+            blocker.mkdir()
+            install(c, "dies")
+            failed = [c.status(), c.detail(), c.device(), c.running(), c.journal_path().exists(), c.block()]
+            # The kept journal names the release to block. The next insert finishes the rollback and writes the block.
+            blocker.rmdir()
+            c.run()
+            resumed = [c.status(), c.detail(), c.journal_path().exists(), c.block() == PAYLOAD_ID, c.leftovers()]
+            c.run()
+            return [failed, resumed, c.status()]
+        check("cluster-block-write-failure-keeps-journal", 5,
+              [["ROLLBACK_FAILED Launcher stopped", "install block write failed; original Launcher started", "original", True, True, None],
+               ["ROLLED_BACK resumed", "files already stock; original Launcher started", False, True, []], "BLOCKED"], block_write_fails)
 
         def journal_blocked():
             c = install(new())
