@@ -22,7 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools/usb-install/encrypt.sh"
 BUSYBOX = ROOT / "tools/busybox/busybox"
-CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v13"
+CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v14"
 ORIGINAL = ROOT / "installed/capture-04/rootfs/usr/bin/Launcher"
 RESULT = ROOT / "analysis/capture-04/usb-install-replay-results.json"
 ETC = ["vnD.qml", "vnG.qml", "vnL.qml", "vnM.qml", "vnN.qml", "vnS.qml", "vnV.qml"]
@@ -1277,7 +1277,9 @@ def main():
                 os.kill(run.pid, signal.SIGKILL)
                 run.wait()
                 (c.t / "real-sleep").unlink()
-                free = c.lock_free()
+                # A short child of the run (sync, cp) can still hold the lock for a moment after the kill. The long sleep
+                # must not: the lock comes free once the short children end.
+                free = wait_for(c.lock_free, 5)
                 c.run()
                 return [installed, free, c.status()]
             finally:
