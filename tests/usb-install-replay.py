@@ -22,7 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools/usb-install/encrypt.sh"
 BUSYBOX = ROOT / "tools/busybox/busybox"
-CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v14"
+CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v15"
 ORIGINAL = ROOT / "installed/capture-04/rootfs/usr/bin/Launcher"
 RESULT = ROOT / "analysis/capture-04/usb-install-replay-results.json"
 ETC = ["vnD.qml", "vnG.qml", "vnL.qml", "vnM.qml", "vnN.qml", "vnS.qml", "vnV.qml"]

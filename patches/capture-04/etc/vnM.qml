@@ -64,8 +64,30 @@ ItemInfo {
         "general": "General settings", "odometer": "Odometer setup", "tank": "Fuel tank setup", "profile": "Vehicle profile",
         "commands": "Service commands", "service": "Service"
     })
-    // No compiled page or native code reads these General settings in this firmware (Global.setFactory cases).
-    readonly property var mFactoryNoEffect: [6, 10, 11, 12, 13, 16, 17]
+    // The menu owns the English labels below. The stock Translation English is poor ("Rear door replacement", "SubTankfuel").
+    // General settings, by Global.setFactory index. seg: the words for state 0 and 1. note: the reason that the row has no
+    // effect. No compiled page or native code reads the "none" rows. vnL always shows the tires card, the steering angle, the
+    // outside temperature, and the clock, so the "shown" rows change nothing. Only the LC76 profile reads row 7.
+    readonly property var mGeneral: [
+        {"title": "Front tire sides", "seg": ["Normal", "Swapped"]}, {"title": "Rear tire sides", "seg": ["Normal", "Swapped"]},
+        {"title": "Fuel filler side", "seg": ["Left", "Right"]}, {"title": "Tire pressure card", "note": "shown"},
+        {"title": "Reverse alert sound"}, {"title": "Tachometer range", "seg": ["7000 rpm", "6000 rpm"]},
+        {"title": "Second fuel tank", "note": "none"}, {"title": "Speedometer range", "note": "lc76"},
+        {"title": "Steering angle", "note": "shown"}, {"title": "Outside temperature", "note": "shown"},
+        {"title": "Eco indicator", "note": "none"}, {"title": "Gear indicator", "note": "none"},
+        {"title": "Oil temperature", "note": "none"}, {"title": "Range to empty", "note": "none"},
+        {"title": "Clock", "note": "shown"}, {"title": "Door popup"}, {"title": "Oil pressure", "note": "none"},
+        {"title": "Suspension height", "note": "none"}, {"title": "Flip screen"}
+    ]
+    readonly property var mGeneralNotes: ({"none": "No effect in this firmware", "shown": "Always shown on this dashboard",
+                                           "lc76": "Fixed for this vehicle model"})
+    // Service items 0-5 (stock mServiceDefaultItems), then the choices for the custom items 6 and 7 after the unnamed choice.
+    readonly property var mServiceTexts: ["Engine oil and filter", "Front brake pads", "Vehicle inspection", "Brake fluid",
+                                          "Rear brake pads", "Fuel and air filters"]
+    readonly property var mServiceChoices: ["Air filter", "Spark plugs", "Wiper blades", "Tires", "Battery", "Coolant",
+                                            "Throttle body", "Shock absorbers", "Cabin air filter", "Clutch"]
+    // Ford vehicle profiles (stock mFordVehicleModels "F150_09-10", "F150_11-14", "F150_15-20").
+    readonly property var mFordProfiles: ["F-150 2009-2010", "F-150 2011-2014", "F-150 2015-2020"]
     readonly property var mDebugLevels: [0, 1, 2, 4, 8]
     readonly property var mDebugTexts: ["Off", "Warnings", "UART receive", "UART transmit", "MCU"]
 
@@ -436,20 +458,9 @@ ItemInfo {
         })
     }
     function resetTitle(row) {
-        var t=mTranslationId.item
-        var language=mGlobalId.item.language
-        switch(row){
-        case "tripA": return t.reset[language]+" TripA"
-        case "tripB": return t.reset[language]+" TripB"
-        case "since": return t.mResetTripInfo
-        case "tpms": return t.mResetTpms[language]
-        case "factory": return t.mResetFactory[language]
-        case "key": return t.mResetKey[language]
-        case "tpmsLearn": return t.mResetTpms[language]
-        case "oil": return t.getVehicleSettingsItem(59)
-        case "compass": return t.mCalibrateCompass
-        }
-        return ""
+        return {"tripA": "Reset trip A", "tripB": "Reset trip B", "since": "Reset trip data", "tpms": "Reset tire pressure",
+                "factory": "Reset truck settings", "key": "Relearn remote key", "tpmsLearn": "Relearn tire sensors",
+                "oil": "Reset oil life", "compass": "Calibrate compass"}[row] || ""
     }
     function runReset(row) {
         var e=mEventHandleId.item
@@ -528,7 +539,7 @@ ItemInfo {
     }
     function unitRows() {
         var g=mGlobalId.item
-        var titles=mTranslationId.item.mSystemSetupUnits
+        var titles=["Fuel economy", "Speed and distance", "Temperature", "Tire pressure"]
         if(!unitsSupported())
             return [unavailableRow("Units", "Unit controls unavailable for this vehicle model")]
         var trim=function(text) { return String(text).trim() }
@@ -557,7 +568,7 @@ ItemInfo {
         var level=mDebugLevels.indexOf(debug)
         return [makeRow("page", "General settings", "", {"page": "general"}),
                 makeRow("page", "Fuel tank setup", tankText(), {"page": "tank"}),
-                makeRow("page", "Vehicle profile", mTranslationId.item.mVehicleModel, {"page": "profile"}),
+                makeRow("page", "Vehicle profile", profileName(g.vehicleModel), {"page": "profile"}),
                 makeRow("page", "Odometer setup", g.getOdo(1), {"page": "odometer"}),
                 makeRow("page", "Service commands", "", {"page": "commands"}),
                 makeRow("command", "ADB debugging: enable", "", {"op": "adb", "arg": 1}),
@@ -580,7 +591,7 @@ ItemInfo {
         var rows=[]
         t.mVehicleModelPickUp.forEach(function(index) {
             if(t.mVehicleModels[index]!==undefined)
-                rows.push(makeRow("select", t.mVehicleModels[index], index===mGlobalId.item.vehicleModel?"Selected":"",
+                rows.push(makeRow("select", profileName(index), index===mGlobalId.item.vehicleModel?"Selected":"",
                                   {"op": "profile", "arg": index}))
         })
         return rows
@@ -596,19 +607,22 @@ ItemInfo {
     // Rows: ported from the General settings page (vnB.qml). OK sends Global.setFactory(index), which flips the setting.
     // Row 7 steps through five speed scale values.
     function generalRows() {
-        var t=mTranslationId.item
-        var states=t.mFactoryItemsState
-        var rows=[]
-        for(var i=0; i<19; i++) {
-            var title=t.mFactoryItems[i]
-            if(mFactoryNoEffect.indexOf(i)>=0)
-                rows.push(unavailableRow(title, "No effect in this firmware"))
-            else if(i===7)
-                rows.push(makeRow("toggle", title, ["200", "210", "240", "260", "290"][states[i]], {"op": "factory", "arg": i}))
-            else
-                rows.push(makeRow("toggle", title, states[i]?"On":"Off", {"op": "factory", "arg": i, "current": states[i]?1:0}))
-        }
-        return rows
+        var states=mTranslationId.item.mFactoryItemsState
+        var lc76=Number(mTrucksModel)===5
+        return mGeneral.map(function(spec, i) {
+            if(spec.note && !(spec.note==="lc76" && lc76))
+                return unavailableRow(spec.title, mGeneralNotes[spec.note])
+            if(i===7)
+                return makeRow("toggle", spec.title, ["200", "210", "240", "260", "290"][states[i]]+" km/h", {"op": "factory", "arg": i})
+            var words=spec.seg || ["Off", "On"]
+            var extra={"op": "factory", "arg": i, "current": states[i]?1:0}
+            if(spec.seg)
+                extra.seg=spec.seg
+            return makeRow("toggle", spec.title, words[states[i]?1:0], extra)
+        })
+    }
+    function profileName(index) {
+        return Number(mTrucksModel)===1 && mFordProfiles[index]!==undefined?mFordProfiles[index]:mTranslationId.item.mVehicleModels[index] || ""
     }
 
     // ----- Service -----
@@ -619,11 +633,14 @@ ItemInfo {
         return makeRow("info", "Oil life", g.trucksTrailerBrakeState<0?"No data from truck":g.trucksOilLifePercentage+"%", {})
     }
     function serviceName(id) {
-        var t=mTranslationId.item
         var g=mGlobalId.item
         if(id<6)
-            return t.mServiceDefaultItems[id]
-        return id===6?t.mServiceIndividual1Items[g.mainTentCustomize1]:t.mServiceIndividual2Items[g.mainTentCustomize2]
+            return mServiceTexts[id]
+        return serviceChoices(id)[id===6?g.mainTentCustomize1:g.mainTentCustomize2] || serviceChoices(id)[0]
+    }
+    // The choices of custom item 6 or 7: the unnamed choice ("Custom 1" or "Custom 2"), then mServiceChoices.
+    function serviceChoices(id) {
+        return ["Custom "+(id-5)].concat(mServiceChoices)
     }
     function serviceDateKnown(id) {
         var g=mGlobalId.item
@@ -634,13 +651,13 @@ ItemInfo {
         var g=mGlobalId.item
         var rows=[]
         if(id>=6) {
-            var names=id===6?mTranslationId.item.mServiceIndividual1Items:mTranslationId.item.mServiceIndividual2Items
+            var names=serviceChoices(id)
             var options=[]
             for(var i=0; i<names.length; i++)
                 options.push(i)
             var custom=id===6?g.mainTentCustomize1:g.mainTentCustomize2
-            rows.push(makeRow("choice", "Item", names[custom], {"op": "svcItem", "arg": id, "options": options,
-                                                                 "texts": names, "start": custom}))
+            rows.push(makeRow("choice", "Service item", serviceName(id), {"op": "svcItem", "arg": id, "options": options,
+                                                                          "texts": names, "start": custom}))
         }
         var mileage=g.mainTentMileage[id]
         rows.push(makeRow("date", "Next service date", serviceDateKnown(id)?g.getMaintentDate(id):"No data from adapter",

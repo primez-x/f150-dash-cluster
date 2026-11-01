@@ -1,7 +1,7 @@
 """Build the USB drive contents for the cluster UI install, rollback, and log collection (tools/usb-install/encrypt.sh).
 
 Run under WSL: python3 tools/build_usb_install.py [--output DIR]
-Inputs: the UI candidate (analysis/capture-04/ui-candidate-menu-v14), the captured original Launcher, chime set A
+Inputs: the UI candidate (analysis/capture-04/ui-candidate-menu-v15), the captured original Launcher, chime set A
 (design/round-43/sounds/a, written by design/round-43/sounds/make_sounds.py), and the captured stock /etc/sound files.
 The vendor USB updater unpacks encrypt.zip with a password. The builder reads that password from the captured updater
 (installed/capture-04/rootfs/etc/mdev/update.sh) at build time; the password never enters Git or the output text.
@@ -24,11 +24,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools/usb-install/encrypt.sh"
-CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v14"
+CANDIDATE = ROOT / "analysis/capture-04/ui-candidate-menu-v15"
 ORIGINAL = ROOT / "installed/capture-04/rootfs/usr/bin/Launcher"
 UPDATER = ROOT / "installed/capture-04/rootfs/etc/mdev/update.sh"
 ZIP_TOOL = ROOT / "tools/infozip/usr/bin/zip"
-OUTPUT_DEFAULT = ROOT / "analysis/capture-04/usb-install-menu-v14"
+OUTPUT_DEFAULT = ROOT / "analysis/capture-04/usb-install-menu-v15"
 SOUND_SET = ROOT / "design/round-43/sounds/a"
 STOCK_SOUND = ROOT / "installed/capture-04/rootfs/etc/sound"
 ETC = ["vnD.qml", "vnG.qml", "vnL.qml", "vnM.qml", "vnN.qml", "vnS.qml", "vnV.qml"]

@@ -115,8 +115,12 @@ try {
     return expression;
   };
   const literal = name => vm.runInNewContext('(' + binding(name) + ')');
-  const noEffect = literal('mFactoryNoEffect');
-  check(JSON.stringify(noEffect) === JSON.stringify([6, 10, 11, 12, 13, 16, 17]), 'Factory rows with no effect');
+  const generalSpecs = literal('mGeneral');
+  const generalNotes = literal('mGeneralNotes');
+  // Truck model 1: the LC76 speed scale row has no effect either.
+  const noEffect = generalSpecs.flatMap((spec, index) => spec.note ? [index] : []);
+  check(JSON.stringify(noEffect) === JSON.stringify([3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17]), 'Factory rows with no effect');
+  // The stock Translation titles stand in as placeholders; vnM shows its own labels.
   const titles = Array.from({length: 19}, (unused, index) => 'Setting ' + index);
   let states = Array(19).fill(0);
   const calls = [];
@@ -150,7 +154,7 @@ try {
     mEventHandleId: {item: e}, mArmTimer: timer, mSentTimer: timer, mFordReadBack: timer, mServiceReadBack: timer,
     mPath: ['home', 'system', 'factory'], mCursors: [1, 5], mCursor: 0, mPressed: false, mHeldKey: -1, mEditing: false,
     mEditValue: 0, mEditStart: 0, mEditFields: [], mEditField: 0, mArmedRow: -1, mSentRow: -1, mShellCmds: [],
-    mFactoryNoEffect: noEffect, mDebugLevels: literal('mDebugLevels'), mDebugTexts: literal('mDebugTexts'),
+    mGeneral: generalSpecs, mGeneralNotes: generalNotes, mFordProfiles: literal('mFordProfiles'), mDebugLevels: literal('mDebugLevels'), mDebugTexts: literal('mDebugTexts'),
     mTitles: literal('mTitles')});
   for (const name of ['mPage', 'mRows', 'mFocusRow']) {
     const expression = binding(name);
@@ -177,13 +181,13 @@ try {
   open('General settings');
   check(menu.mPage === 'general' && JSON.stringify(log) === JSON.stringify([['systemInquire']]), 'General entry runs one system inquiry without arguments');
   const general = menu.mRows;
-  check(general.length === 19 && general.every((row, index) => row.title === titles[index]), 'General shows the 19 vendor rows');
+  check(general.length === 19 && general.every((row, index) => row.title === generalSpecs[index].title), 'General shows the 19 vendor rows');
   for (let index = 0; index < 19; index++) {
     const row = general[index];
-    if (noEffect.includes(index)) check(row.kind === 'unavailable' && row.value === 'No effect in this firmware', 'General row with no effect ' + index);
+    if (noEffect.includes(index)) check(row.kind === 'unavailable' && row.value === generalNotes[generalSpecs[index].note], 'General row with no effect ' + index);
     else check(row.kind === 'toggle' && row.op === 'factory' && row.arg === index, 'General row ' + index);
   }
-  check(general[7].value === '200' && general[7].current === undefined && general[0].value === 'Off' && general[0].current === 0, 'General start values');
+  check(general[0].value === 'Normal' && general[0].current === 0 && general[2].value === 'Left' && general[4].value === 'Off', 'General start values');
   check(/\["200", "210", "240", "260", "290"\]/.test(menuText), 'General row-seven labels match the decoded vendor binding');
   for (let index = 0; index < 19; index++) {
     menu.mCursor = index;
@@ -192,7 +196,7 @@ try {
     if (noEffect.includes(index)) check(calls.length === before, 'General row with no effect sends nothing ' + index);
     else check(calls[calls.length - 1] === index, 'General setter index ' + index);
   }
-  check(menu.mRows[0].value === 'On' && menu.mRows[0].current === 1 && menu.mRows[7].value === '210', 'General rows follow the setting');
+  check(menu.mRows[0].value === 'Swapped' && menu.mRows[0].current === 1 && menu.mRows[4].value === 'On', 'General rows follow the setting');
   menu.mCursor = 0;
   menu.release(g.swcUp);
   check(menu.mCursor === 18, 'General Up wraps');
@@ -224,7 +228,7 @@ try {
       'mTranslationId.item.mFactoryItemsState[' + row.row + ']';
     check(row.expression === expectedExpression, 'Original state source for factory row ' + row.row);
   }
-  check(/t\.mFactoryItemsState/.test(menuText) && /t\.mFactoryItems\[i\]/.test(menuText), 'Candidate reuses the original Translation rows and states');
+  check(/\.mFactoryItemsState/.test(menuText) && !/mFactoryItems\[/.test(menuText), 'Candidate reuses the original Translation states with its own labels');
   report.factory_state_reconciliation = {rows: 19, source: stateArray.source,
     source_sha256: stateArray.source_sha256, compiled_unit_sha256: stateArray.compiled_unit_sha256,
     function_index: stateArray.function_index, code_sha256: stateArray.code_sha256,
@@ -256,12 +260,13 @@ try {
   menu.closePage();
   log.length = 0;
   open('Vehicle profile');
-  check(JSON.stringify(menu.mRows.map(row => row.title)) === JSON.stringify(models) && menu.mRows[1].value === 'Selected',
+  check(JSON.stringify(menu.mRows.map(row => row.title)) === JSON.stringify(['F-150 2009-2010', 'F-150 2011-2014', 'F-150 2015-2020']) &&
+    menu.mRows[1].value === 'Selected',
     'Profile lists the defined models only');
-  open('F150_15-20');
+  open('F-150 2015-2020');
   check(g.vehicleModel === 2 && JSON.stringify(sends()) === JSON.stringify([['setVehicleModel', 69]]), 'Profile sends the new profile index');
   modelIndexes = [-1, -1, -1];
-  open('F150_09-10');
+  open('F-150 2009-2010');
   check(g.vehicleModel === 0 && sends().length === 1, 'Profile index -1 sends nothing');
   modelIndexes = [56, 68, 69];
   g.vehicleModel = 1;

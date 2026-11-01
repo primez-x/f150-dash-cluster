@@ -91,7 +91,7 @@ Private evidence and firmware remain local and ignored by Git. Historical eviden
 - Boot candidates remove automatic formatting after mount failure and stop later init scripts after critical mount failures.
 - Private-data migration restores the original directory after a failed mount. If rollback fails, the data remains in `/private-move`.
 - A failed copy preserves the migration backup. Independent review approved the boot candidates for a local commit.
-- The settings menu, including Factory, General settings, G-force, and the Factory setup pages, passes 289 host Qt checks.
+- The settings menu, including Factory, General settings, G-force, and the Factory setup pages, passes 292 host Qt checks.
 - Eight additional Qt checks execute the patched MenuPage cache. The checks verify that MenuPage loads `/etc/vnM.qml` and passes the keys.
 - Native Qt fixture previews cover thirteen settings menu states, including the layout segments, Factory, General settings, the odometer and fuel tank editors, Vehicle profile, an armed service command, and G-force, and the screen grid. Real vehicle rendering remains unverified.
 - The dashboard shell is the owned source file `/etc/vnD.qml`. The candidate changes the one main.qml record that both Ford trucks read (`qrc:/Trucks/Dashboard.qml`). vnD started as a function-by-function copy of the compiled shell (cache 023).
@@ -245,7 +245,9 @@ System > Units shows independent Manual/Follow state and exposes `followVehicleU
 Factory is a vnM page without a code prompt. The page exposes General settings, Fuel tank setup, Vehicle profile, Odometer setup, and Service commands. The stock Advanced settings page set only the odometer, the fuel tanks, and the vehicle profile, so Factory has no Advanced settings row.
 The page also exposes the existing ADB, Debug logging, USB image preview, Screen grid, and Car model options actions. Actions require explicit activation.
 Factory runs the vendor service-list query on entry. General settings run the separate status query on entry; the original page waited 50 ms.
-General settings show all 19 controls. Seven controls that no compiled page or native code reads (sub tank, eco, gear, oil temperature, range, oil pressure, chassis state) show "No effect in this firmware" and do not change.
+General settings show all 19 controls. Seven controls that no compiled page or native code reads (sub tank, eco, gear, oil temperature, range, oil pressure, chassis state) show "No effect in this firmware" and do not change. The owned layout always shows the tires card, the steering angle, the outside temperature, and the clock, so those four controls show "Always shown on this dashboard". The speed scale range applies to the LC76 profile only and shows "Fixed for this vehicle model" on the truck.
+
+vnM owns the English text of the General settings, Reset, Units, Service, and Vehicle profile rows. The stock Translation English is poor ("Rear door replacement", "SubTankfuel", "F150_11-14"). The menu still reads the stock setting states and choice indexes.
 Back returns to the Factory row where the page opened.
 Odometer setup and Fuel tank setup edit six digits: Up raises and Down lowers the marked digit (0-9, wraps), OK moves to the next digit, and the last OK sends a changed value once (`setOdo`, or `setFuelTank` for the main tank, then the sub tank). Left cancels and sends nothing.
 Vehicle profile lists the profiles that the truck table names. One OK selects a profile and sends the device profile index; an index of -1 or no index sends nothing.

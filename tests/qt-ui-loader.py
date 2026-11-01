@@ -472,10 +472,11 @@ def capture(window):
 
 def settings_pages(fixture, result, app, engine, callbacks, intercepted, denied, ui_units):
     from PyQt5 import QtCore, QtGui, QtQml, QtQuick, QtTest, sip
-    titles = ["Front TPMS side exchange", "Rear TPMS side exchange", "Fuel filler side", "Tyre pressure",
-              "Reverse alarm", "Tachometer range", "Sub tank", "Maximum speed", "Vehicle angle",
-              "Outside temperature", "Eco information", "Gear information", "Oil temperature", "Range",
-              "Clock", "Doors", "Oil pressure", "Chassis state", "Screen flip"]
+    # The stock Translation English (cache 002). vnM shows its own labels instead.
+    titles = ["Front wheel replacement", "Rear door replacement", "Fuel Tank Position", "Tire pressure",
+              "Reversing sound", "Maximum speed 6000 RPM", "SubTankfuel", "MsxSpeed", "Angle sensor",
+              "Outdoor Temp", "ECO ON/OFF", "gearInfo", "OilTemp", "Remaining mileage",
+              "Clock", "Doors info", "Oil Pressure", "Chassis Lift/Lower", "Screen Flip"]
     precompiled = []
     for url in ui_units:
         dependency = QtQml.QQmlComponent(engine, QtCore.QUrl(url))
@@ -736,12 +737,12 @@ Window {
             property string mSpeedWarn: "Speed warning"
             property string mSystemVersion: "Version"
             property string mSystemFactory: "Factory"
-            property var mSystemSetupUnits: ["Fuel economy", "Speed and distance", "Temperature", "Tyre pressure"]
+            property var mSystemSetupUnits: ["Consumption", "Distance", "Temperature", "Pressure"]
             property var reset: ["Fixture", "Reset"]
-            property string mResetTripInfo: "Reset trip info"
-            property var mResetTpms: ["Fixture", "Reset TPMS"]
-            property var mResetFactory: ["Fixture", "Factory reset"]
-            property var mResetKey: ["Fixture", "Learn key"]
+            property string mResetTripInfo: "Reset Trip"
+            property var mResetTpms: ["Fixture", "Tire pressure reset"]
+            property var mResetFactory: ["Fixture", "Factory Reset"]
+            property var mResetKey: ["Fixture", "Remote key relearn"]
             property string mCalibrateCompass: "Calibrate compass"
             function getVehicleSettingsItem(index) { return index===59?"Oil Life":"Item "+index }
             function getSystemUnit(index) {
@@ -866,7 +867,13 @@ Window {
     #   last OK sends twice, sends a wrong value, or sends an unchanged value; Left sends; the two tank sends split or swap.
     # - Vehicle profile: undefined models listed; one OK does not select; a profile index of -1 or undefined is sent.
     # - Service commands: one OK runs a file; the files are read on highlight; an empty list shows no reason.
-    titles_general = titles
+    titles_general = ["Front tire sides", "Rear tire sides", "Fuel filler side", "Tire pressure card", "Reverse alert sound",
+                      "Tachometer range", "Second fuel tank", "Speedometer range", "Steering angle", "Outside temperature",
+                      "Eco indicator", "Gear indicator", "Oil temperature", "Range to empty", "Clock", "Door popup",
+                      "Oil pressure", "Suspension height", "Flip screen"]
+    general_notes = {i: "No effect in this firmware" for i in (6, 10, 11, 12, 13, 16, 17)}
+    general_notes.update({i: "Always shown on this dashboard" for i in (3, 8, 9, 14)})
+    general_notes[7] = "Fixed for this vehicle model"
     menu_url = QtCore.QUrl.fromLocalFile(pages[0]["copy"]).toString()
     menu_state = {}
     def load_menu():
@@ -1070,7 +1077,7 @@ Window {
     tap("Back")
     # Reset: press-twice confirm with the captured Reset page commands.
     open_path("Reset")
-    verify("menu reset rows follow the captured Reset page", titles() == ["Reset TripA", "Reset TripB", "Reset trip info", "Reset TPMS", "Factory reset", "Oil Life"])
+    verify("menu reset rows follow the captured Reset page", titles() == ["Reset trip A", "Reset trip B", "Reset trip data", "Reset tire pressure", "Reset truck settings", "Reset oil life"])
     mark = len(log())
     tap("Enter")
     verify("menu one OK arms and sends nothing", sends(mark) == [] and m("mArmedRow") == 0 and
@@ -1101,9 +1108,9 @@ Window {
     open_path("Reset")
     verify("menu leaving drops the armed row", m("mArmedRow") == -1 and m("mCursor") == 0 and len(sends(mark)) == 6)
     tap("Back")
-    for vehicle, expected in ((0, ["Reset TripA", "Reset TripB", "Reset trip info", "Reset TPMS"]),
-                              (2, ["Reset TripA", "Reset TripB", "Reset trip info", "Reset TPMS", "Factory reset", "Learn key",
-                                   "Reset TPMS", "Calibrate compass"])):
+    for vehicle, expected in ((0, ["Reset trip A", "Reset trip B", "Reset trip data", "Reset tire pressure"]),
+                              (2, ["Reset trip A", "Reset trip B", "Reset trip data", "Reset tire pressure", "Reset truck settings",
+                                   "Relearn remote key", "Relearn tire sensors", "Calibrate compass"])):
         global_state.setProperty("vehicleModel", vehicle)
         tap("Back")
         mark = len(log())
@@ -1223,19 +1230,22 @@ Window {
     verify("menu Factory rows", titles() == ["General settings", "Fuel tank setup", "Vehicle profile", "Odometer setup",
                                              "Service commands", "ADB debugging: enable", "ADB debugging: disable",
                                              "Debug logging", "USB image preview", "Screen grid", "Car model options"])
-    verify("menu Factory setup rows show the current values", values()[1:5] == ["80 L · 0 L", "F150_11-14", "------ km", ""] and
+    verify("menu Factory setup rows show the current values", values()[1:5] == ["80 L · 0 L", "F-150 2011-2014", "------ km", ""] and
            all(entry["kind"] == "page" for entry in rows()[:5]))
     verify("menu Factory entry leaves the tools unchanged", value(event_state, "adbCalls") == [] and
            value(global_state, "uartDebugEnabled") == 0 and value(global_state, "mediaImageEnabled") == 0 and
            value(global_state, "modelCarSelection") is False)
     # General settings: a native page with the 19 vendor rows.
-    no_effect = [6, 10, 11, 12, 13, 16, 17]
+    no_effect = sorted(general_notes)
     mark = len(log())
     tap("Enter")
     verify("menu General settings runs one system inquiry", m("mPath")[-1] == "general" and calls_since(mark) == [["systemInquire"]])
     verify("menu General settings rows", titles() == titles_general)
     verify("menu General rows with no effect show the reason", all(rows()[i]["kind"] == "unavailable" and
-           rows()[i]["value"] == "No effect in this firmware" for i in no_effect) and values()[0] == "Off" and values()[7] == "200")
+           rows()[i]["value"] == general_notes[i] for i in no_effect))
+    verify("menu General rows name the state", [values()[i] for i in (0, 1, 2, 4, 5, 15, 18)] ==
+           ["Normal", "Normal", "Left", "Off", "7000 rpm", "Off", "Off"] and rows()[0]["seg"] == ["Normal", "Swapped"] and
+           rows()[2]["seg"] == ["Left", "Right"] and "seg" not in rows()[4])
     for index in range(19):
         before = list(value(global_state, "factoryCalls"))
         swc("Enter", 1)
@@ -1247,7 +1257,8 @@ Window {
         tap("Down")
     verify("menu General sends the vendor setter for rows with an effect",
            value(global_state, "factoryCalls") == [i for i in range(19) if i not in no_effect])
-    verify("menu General rows follow the setting", values()[0] == "On" and rows()[0]["current"] == 1 and values()[7] == "210")
+    verify("menu General rows follow the setting", values()[0] == "Swapped" and rows()[0]["current"] == 1 and
+           values()[2] == "Right" and values()[5] == "6000 rpm" and values()[4] == "On")
     tap("Back")
     verify("menu General Back returns to the Factory row", m("mPath")[-1] == "factory" and m("mCursor") == 0)
     # Odometer setup (stock FactoryOdoSetup): six digits from getOdoNum, one setOdo(Number(digits)) after the last digit.
@@ -1329,9 +1340,9 @@ Window {
     mark = len(log())
     open_path("Vehicle profile")
     verify("menu Vehicle profile lists only the defined models", m("mPath")[-1] == "profile" and
-           titles() == ["F150_09-10", "F150_11-14", "F150_15-20"] and values() == ["", "Selected", ""] and
+           titles() == ["F-150 2009-2010", "F-150 2011-2014", "F-150 2015-2020"] and values() == ["", "Selected", ""] and
            all(entry["kind"] == "select" for entry in rows()) and calls_since(mark) == [])
-    focus("F150_15-20")
+    focus("F-150 2015-2020")
     swc("Enter", 1)
     verify("menu one OK selects the profile and sends the profile index",
            value(global_state, "vehicleModel") == 2 and sends(mark) == [["setVehicleModel", 69]])
@@ -1340,7 +1351,7 @@ Window {
     translation_state = window.property("translationState")
     for indexes, label in (([-1, -1, -1], "-1"), ([56, 68], "undefined")):
         translation_state.setProperty("modelIndexes", indexes)
-        focus("F150_11-14" if label == "-1" else "F150_15-20")
+        focus("F-150 2011-2014" if label == "-1" else "F-150 2015-2020")
         if label == "undefined":
             global_state.setProperty("vehicleModel", 0)
         tap("Enter")
@@ -1495,7 +1506,7 @@ Window {
         global_state.setProperty(name, flag)
     mark = len(log())
     open_path("Units")
-    verify("menu unit titles keep the Units page rows", titles() == ["Fuel economy", "Speed and distance", "Temperature", "Tyre pressure",
+    verify("menu unit titles keep the Units page rows", titles() == ["Fuel economy", "Speed and distance", "Temperature", "Tire pressure",
                                                        "Follow vehicle units"])
     focus("Speed and distance")
     tap("Enter")
@@ -1517,11 +1528,11 @@ Window {
     verify("menu fuel economy edit is local", value(global_state, "consumptionUnit") == 0)
     tap("Enter")
     verify("menu fuel economy commit", value(global_state, "consumptionUnit") == 1 and row("Fuel economy")["value"] == "km/L")
-    focus("Tyre pressure")
+    focus("Tire pressure")
     tap("Enter")
     tap("Down")
     tap("Enter")
-    verify("menu tyre pressure Down wraps to the last option", value(global_state, "pressureUnit") == 3 and len(sends(mark)) == 3)
+    verify("menu tire pressure Down wraps to the last option", value(global_state, "pressureUnit") == 3 and len(sends(mark)) == 3)
     tap("Back")
     mark = len(log())
     open_path("Display")
@@ -1586,8 +1597,9 @@ Window {
     mark = len(log())
     open_path("Service")
     verify("menu Service entry runs one inquiry", calls_since(mark) == [["serviceInquire"]])
-    verify("menu service titles", titles() == ["Oil life", "Reset oil life", "Oil & Oil filter", "Front brake", "Inspection",
-                                               "Brake fluid", "Rear brake", "Filter", "spark plug", "Individual 2"])
+    verify("menu service titles", titles() == ["Oil life", "Reset oil life", "Engine oil and filter", "Front brake pads",
+                                               "Vehicle inspection", "Brake fluid", "Rear brake pads", "Fuel and air filters",
+                                               "Spark plugs", "Custom 2"])
     verify("menu service no-data text", values()[0] == "No data from truck" and
            all(entry == "No data from adapter" for entry in values()[2:]))
     verify("menu service colours", [entry["color"] for entry in rows()[2:]] ==
@@ -1603,7 +1615,7 @@ Window {
     global_state.setProperty("mainTentChanged", 1)
     advance()
     verify("menu service reminder text", values()[2] == "1000 km")
-    open_path("Oil & Oil filter")
+    open_path("Engine oil and filter")
     verify("menu service item rows", titles() == ["Next service date", "Service interval", "Reset"] and
            values() == ["2027/3/15", "8000 km", ""])
     tap("Enter")
@@ -1633,7 +1645,7 @@ Window {
     QtTest.QTest.qWait(600)
     verify("menu service read-back once per burst", len(inquiries(mark, "serviceInquire")) == 3)
     tap("Back")
-    focus("Rear brake")
+    focus("Rear brake pads")
     tap("Enter")
     focus("Next service date")
     tap("Enter")
@@ -1641,13 +1653,13 @@ Window {
     verify("menu service date without data starts today", m("mEditFields") == [max(2024, today.tm_year), today.tm_mon, today.tm_mday])
     tap("Back")
     tap("Back")
-    open_path("spark plug")
-    verify("menu custom rows", titles() == ["Item", "Next service date", "Service interval", "Reset"] and values()[0] == "spark plug")
+    open_path("Spark plugs")
+    verify("menu custom rows", titles() == ["Service item", "Next service date", "Service interval", "Reset"] and values()[0] == "Spark plugs")
     tap("Enter")
     tap("Up")
     tap("Enter")
     verify("menu custom item Up commits the next item", value(global_state, "mainTentCustomize1") == 3 and sends(mark)[-1] == ["svcItem", 6, 3] and
-           values()[0] == "Wiper")
+           values()[0] == "Wiper blades")
     focus("Service interval")
     tap("Enter")
     tap("Down")
@@ -1656,7 +1668,7 @@ Window {
     tap("Enter")
     verify("menu custom interval commit", sends(mark)[-1] == ["svcMileage", 6, 500])
     tap("Back")
-    verify("menu custom name in the service list", titles()[8] == "Wiper")
+    verify("menu custom name in the service list", titles()[8] == "Wiper blades")
     mark = len(log())
     focus("Reset oil life")
     tap("Enter")
@@ -1796,7 +1808,7 @@ Window {
     tap("Back")
     open_path("Vehicle profile")
     texts = item_texts(page_item)
-    verify("menu view lists the profiles and marks the selected one", {"F150_09-10", "F150_11-14", "F150_15-20", "Selected"} <= texts)
+    verify("menu view lists the profiles and marks the selected one", {"F-150 2009-2010", "F-150 2011-2014", "F-150 2015-2020", "Selected"} <= texts)
     preview("profile", "vnM locked view; Factory > Vehicle profile.")
     tap("Back")
     open_path("Service commands")
