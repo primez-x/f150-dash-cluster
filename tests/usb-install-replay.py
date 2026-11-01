@@ -1793,6 +1793,28 @@ def main():
             return [c.lines(), c.device()]
         check("drive-marker-alone-blocks", 5, [["BLOCKED", DRIVE_BLOCK_HELP], "original"], drive_marker_only)
 
+        def drive_marker_names_release():
+            # A failed install writes the reason on line 1 and the release identity on line 2.
+            c = install(new(), "dies")
+            return [c.status(), (c.usb / "INSTALL-BLOCKED.txt").read_text().splitlines()]
+        check("drive-marker-names-the-release", 5,
+              ["ROLLED_BACK Launcher stopped", ["Launcher stopped", f"release {PAYLOAD_ID}"]], drive_marker_names_release)
+
+        def drive_marker_same_release():
+            c = new()
+            (c.usb / "INSTALL-BLOCKED.txt").write_text(f"startup markers missing\nrelease {PAYLOAD_ID}\n")
+            install(c)
+            return [c.lines(), c.device()]
+        check("drive-marker-of-this-release-blocks", 5, [["BLOCKED", DRIVE_BLOCK_HELP], "original"], drive_marker_same_release)
+
+        def drive_marker_other_release():
+            # Review 7: a marker left by a failed earlier release must not stop a different release on the same drive.
+            c = new()
+            (c.usb / "INSTALL-BLOCKED.txt").write_text("startup markers missing\nrelease " + "0" * 64 + "\n")
+            install(c)
+            return [c.status(), c.device(), c.drive_blocked()]
+        check("drive-marker-of-another-release-installs", 25, ["INSTALLED", "candidate", True], drive_marker_other_release)
+
         def rollback_clears_block():
             found = []
             c = install(new(), "dies")

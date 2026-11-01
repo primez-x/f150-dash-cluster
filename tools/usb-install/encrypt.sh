@@ -528,6 +528,16 @@ block_write() {
     log "install block write failed"
     return 1
 }
+# 0 when INSTALL-BLOCKED.txt on the drive blocks release $1. Line 2 names the release. A marker without that line (written
+# before the release line) blocks every release.
+marker_blocks() {
+    [ -e "$usb_root/INSTALL-BLOCKED.txt" ] || return 1
+    named=$(awk 'NR == 2' "$usb_root/INSTALL-BLOCKED.txt" 2>/dev/null)
+    case "$named" in
+        "release "*) [ "$named" = "release $1" ] ;;
+        *) return 0 ;;
+    esac
+}
 # A rollback insert ended with the stock files: remove the cluster block and INSTALL-BLOCKED.txt on this drive. Adds a failed
 # removal to started.
 block_clear() {
@@ -687,13 +697,14 @@ fail_restart() {
 }
 # Failure after the journal: block a repeat install of this release, then restore the original. The journal names the release,
 # so the cluster block goes in place before the journal removal, also when a later drive insert finishes the rollback.
-# Without that journal line, the block goes in place now. INSTALL-BLOCKED.txt also blocks a repeat install from this drive.
+# Without that journal line, the block goes in place now. INSTALL-BLOCKED.txt names the release on line 2 and blocks a repeat
+# install of that release from this drive.
 rollback_now() {
     log "rollback: $1"
     cp "$LAUNCHER_LOG" "$out/Launcher-failed.log" 2>/dev/null
     release=$(payload_id)
     journal_write "$SETTINGS_COPY_NAME" files "$release" || block_write "$release"
-    printf '%s\n' "$1" > "$usb_root/INSTALL-BLOCKED.txt" || log "INSTALL-BLOCKED.txt write failed"
+    printf '%s\nrelease %s\n' "$1" "$release" > "$usb_root/INSTALL-BLOCKED.txt" || log "INSTALL-BLOCKED.txt write failed"
     if restore_original keep; then
         finish "ROLLED_BACK $1" "$started"
     else
@@ -729,9 +740,10 @@ do_install() {
     clean_leftovers
     resume_rollback
     blocked=
-    if block_names "$(payload_id)"; then
+    release=$(payload_id)
+    if block_names "$release"; then
         blocked=$BLOCK_HELP
-    elif [ -e "$usb_root/INSTALL-BLOCKED.txt" ]; then
+    elif marker_blocks "$release"; then
         blocked="Remove INSTALL-BLOCKED.txt only after the cause is fixed."
     fi
     if [ -n "$blocked" ]; then
